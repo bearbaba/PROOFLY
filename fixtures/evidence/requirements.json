@@ -1,0 +1,5 @@
+[
+  {"id":"R1","text":"The guide explicitly states that this is a trial environment and that it does not accept real money."},
+  {"id":"R2","text":"The guide gives all three steps for reading a saved draft in the order documented by the reference."},
+  {"id":"R3","text":"The guide provides two troubleshooting instructions whose claimed remedies are supported by the reference. Remedies for undocumented error codes are unverifiable, not automatically false."}
+]
