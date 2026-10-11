@@ -118,6 +118,35 @@ class ReceiptTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             unique_json(b'{"id":"1","id":"2"}')
 
+    def test_malformed_receipt_structures_fail_closed(self):
+        o, r = fixture()
+        cases = [
+            ({"id": ["not-a-scalar"], **{k: v for k, v in o.items() if k != "id"}}, r),
+            (dict(o, spec={"criteria": [{"id": ["R1"], "text": "bad"}] * 3}), r),
+            (dict(o, submissions=[None]), r),
+            (o, dict(r, results=[None, None, None])),
+            (o, dict(r, results=[{"id": "R1", "status": {"bad": "type"}}] * 3)),
+            (o, dict(r, contract="0x" + "Z" * 40)),
+            (o, dict(r, chain_id=True)),
+            (o, dict(r, chain_id=float("nan"))),
+        ]
+        for order, receipt in cases:
+            with self.subTest(order=repr(order)[:60], receipt=repr(receipt)[:60]):
+                report = validate(order, receipt, ARTEFACT, REFERENCE)
+                self.assertFalse(report["valid"], report)
+                self.assertFalse(report["chain_finality_verified"])
+
+    def test_non_bytes_and_large_json_are_rejected(self):
+        o, r = fixture()
+        self.assertIn("INVALID_EVIDENCE_BYTES", validate(o, r, "bytes", REFERENCE)["errors"])
+        r["untrusted_note"] = "X" * 65_000
+        self.assertIn("RECEIPT_METADATA_TOO_LARGE", validate(o, r, ARTEFACT, REFERENCE)["errors"])
+
+    def test_invalid_contract_characters_are_rejected(self):
+        o, r = fixture()
+        r["contract"] = "0x" + "g" * 40
+        self.assertIn("INVALID_CONTRACT_ADDRESS", validate(o, r, ARTEFACT, REFERENCE)["errors"])
+
     def test_cli_can_verify_supplied_snapshot(self):
         o, r = fixture()
         with tempfile.TemporaryDirectory() as tmp:

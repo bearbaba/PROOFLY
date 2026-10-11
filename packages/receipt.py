@@ -7,6 +7,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -33,7 +34,7 @@ def _report(errors: list[str]) -> dict[str, Any]:
             "warning": "Offline integrity checks only. Independently verify onchain record and finality."}
 
 
-def validate(order: Any, receipt: Any, artifact: bytes, reference: bytes) -> dict[str, Any]:
+def _validate_core(order: Any, receipt: Any, artifact: bytes, reference: bytes) -> dict[str, Any]:
     """Check integrity relative to the SUPPLIED order and original evidence bytes."""
     errors: list[str] = []
 
@@ -139,6 +140,31 @@ def validate(order: Any, receipt: Any, artifact: bytes, reference: bytes) -> dic
         check(receipt.get("outcome") == outcome, "AGGREGATE_OUTCOME_MISMATCH")
     return _report(errors)
 
+
+def validate(order: Any, receipt: Any, artifact: bytes, reference: bytes) -> dict[str, Any]:
+    """Fail closed on malformed or adversarial JSON without raising exceptions.
+
+    This is an OFFLINE integrity check, not a chain provenance or finality proof.
+    """
+    try:
+        if type(order) is not dict or type(receipt) is not dict:
+            return _report(["INVALID_JSON_OBJECT"])
+        if type(artifact) is not bytes or type(reference) is not bytes:
+            return _report(["INVALID_EVIDENCE_BYTES"])
+        # Bound nested JSON before traversing it. Reject booleans/nonfinite
+        # metadata early; our canonical representation must be reproducible.
+        for label, value in (("ORDER", order), ("RECEIPT", receipt)):
+            raw = json.dumps(value, ensure_ascii=False, allow_nan=False)
+            if len(raw.encode("utf-8")) > 64_000:
+                return _report([label + "_METADATA_TOO_LARGE"])
+        contract = receipt.get("contract")
+        if type(contract) is not str or not re.fullmatch(r"0x[a-fA-F0-9]{40}", contract):
+            return _report(["INVALID_CONTRACT_ADDRESS"])
+        if type(receipt.get("chain_id")) is not int or receipt["chain_id"] <= 0:
+            return _report(["INVALID_CHAIN_ID"])
+        return _validate_core(order, receipt, artifact, reference)
+    except (TypeError, ValueError, OverflowError, RecursionError, KeyError, AttributeError):
+        return _report(["MALFORMED_RECEIPT_INPUT"])
 
 def unique_json(raw: bytes) -> Any:
     def no_duplicate_keys(pairs):
