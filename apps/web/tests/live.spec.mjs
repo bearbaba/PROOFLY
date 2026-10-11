@@ -63,6 +63,7 @@ test("Contributor account connects without installing a MetaMask Snap",async({pa
       on(){},
       request:async({method})=>{
         window.__walletCalls.push(method);
+        if(method==="eth_accounts")return [];
         if(method==="eth_requestAccounts")return ["0xd6b8a3a5eb329410d9504784812b8569afa8c2af"];
         if(method==="eth_chainId")return "0xf22f";
         if(method==="wallet_getSnaps"||method==="wallet_requestSnaps")
@@ -75,7 +76,9 @@ test("Contributor account connects without installing a MetaMask Snap",async({pa
   await page.locator("#connectWallet").click();
   await expect(page.locator("#walletState")).toContainText("Connected / 0xd6b8a3a5eb329410d9504784812b8569afa8c2af / Studionet 61999");
   const calls=await page.evaluate(()=>window.__walletCalls);
-  expect(calls).toEqual(["eth_requestAccounts","eth_chainId"]);
+  expect(calls).toContain("eth_requestAccounts");
+  expect(calls).toContain("eth_chainId");
+  expect(calls).not.toContain("wallet_requestSnaps");
 });
 test("wrong-chain account fails before SDK and never triggers Snap prompts",async({page})=>{
   await page.addInitScript(()=>{
@@ -83,6 +86,7 @@ test("wrong-chain account fails before SDK and never triggers Snap prompts",asyn
     window.ethereum={
       isMetaMask:true,on(){},request:async({method})=>{
         window.__walletCalls.push(method);
+        if(method==="eth_accounts")return [];
         if(method==="eth_requestAccounts")return ["0xd6b8a3a5eb329410d9504784812b8569afa8c2af"];
         if(method==="eth_chainId")return "0x1";
         throw Error("Unexpected wallet method");
@@ -92,6 +96,48 @@ test("wrong-chain account fails before SDK and never triggers Snap prompts",asyn
   await page.goto("/",{waitUntil:"domcontentloaded"});
   await page.locator("#connectWallet").click();
   await expect(page.locator("#walletState")).toContainText("Wrong network");
-  await expect(page.locator("#walletState")).toContainText("No Snap installation is needed");
-  expect(await page.evaluate(()=>window.__walletCalls)).toEqual(["eth_requestAccounts","eth_chainId"]);
+  await expect(page.locator("#walletState")).toContainText("GenLayer Studionet");
+  const calls=await page.evaluate(()=>window.__walletCalls);
+  expect(calls).toContain("eth_requestAccounts");
+  expect(calls).not.toContain("wallet_requestSnaps");
+});
+
+test("My Work section is visible but requires connected wallet, no fabricated jobs",async({page})=>{
+  await page.goto("/",{waitUntil:"domcontentloaded"});
+  await expect(page.locator("#myWorkCard")).toBeVisible();
+  await expect(page.locator("#myWorkStatus")).toContainText("Connect your wallet");
+  await expect(page.locator("#myWorkList .my-work-row")).toHaveCount(0);
+  await expect(page.locator("#refreshMyWork")).toBeVisible();
+});
+
+test("MetaMask accountChanged switches Owner to Contributor without another connection prompt",async({page})=>{
+  await page.addInitScript(()=>{
+    window.__walletCalls=[];
+    const owner="0x4c7cb73ac8f8999af21cfc9ff4cf2333a9508dcb";
+    const contributor="0xd6b8a3a5eb329410d9504784812b8569afa8c2af";
+    window.__account=owner;
+    window.__listeners={};
+    window.ethereum={
+      isMetaMask:true,
+      on(event,handler){window.__listeners[event]=handler;},
+      async request({method}){
+        window.__walletCalls.push(method);
+        if(method==="eth_accounts")return [window.__account];
+        if(method==="eth_chainId")return "0xf22f";
+        throw Error("Unexpected wallet method: "+method);
+      }
+    };
+    window.__switchToContributor=()=>{
+      window.__account=contributor;
+      window.__listeners.accountsChanged?.([contributor]);
+    };
+  });
+  await page.goto("/",{waitUntil:"domcontentloaded"});
+  await expect(page.locator("#walletState")).toContainText("0x4c7cb73ac8f8999af21cfc9ff4cf2333a9508dcb");
+  await page.evaluate(()=>window.__switchToContributor());
+  await expect(page.locator("#walletState")).toContainText("0xd6b8a3a5eb329410d9504784812b8569afa8c2af");
+  const calls=await page.evaluate(()=>window.__walletCalls);
+  expect(calls).not.toContain("eth_requestAccounts");
+  expect(calls).not.toContain("eth_sendTransaction");
+  expect(calls).not.toContain("wallet_requestSnaps");
 });

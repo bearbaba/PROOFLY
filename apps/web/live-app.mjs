@@ -7,6 +7,7 @@ import { createClient } from "genlayer-js";
 import { studionet } from "genlayer-js/chains";
 import { TransactionHashVariant, TransactionStatus } from "genlayer-js/types";
 import {inspectTransaction} from "./tx-verdict.mjs";
+import {listRecentWork,recommendedOperation} from "./workboard.mjs";
 import {candidateFromArgs,restoreCandidate,discoverCreatedOrder,orderLink,queryOrder} from "./order-handoff.mjs";
 import { createWorkflowGateway, makeRead } from "./sdk-workflow.mjs";
 import { isPinnedUrl } from "./model.mjs";
@@ -37,6 +38,12 @@ let verifiedReference = null;
 let verifiedArtifact = null;
 let candidateOrder = null;
 let creationOutcome = null;
+let walletSequence = 0;
+let boardBusy = false;
+let lastBoardWallet = null;
+let boardItems = [];
+let userPickedOrder = Boolean(queryOrder(window.location.search));
+
 
 function elem(tag, text, className) {
   const node = document.createElement(tag);
@@ -66,6 +73,8 @@ function setBusy(value) {
   $("trackTx").disabled = value;
   refreshAction();
   refreshCreateForm();
+  const refresh=$("refreshMyWork");
+  if(refresh)refresh.disabled=value||boardBusy;
 }
 function getOrderId() {
   const id = $("orderId").value.trim();
@@ -95,6 +104,7 @@ function openVerifiedOrder(id,order) {
   currentOrder=order;
   currentReceipt=null;
   renderOrder();
+  selectNextOperation();
   try{localStorage.setItem(LAST_ORDER_KEY,String(id));}catch{}
   window.history.replaceState(null,"",orderLink(window.location.origin+window.location.pathname,String(id)));
 }
@@ -126,6 +136,93 @@ function renderOrder() {
     root.append(version);
   }
 }
+
+function selectNextOperation() {
+  const action=recommendedOperation(currentOrder,wallet);
+  if(action && $("operation").value!==action){
+    $("operation").value=action;
+    refreshExtras(); // never signs; only prepares the appropriate manual action
+  }else refreshAction();
+}
+function clearMyWork(message) {
+  boardItems=[];
+  lastBoardWallet=null;
+  const list=$("myWorkList");
+  if(list)list.replaceChildren();
+  if($("myWorkStatus"))$("myWorkStatus").textContent=message;
+}
+function renderMyWork(items) {
+  const root=$("myWorkList");
+  root.replaceChildren();
+  for(const item of items){
+    const order=item.order;
+    const row=elem("button",undefined,"my-work-row");
+    row.type="button";
+    const left=elem("div");
+    const title=elem("span","#"+order.id+" · "+String(order.title||"Untitled"),"my-work-name");
+    const next=item.next==="accept_order"?" · Accept next" :
+      item.next==="submit_evidence"?" · Submit evidence next" :
+      item.next==="evaluate_submission"?" · Verify next" : "";
+    const meta=elem("span",item.role.toUpperCase()+" · "+String(order.status)+next,"my-work-meta");
+    left.append(title,meta);
+    const right=elem("span","Open →","my-work-state");
+    row.append(left,right);
+    row.addEventListener("click",()=>{
+      userPickedOrder=true;
+      $("orderId").value=String(order.id);
+      // An existing snapshot has already been read from the blockchain.
+      openVerifiedOrder(String(order.id),order);
+      $("orderResult").scrollIntoView({behavior:"smooth",block:"center"});
+    });
+    root.append(row);
+  }
+}
+async function refreshMyWork({autoOpen=true}={}) {
+  if(busy||boardBusy||!wallet)return;
+  const account=wallet,sequence=walletSequence;
+  boardBusy=true;
+  $("refreshMyWork").disabled=true;
+  $("myWorkStatus").textContent="Finding your work from finalized on-chain records…";
+  try {
+    const result=await listRecentWork(readFinal,account,{limit:25,concurrency:4});
+    if(account!==wallet || sequence!==walletSequence)return;
+    boardItems=result.items;
+    lastBoardWallet=account;
+    renderMyWork(result.items);
+    // A refreshed finalized record is the source of truth. Update status,
+    // role and recommended action without manual "Load order" clicks.
+    const selected=result.items.find(x=>String(x.order.id)===String(currentOrderId));
+    if(selected && currentOrder?.status!==selected.order.status) {
+      openVerifiedOrder(selected.order.id,selected.order);
+    }
+    $("myWorkStatus").textContent=result.items.length ?
+      result.items.length+" linked work order(s) · recent "+result.scanned+" checked"+
+      (result.errors?" · "+result.errors+" RPC read(s) unavailable":"") :
+      "No work orders for this wallet in the latest "+result.scanned+
+      " records"+(result.hasOlder?" (older orders may exist)":"")+".";
+    if(autoOpen && !userPickedOrder && result.items.length){
+      const actionable=result.items.find(x=>x.next&&x.role==="contributor") ||
+        result.items.find(x=>x.next) || result.items[0];
+      const currentForWallet=currentOrder &&
+        (currentOrder.owner?.toLowerCase()===account ||
+         currentOrder.contributor?.toLowerCase()===account);
+      if(!currentForWallet || (currentOrder.status==="COMPLETED" && actionable.next)){
+        openVerifiedOrder(String(actionable.order.id),actionable.order);
+      } else {
+        selectNextOperation();
+      }
+    }
+  } catch(error){
+    if(account===wallet&&sequence===walletSequence)
+      $("myWorkStatus").textContent="Could not refresh work orders: "+String(error?.message||error)+
+        ". Your current work order remains available.";
+  } finally {
+    boardBusy=false;
+    $("refreshMyWork").disabled=busy;
+    if(wallet && wallet!==account && !busy)void refreshMyWork();
+  }
+}
+
 function renderReceipt() {
   const root = $("receiptResult");
   root.replaceChildren();
@@ -178,7 +275,7 @@ async function loadOrder() {
     }
     $("receiptResult").textContent = "Click Read finalized Proof Receipt to inspect results.";
   } catch(error) { showError(error,$("orderResult")); }
-  finally { setBusy(false); }
+  finally { setBusy(false); if(wallet && !boardBusy) void refreshMyWork({autoOpen:!userPickedOrder}); }
 }
 async function loadReceipt() {
   if (busy) return;
@@ -193,48 +290,80 @@ async function loadReceipt() {
   finally { setBusy(false); }
 }
 function walletChanged(message) {
-  wallet = null;
-  gateway = null;
-  $("walletState").textContent = message;
-  $("connectWallet").textContent = "Connect wallet ↗";
-  if (currentOrder) renderOrder();
+  walletSequence++;
+  wallet=null;
+  gateway=null;
+  $("walletState").textContent=message;
+  $("connectWallet").textContent="Connect wallet ↗";
+  clearMyWork("Connect your wallet to see your recent work orders.");
+  if(currentOrder)renderOrder();
   refreshAction();
   refreshCreateForm();
 }
+/** Rebind the injected EIP-1193 account without triggering any wallet prompt.
+ * The only active permission request is a deliberate Connect wallet click.
+ */
+async function bindAuthorizedWallet(accounts,provider=window.ethereum) {
+  const account=Array.isArray(accounts) ? accounts[0] : null;
+  if(!/^0x[0-9a-fA-F]{40}$/.test(String(account||""))) {
+    walletChanged("No account authorized for this site. Connect wallet to continue.");
+    return false;
+  }
+  const sequence=++walletSequence;
+  const chainHex=await provider.request({method:"eth_chainId"});
+  if(sequence!==walletSequence)return false; // account switched again during RPC
+  if(Number.parseInt(String(chainHex),16)!==CHAIN_ID) {
+    walletChanged("Wrong network. Switch MetaMask to GenLayer Studionet 61999.");
+    return false;
+  }
+  const client=createClient({chain:studionet,account,provider});
+  const bound=createWorkflowGateway({
+    client,contractAddress:CONTRACT,
+    finalVariant:TransactionHashVariant.LATEST_FINAL,isSuccessful
+  });
+  if(sequence!==walletSequence)return false;
+  const different=wallet!==account.toLowerCase();
+  if(different)clearMyWork("Loading the selected wallet's work orders…");
+  wallet=account.toLowerCase();
+  gateway=bound;
+  $("walletState").textContent="Connected / "+wallet+" / Studionet "+CHAIN_ID;
+  $("connectWallet").textContent="Connected · switch in MetaMask ↗";
+  if(different)userPickedOrder=false; // prioritize tasks relevant to new account
+  if(currentOrder)renderOrder();
+  selectNextOperation();
+  refreshCreateForm();
+  // Do not await a full dashboard RPC scan before the wallet can sign.
+  if(!busy)void refreshMyWork();
+  return true;
+}
 async function connectWallet() {
-  if (busy) return;
-  const provider = window.ethereum;
-  if (!provider || typeof provider.request !== "function") {
-    showError(new Error("No EIP-1193 browser wallet found. Install MetaMask or a compatible wallet."),$("walletState"));
+  if(busy)return;
+  const provider=window.ethereum;
+  if(!provider||typeof provider.request!=="function"){
+    showError(Error("No EIP-1193 wallet found. Install MetaMask or another compatible wallet."),$("walletState"));
     return;
   }
   setBusy(true);
-  try {
-    const accounts = await provider.request({method:"eth_requestAccounts"});
-    if (!Array.isArray(accounts) || !/^0x[0-9a-fA-F]{40}$/.test(accounts[0] || "")) throw new Error("Wallet returned no valid account.");
-    const account = accounts[0];
-    // genlayer-js@1.1.8 client.connect("studionet") requests
-    // wallet_getSnaps/wallet_requestSnaps, even for plain EIP-1193
-    // eth_sendTransaction writes. That extra installation prompt can trap
-    // account switching behind a repeated third-party software disclaimer.
-    // Direct EIP-1193 wallet writes do NOT need a Snap. Never auto-install one.
-    const chainHex = await provider.request({method:"eth_chainId"});
-    if (parseInt(String(chainHex),16) !== CHAIN_ID)
-      throw new Error("Wrong network. Select GenLayer Studionet (61999) in MetaMask, then reconnect. No Snap installation is needed.");
-    const client = createClient({chain:studionet,account,provider});
-    const bound = createWorkflowGateway({
-      client,contractAddress:CONTRACT,
-      finalVariant:TransactionHashVariant.LATEST_FINAL,isSuccessful
-    });
-    wallet = account.toLowerCase();
-    gateway = bound;
-    $("walletState").textContent = "Connected / " + wallet + " / Studionet " + CHAIN_ID;
-    $("connectWallet").textContent = "Reconnect / switch account";
-    renderOrder();
-    refreshAction();
-    refreshCreateForm();
-  } catch(error) { walletChanged(String(error?.message || error)); showError(error,$("walletState")); }
-  finally { setBusy(false); }
+  try{
+    const accounts=await provider.request({method:"eth_requestAccounts"});
+    await bindAuthorizedWallet(accounts,provider);
+  }catch(error){
+    walletChanged(String(error?.message||error));
+  }finally{
+    setBusy(false);
+    if(wallet)void refreshMyWork();
+  }
+}
+async function syncAuthorizedWallet() {
+  const provider=window.ethereum;
+  if(!provider?.request)return;
+  try{
+    // eth_accounts checks existing site permission silently; never prompts.
+    const accounts=await provider.request({method:"eth_accounts"});
+    await bindAuthorizedWallet(accounts,provider);
+  }catch(error){
+    walletChanged("Wallet permission or network unavailable. Connect wallet if needed.");
+  }
 }
 
 /* Human-facing create flow. Public bytes are re-fetched and SHA-256 checked
@@ -453,7 +582,21 @@ function refreshAction() {
     (op === "submit_evidence" && ["ACTIVE","REVIEWED"].includes(currentOrder?.status)) ||
     (op === "evaluate_submission" && currentOrder?.status === "SUBMITTED") ||
     (op === "cancel_order" && currentOrder?.status === "PROPOSED");
-  $("actionInfo").textContent = explanation + (!wallet ? " Connect a wallet first." : !needed ? " Load a finalized order first." : !correctRole ? " Current wallet is not authorized." : !validState ? " Order state does not allow this call." : "");
+  const waiting=role==="owner" && op==="accept_order" && currentOrder?.status==="PROPOSED";
+  const roleInfo=waiting ? " Waiting for the Contributor wallet to accept this order." :
+    role==="viewer" ? " Connect the assigned wallet to act on this order." :
+    !correctRole ? " This action is not available to your wallet role." : "";
+  $("actionInfo").textContent = explanation + (!wallet ? " Connect your wallet to continue." :
+    !needed ? " Choose a work order from Your work orders above." :
+    roleInfo || (!validState ? " This step is not available in the current order state." : " Ready to review and sign."));
+  const names={
+    accept_order:"Accept this work order →",
+    submit_evidence:"Submit evidence & sign →",
+    evaluate_submission:"Run AI verification →",
+    cancel_order:"Cancel work order →",
+    close_expired:"Close expired order →"
+  };
+  $("writeAction").textContent=names[op]||"Review cost & sign →";
   $("writeAction").disabled = busy || !wallet || !needed || !correctRole || !validState;
 }
 function parameters() {
@@ -478,6 +621,7 @@ function parameters() {
 }
 async function submit() {
   if (busy) return;
+  let trackedHash=null;
   setBusy(true);
   try {
     requireWallet();
@@ -503,8 +647,14 @@ async function submit() {
         "\n\nContinue to MetaMask cost review and signing? No automatic retries.");
     });
     showTx(r.status,r.txId);
+    trackedHash=r.txId;
   } catch(error) {showError(error);}
-  finally { setBusy(false); }
+  finally {
+    setBusy(false);
+    // Read-only transaction tracking follows wallet approval automatically.
+    // Never trigger another signature or retry this transaction.
+    if(trackedHash)window.setTimeout(()=>{if(!busy)void track();},0);
+  }
 }
 async function track() {
   if (busy) return;
@@ -595,9 +745,16 @@ async function track() {
     }
   } catch(error){
     showError(new Error("Tracking unresolved or failed: " + String(error?.message||error)+". Check transaction hash before retrying."));
-  } finally {setBusy(false);}
+  } finally {
+    setBusy(false);
+    if(wallet)void refreshMyWork({autoOpen:false});
+  }
 }
-$("loadOrder").addEventListener("click",loadOrder);
+$("loadOrder").addEventListener("click",()=>{
+  userPickedOrder=true;
+  void loadOrder();
+});
+$("refreshMyWork").addEventListener("click",()=>{void refreshMyWork({autoOpen:false});});
 $("loadDemo").addEventListener("click",loadDemoRequirements);
 $("fillDemoContributor").addEventListener("click",()=>{
   $("jobContributor").value=DEMO_CONTRIBUTOR;
@@ -662,7 +819,21 @@ try {
   }
 }catch{}
 if(window.ethereum?.on) {
-  window.ethereum.on("accountsChanged",()=>walletChanged("Wallet account changed. Reconnect before signing."));
-  window.ethereum.on("chainChanged",()=>walletChanged("Wallet network changed. Reconnect to Studionet."));
+  window.ethereum.on("accountsChanged",accounts=>{
+    if(!Array.isArray(accounts)||!accounts.length) {
+      walletChanged("No wallet selected. Connect a wallet to act.");
+      return;
+    }
+    void bindAuthorizedWallet(accounts).catch(error=>walletChanged(String(error?.message||error)));
+  });
+  window.ethereum.on("chainChanged",()=>{
+    // Revalidate silently. No wallet signature, Snap, or requestAccounts prompt.
+    void syncAuthorizedWallet();
+  });
 }
 refreshExtras();
+void syncAuthorizedWallet();
+window.setInterval(()=>{
+  if(document.visibilityState!=="visible" || busy || boardBusy)return;
+  if(wallet)void refreshMyWork({autoOpen:false});
+},45000);

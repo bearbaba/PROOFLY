@@ -32,3 +32,15 @@
 .order-handoff .inline{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .order-handoff input{flex:1 1 230px;min-width:0}
 .order-handoff button{white-space:nowrap}
+
+/* Wallet-aware list uses literal text nodes only, no untrusted innerHTML. */
+.my-work-list{display:grid;gap:9px;margin:12px 0}
+.my-work-row{width:100%;text-align:left;border:1px solid #dce7e9;background:#fff;border-radius:12px;padding:12px 14px;display:flex;gap:12px;justify-content:space-between;align-items:center}
+.my-work-row:hover{border-color:#087e89;background:#f1f9f9}
+.my-work-name{font-weight:750;line-height:1.4;display:block;overflow-wrap:anywhere}
+.my-work-meta{color:#637e87;font-size:11px;display:block;margin-top:4px}
+.my-work-state{font-size:10px;font-weight:800;letter-spacing:.03em;flex-shrink:0;color:#126f76}
+.my-work-footer{display:flex;gap:10px;align-items:center;justify-content:space-between;color:#69818a;font-size:11px}
+.my-work-footer button{flex-shrink:0}
+#myWorkStatus{min-height:1.3em}
+@media(max-width:550px){.my-work-footer{align-items:start}.my-work-state{font-size:10px}}
