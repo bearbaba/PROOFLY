@@ -82,4 +82,44 @@ end-to-end proof. **Do not report create_order as successful.** The source
 fix changes the method's contributor ABI from `Address` to `str`; it
 requires deployment of a fresh instance. The old candidate address remains
 in this document only as historical evidence of the attempted deployment.
-The new address, deployment tx, readback and business flow are PENDING.
+The newer contract address is documented below. Its deployment transaction hash and finality proof are still PENDING.
+
+
+## Work Order #1 — live Studio readbacks reported by owner (2026-10-11)
+
+**Source:** Full JSON responses pasted directly from GenLayer Studio by the
+project owner in the project discussion. These are user-supplied state
+readbacks; explorer transaction hashes, finalization receipts and bytecode
+matching have **not** been independently confirmed. Do not treat the
+following as an audited finality attestation.
+
+- Patched contract import link:
+  https://studio.genlayer.com/?import-contract=0xEbb6E4D791299E79317DE796232029194e0F0aCb
+- New candidate address: `0xEbb6E4D791299E79317DE796232029194e0F0aCb`
+- Order ID: `1`
+- Owner: `0x4c7cb73ac8f8999af21cfc9ff4cf2333a9508dcb`
+- Contributor: `0xd6b8a3a5eb329410d9504784812b8569afa8c2af`
+- Scoped accepted spec SHA-256:
+  `e4aac1e77ba1c291394f053893dcd0488381dfcbe13bafe95659018282e21f19`
+- Pinned reference SHA-256:
+  `9edf98b490eeb1b64f5e3f0b71a368ce38e9ba0e79070818eae3b2c70bb48527`
+- Pinned pass artifact SHA-256:
+  `8a087bffcffd9809daff7c53e56940b3974398ca58976693100b723bd015da1a`
+
+Reported readback progression:
+
+1. `get_order("1")` returned `PROPOSED`, `created_at=1791711441`,
+   `accepted_at=null`, and no submissions.
+2. A readback after the contributor's accept returned `ACTIVE`,
+   `accepted_at=1791712092`, and no submissions.
+3. The latest `get_order("1")` readback returned `SUBMITTED`,
+   `submissions[0].version=1`, `submitted_at=1791712317`,
+   the pinned pass fixture URL+SHA-256, and `outcome=null`.
+
+**Latest reported state:** SUBMITTED. `evaluate_submission("1")` and
+`get_receipt("1", 1)` are the **next steps**; no AI/validator verdict has
+been provided yet. Collect the evaluate transaction hash, FINALIZED and
+GenVM SUCCESS status, receipt JSON and finalized readback before claiming
+on-chain evaluation. The earlier `0x6F773E2e...` contract remains a failed
+pre-patch candidate.
+
