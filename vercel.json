@@ -2,6 +2,6 @@
   "version": 2,
   "framework": null,
   "outputDirectory": "apps/web",
-  "buildCommand": "echo 'Static PROOFLY preview - no build required'",
-  "installCommand": "echo 'No dependencies to install'"
+  "installCommand": "npm --prefix apps/web install --no-audit --no-fund",
+  "buildCommand": "npm --prefix apps/web run build && npm --prefix apps/web run bundle"
 }

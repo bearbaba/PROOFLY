@@ -8,6 +8,8 @@ Project owners and contributors agree on clear requirements before work begins. 
 
 **Builder review:** [Submission-ready technical overview](docs/BUILDER_SUBMISSION.md) · [Live Studio success case](docs/LIVE_STUDIO_DEMO.md).
 
+[**Open the Studionet live-workflow console**](apps/web/live.html) (requires a web deployment) · [Builder submission](docs/BUILDER_SUBMISSION.md).
+
 ## Core workflow
 
 Create a work order → Accept requirements → Submit evidence →
@@ -205,3 +207,20 @@ python -m packages.receipt --order docs/evidence/studionet-order-1-completed.jso
 The Studio screenshot shows the evaluation as FINALIZED but complete tx IDs,
 independent Explorer validation, other verdict branches and wallet-enabled
 hosted app integration remain unfinished.
+
+
+## Web GenLayer Studionet integration (experimental)
+
+\`apps/web/live.html\` and \`live-app.mjs\` now provide a browser
+wallet-backed GenLayerJS console for the real deployed work-order
+contract on chain 61999, with finalized reads, owner/contributor
+actions, explicit fee confirmation, signed writes, transaction hash
+tracking and versioned Proof Receipts. The original Spec Builder and
+offline Receipt Inspector are preserved as separate tools.
+
+\`npm --prefix apps/web install && npm --prefix apps/web run bundle\`
+generates the static live client. GitHub Actions checks syntax, bundle,
+offline tests and browser rendering. End-to-end signed wallet / RPC
+compatibility is pending user-authenticated testing after deployment.
+Do not confuse this new wallet-enabled integration with an already
+verified hosted production app.

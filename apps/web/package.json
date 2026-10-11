@@ -4,10 +4,15 @@
   "type": "module",
   "scripts": {
     "test": "node --test *.test.mjs",
-    "build": "node --check app.mjs && node --check model.mjs && node --check receipt.mjs && node --check receipt-model.mjs && node --check studio-plan.mjs && node --check sdk-workflow.mjs",
+    "build": "node --check app.mjs && node --check model.mjs && node --check receipt.mjs && node --check receipt-model.mjs && node --check studio-plan.mjs && node --check sdk-workflow.mjs && node --check live-model.mjs && node --check live-app.mjs",
+    "bundle": "esbuild live-app.mjs --bundle --format=iife --platform=browser --target=es2022 --outfile=live.bundle.js",
     "test:browser": "playwright test"
   },
+  "dependencies": {
+    "genlayer-js": "1.1.8"
+  },
   "devDependencies": {
-    "@playwright/test": "1.56.1"
+    "@playwright/test": "1.56.1",
+    "esbuild": "0.25.12"
   }
 }

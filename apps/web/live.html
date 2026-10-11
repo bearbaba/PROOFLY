@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="PROOFLY — real GenLayer Studionet work orders and proof receipts">
+<title>PROOFLY / Live Work Orders</title>
+<link rel="stylesheet" href="./live.css">
+<script type="module" src="./live.bundle.js"></script>
+</head>
+<body>
+<div class="wrap">
+<nav class="top"><a class="mark" href="./"><span class="monogram">P</span>PROOFLY <small> / STUDIO</small></a>
+<div class="top-links"><span class="testnet"><i></i> GENLAYER STUDIONET · 61999</span>
+<a href="./">Spec Builder</a><a href="./receipt.html">Receipt Inspector</a><a href="https://github.com/bearbaba/PROOFLY" target="_blank" rel="noopener noreferrer">Source ↗</a></div></nav>
+<header class="hero"><div class="kicker">PROTOCOL / WORK ORDER CONSOLE</div>
+<h1>Prove the work.<br><em>Trust the evidence.</em></h1>
+<p>Read finalized GenLayer state, connect your own wallet to act, and inspect evidence-backed AI receipts. Every write is a real testnet transaction, not a simulated verdict.</p>
+<div class="hero-row"><span>01 Agree</span><b>→</b><span>02 Submit</span><b>→</b><span>03 Adjudicate</span><b>→</b><span>04 Receipt</span></div></header>
+<div class="strip"><span><strong>REAL TESTNET</strong> · Studionet is an experimental network; no escrow, payments or warranties. Never enter seed phrases or private keys.</span>
+<a id="studio" target="_blank" rel="noopener noreferrer" href="https://studio.genlayer.com/?import-contract=0xEbb6E4D791299E79317DE796232029194e0F0aCb">Open in Studio ↗</a></div>
+<main class="layout">
+<section class="stack">
+<article class="panel">
+<div class="heading"><div><div class="kicker">01 / PUBLIC CONTRACT STATE</div><h2>Find a work order</h2></div><span class="pill">FINALIZED READS</span></div>
+<div class="field"><label for="orderId">ORDER NUMBER</label><div class="inline"><input type="text" id="orderId" inputmode="numeric" value="1" pattern="[1-9][0-9]*" aria-label="Order ID">
+<button id="loadOrder" class="primary">Load order →</button></div></div>
+<div class="factgrid"><div><span>CHAIN</span><strong>Studionet / 61999</strong></div><div><span>CONTRACT</span><a id="contractLink" target="_blank" rel="noopener noreferrer" href="https://studio.genlayer.com/?import-contract=0xEbb6E4D791299E79317DE796232029194e0F0aCb">0xEbb6…0aCb ↗</a></div></div>
+<div id="orderResult" class="result empty" aria-live="polite">Load an order to view its on-chain requirements, participants and current status.</div>
+<div class="inline"><label for="receiptVersion" style="align-self:center;font-size:11px;font-weight:700">VERSION</label><input type="number" id="receiptVersion" value="1" min="1" max="2" style="max-width:70px"><button id="loadReceipt" class="secondary">Read finalized Proof Receipt →</button></div>
+<div id="receiptResult" class="receipt empty" aria-live="polite">A Proof Receipt appears after a finalized successful evaluation.</div>
+</article>
+<article class="panel">
+<div class="heading"><div><div class="kicker">03 / CONSENSUS TRACKING</div><h2>Transaction lifecycle</h2></div><span class="pill neutral">NO AUTO-RETRY</span></div>
+<div id="txResult" class="result empty" aria-live="polite">Submit a signed write or paste a previous transaction hash to track finality.</div>
+<div class="field"><label for="txHash">TRANSACTION HASH</label><div class="inline"><input id="txHash" placeholder="0x… (64 hex characters)" spellcheck="false"><button id="trackTx" class="secondary">Track finality</button></div></div>
+<p class="hint">Consensus accepted and contract execution success are different checks. Never resend automatically while a transaction is unresolved.</p>
+</article>
+</section>
+<aside class="stack">
+<article class="panel dark">
+<div class="heading"><div><div class="kicker">02 / SIGNED OPERATIONS</div><h2>Wallet & actions</h2></div></div>
+<p class="soft">Reading is public. Writes require your own EIP-1193 wallet on GenLayer Studionet and explicit confirmation of the estimated fees.</p>
+<button id="connectWallet" class="wallet">Connect wallet ↗</button>
+<div id="walletState" class="wallet-state">No wallet connected · Read-only mode</div>
+<div class="separator"></div>
+<div class="field"><label for="operation">OPERATION</label>
+<select id="operation">
+<option value="accept_order">Accept order (Contributor)</option>
+<option value="submit_evidence">Submit evidence (Contributor)</option>
+<option value="evaluate_submission">Run GenLayer verification</option>
+<option value="create_order">Create from Spec Builder plan</option>
+<option value="cancel_order">Cancel proposed order (Owner)</option>
+<option value="close_expired">Close expired order</option>
+</select></div>
+<div id="actionExtra" class="action-extra"></div>
+<div id="actionInfo" class="action-info">Load an order to review its exact requirements before signing.</div>
+<button id="writeAction" class="sign" disabled>Review fee & sign →</button>
+<p class="hint light">We never request a secret key. Each click estimates network fees and requests a wallet signature only after your confirmation. Live writes may cost testnet GEN.</p>
+</article>
+<article class="panel side-note">
+<div class="kicker">REVIEWER / DEMO</div><h3>First verified sample</h3>
+<p>Order #1 was executed manually in Studio with two accounts. The published archive records <strong>COMPLETED / ACCEPTED</strong> and 3/3 SATISFIED criteria. That history is separate from your current finalized RPC read.</p>
+<a href="https://github.com/bearbaba/PROOFLY/blob/main/docs/LIVE_STUDIO_DEMO.md" target="_blank" rel="noopener noreferrer">View archived Studio evidence ↗</a>
+</article>
+</aside>
+</main>
+<footer><span>PROOFLY / Evidence-driven adjudication</span><span>Studionet experimental · No payments · Open source</span></footer>
+</div>
+</body>
+</html>

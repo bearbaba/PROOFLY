@@ -98,13 +98,18 @@ export function createWorkflowGateway({ client, contractAddress, finalVariant, i
       return { found: true, value: parsed, finalSnapshotRequested: true };
     },
 
-    async submit(name, args, onSubmitted) {
+    async submit(name, args, onSubmitted, approveFees) {
       const call = { address, ...makeWrite(name, args) };
       // Estimation can fail or cost too much: do not submit unless the caller
       // explicitly invoked this method and fee policy was returned.
       const estimate = await client.estimateTransactionFeesForWrite(call);
       requireCondition(estimate && estimate.distribution != null && estimate.feeValue != null,
         "SDK did not return a usable fee estimate", "FEE_ESTIMATE_MISSING");
+      // The UI can review fees and cancel *before* any wallet signature.
+      if (typeof approveFees === "function") {
+        const approved = await approveFees(estimate);
+        requireCondition(approved === true, "Wallet submission cancelled before signing", "USER_CANCELLED");
+      }
       const txId = await client.writeContract({
         ...call,
         fees: { distribution: estimate.distribution, feeValue: estimate.feeValue }
