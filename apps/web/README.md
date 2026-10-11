@@ -142,3 +142,27 @@ hash exists, the app waits for a FINALIZED receipt and checks the
 
 Wallet smoke tests still require a human signature; CI now verifies the
 adapter against a **real** pinned SDK client, not only mocked clients.
+
+## User-facing creation workflow (no JSON required)
+
+The production homepage includes **Create a work order** directly.
+A customer enters a job title, contributor wallet, three objective
+requirements, and a public commit-pinned reference text URL. The browser
+automatically downloads that reference and calculates/verifies its
+SHA-256 digest before signing. Deadlines are chosen as a number of
+days, so users never calculate Unix timestamps or prepare ABI arrays.
+**Fill example requirements** makes the successful public trial-guide
+fixture usable for a first walkthrough; it does not fabricate blockchain
+outcomes. The reference digest is rechecked before signing.
+
+The signer sees the wallet cost warning and must approve in MetaMask.
+A returned transaction hash is **not** treated as finality; the
+user tracks it to finalized execution and the app verifies any inferred
+order ID against the actual owner/contributor/title on the chain.
+Duplicate submissions are blocked while an unresolved transaction
+hash is saved locally.
+
+**Remaining MVP limitation:** arbitrary reference/evidence files still
+must be publicly published as immutable GitHub commit-pinned .txt files.
+There is no built-in permanent document upload/storage backend yet.
+The application does not claim a file upload that does not exist.
