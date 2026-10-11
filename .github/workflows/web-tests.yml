@@ -5,11 +5,13 @@ on:
     branches: [develop, main]
     paths:
       - "apps/web/**"
+      - "vercel.json"
       - ".github/workflows/web-tests.yml"
   push:
     branches: [develop, main]
     paths:
       - "apps/web/**"
+      - "vercel.json"
       - ".github/workflows/web-tests.yml"
   workflow_dispatch:
 
