@@ -96,7 +96,7 @@ fields are transcribed from the final Studio response.
 chain finality):
 
 ```bash
-python -m unittest tests.test_studio_evidence -v
+python -m unittest discover -s tests -p "test_studio_evidence.py" -v
 python -m packages.receipt \\
   --order docs/evidence/studionet-order-1-completed.json \\
   --receipt docs/evidence/studionet-order-1-receipt.json \\

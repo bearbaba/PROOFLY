@@ -195,7 +195,7 @@ Both actual Studio JSON readbacks are archived with original public fixture
 bytes in the repo. Recheck the bundle locally:
 
 ```bash
-python -m unittest tests.test_studio_evidence -v
+python -m unittest discover -s tests -p "test_studio_evidence.py" -v
 python -m packages.receipt --order docs/evidence/studionet-order-1-completed.json --receipt docs/evidence/studionet-order-1-receipt.json --artifact fixtures/evidence/pass.txt --reference fixtures/evidence/reference.txt
 ```
 

@@ -2,12 +2,14 @@
 
 **Status: LIVE STUDIO RECEIPT REPORTED (3/3 SATISFIED); EXPLORER INDEPENDENT VERIFICATION PENDING**
 
-A PROOFLY Studio import link was provided by the project owner on
-2026-10-11. This is an **unverified lead**, not independently confirmed
-deployment, finalization, execution success, or compatibility with
-`contracts/proofly/work_order.py` at HEAD.
+This file distinguishes the **failed initial candidate** from the
+**patched instance**, for which the owner supplied a complete manual Studio
+workflow, a business-level ACCEPTED Proof Receipt and a completed-order
+Accepted-state readback. Independently authenticated Explorer transaction
+IDs, GenVM execution receipts, and deployed-source attestation are still
+pending; the Studio evidence is not an audit.
 
-## Candidate address (user supplied)
+## Historical first candidate (failed create_order; do not use for demo)
 
 - Network to inspect: GenLayer Studio / Studionet (confirm chain ID **61999**)
 - Candidate contract: `0x6F773E2e249D08a00509E4EC96d13C71c0e657d7`
@@ -54,12 +56,13 @@ execution success, contract code, and observable read/write state are collected.
 | Deployment transaction URL | Pending |
 | Finalized deployment SUCCESS | Pending |
 | Deployed source matches reviewed code | Pending |
-| `next_order()` read | Pending |
-| `create_order` finalized SUCCESS | Pending |
-| `accept_order` finalized SUCCESS | Pending |
-| `submit_evidence` finalized SUCCESS | Pending |
-| `evaluate_submission` finalized SUCCESS | Pending |
-| `get_receipt` and per-requirement results | Pending |
+| `next_order()` read | Not archived |
+| `create_order` state result | **PROPOSED readback** from patched Studio contract; full tx proof pending |
+| `accept_order` state result | **ACTIVE readback** and Studio FINALIZED screenshot; explorer proof pending |
+| `submit_evidence` state result | **SUBMITTED readback** and Studio FINALIZED screenshot; explorer proof pending |
+| `evaluate_submission` state result | Studio FINALIZED screenshot + nonempty receipt; explorer/GenVM proof pending |
+| `get_receipt` and per-requirement results | **ACCEPTED 3/3 SATISFIED**; [archived JSON](evidence/studionet-order-1-receipt.json) |
+| Post-evaluation `get_order("1")` | **COMPLETED, submission outcome ACCEPTED**; [archived JSON](evidence/studionet-order-1-completed.json) |
 | Independent verdict benchmark / injection case | Pending |
 
 This deployment note is for auditability and **must not** be interpreted as
