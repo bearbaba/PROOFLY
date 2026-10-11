@@ -283,48 +283,79 @@ async function loadReceipt() {
   finally { setBusy(false); }
 }
 function walletChanged(message) {
-  wallet = null;
-  gateway = null;
-  $("walletState").textContent = message;
-  $("connectWallet").textContent = "Connect wallet ↗";
-  if (currentOrder) renderOrder();
+  walletSequence++;
+  wallet=null;
+  gateway=null;
+  $("walletState").textContent=message;
+  $("connectWallet").textContent="Connect wallet ↗";
+  clearMyWork("Connect your wallet to see your recent work orders.");
+  if(currentOrder)renderOrder();
   refreshAction();
   refreshCreateForm();
 }
+/** Rebind the injected EIP-1193 account without triggering any wallet prompt.
+ * The only active permission request is a deliberate Connect wallet click.
+ */
+async function bindAuthorizedWallet(accounts,provider=window.ethereum) {
+  const account=Array.isArray(accounts) ? accounts[0] : null;
+  if(!/^0x[0-9a-fA-F]{40}$/.test(String(account||""))) {
+    walletChanged("No account authorized for this site. Connect wallet to continue.");
+    return false;
+  }
+  const sequence=++walletSequence;
+  const chainHex=await provider.request({method:"eth_chainId"});
+  if(sequence!==walletSequence)return false; // account switched again during RPC
+  if(Number.parseInt(String(chainHex),16)!==CHAIN_ID) {
+    walletChanged("Wrong network. Switch MetaMask to GenLayer Studionet 61999.");
+    return false;
+  }
+  const client=createClient({chain:studionet,account,provider});
+  const bound=createWorkflowGateway({
+    client,contractAddress:CONTRACT,
+    finalVariant:TransactionHashVariant.LATEST_FINAL,isSuccessful
+  });
+  if(sequence!==walletSequence)return false;
+  const different=wallet!==account.toLowerCase();
+  wallet=account.toLowerCase();
+  gateway=bound;
+  $("walletState").textContent="Connected / "+wallet+" / Studionet "+CHAIN_ID;
+  $("connectWallet").textContent="Connected · switch in MetaMask ↗";
+  if(different)userPickedOrder=false; // prioritize tasks relevant to new account
+  if(currentOrder)renderOrder();
+  selectNextOperation();
+  refreshCreateForm();
+  // Do not await a full dashboard RPC scan before the wallet can sign.
+  if(!busy)void refreshMyWork();
+  return true;
+}
 async function connectWallet() {
-  if (busy) return;
-  const provider = window.ethereum;
-  if (!provider || typeof provider.request !== "function") {
-    showError(new Error("No EIP-1193 browser wallet found. Install MetaMask or a compatible wallet."),$("walletState"));
+  if(busy)return;
+  const provider=window.ethereum;
+  if(!provider||typeof provider.request!=="function"){
+    showError(Error("No EIP-1193 wallet found. Install MetaMask or another compatible wallet."),$("walletState"));
     return;
   }
   setBusy(true);
-  try {
-    const accounts = await provider.request({method:"eth_requestAccounts"});
-    if (!Array.isArray(accounts) || !/^0x[0-9a-fA-F]{40}$/.test(accounts[0] || "")) throw new Error("Wallet returned no valid account.");
-    const account = accounts[0];
-    // genlayer-js@1.1.8 client.connect("studionet") requests
-    // wallet_getSnaps/wallet_requestSnaps, even for plain EIP-1193
-    // eth_sendTransaction writes. That extra installation prompt can trap
-    // account switching behind a repeated third-party software disclaimer.
-    // Direct EIP-1193 wallet writes do NOT need a Snap. Never auto-install one.
-    const chainHex = await provider.request({method:"eth_chainId"});
-    if (parseInt(String(chainHex),16) !== CHAIN_ID)
-      throw new Error("Wrong network. Select GenLayer Studionet (61999) in MetaMask, then reconnect. No Snap installation is needed.");
-    const client = createClient({chain:studionet,account,provider});
-    const bound = createWorkflowGateway({
-      client,contractAddress:CONTRACT,
-      finalVariant:TransactionHashVariant.LATEST_FINAL,isSuccessful
-    });
-    wallet = account.toLowerCase();
-    gateway = bound;
-    $("walletState").textContent = "Connected / " + wallet + " / Studionet " + CHAIN_ID;
-    $("connectWallet").textContent = "Reconnect / switch account";
-    renderOrder();
-    refreshAction();
-    refreshCreateForm();
-  } catch(error) { walletChanged(String(error?.message || error)); showError(error,$("walletState")); }
-  finally { setBusy(false); }
+  try{
+    const accounts=await provider.request({method:"eth_requestAccounts"});
+    await bindAuthorizedWallet(accounts,provider);
+  }catch(error){
+    walletChanged(String(error?.message||error));
+  }finally{
+    setBusy(false);
+    if(wallet)void refreshMyWork();
+  }
+}
+async function syncAuthorizedWallet() {
+  const provider=window.ethereum;
+  if(!provider?.request)return;
+  try{
+    // eth_accounts checks existing site permission silently; never prompts.
+    const accounts=await provider.request({method:"eth_accounts"});
+    await bindAuthorizedWallet(accounts,provider);
+  }catch(error){
+    walletChanged("Wallet permission or network unavailable. Connect wallet if needed.");
+  }
 }
 
 /* Human-facing create flow. Public bytes are re-fetched and SHA-256 checked
