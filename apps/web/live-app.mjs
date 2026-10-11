@@ -219,6 +219,7 @@ async function refreshMyWork({autoOpen=true}={}) {
   } finally {
     boardBusy=false;
     $("refreshMyWork").disabled=busy;
+    if(wallet && wallet!==account && !busy)void refreshMyWork();
   }
 }
 
@@ -322,6 +323,7 @@ async function bindAuthorizedWallet(accounts,provider=window.ethereum) {
   });
   if(sequence!==walletSequence)return false;
   const different=wallet!==account.toLowerCase();
+  if(different)clearMyWork("Loading the selected wallet's work orders…");
   wallet=account.toLowerCase();
   gateway=bound;
   $("walletState").textContent="Connected / "+wallet+" / Studionet "+CHAIN_ID;
