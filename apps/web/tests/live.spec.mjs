@@ -113,7 +113,7 @@ test("My Work section is visible but requires connected wallet, no fabricated jo
 test("MetaMask accountChanged switches Owner to Contributor without another connection prompt",async({page})=>{
   await page.addInitScript(()=>{
     window.__walletCalls=[];
-    const owner="0x"+"4c7cb73ac8f8999af21cfc9ff4cf2333a9508dcb".slice(2);
+    const owner="0x4c7cb73ac8f8999af21cfc9ff4cf2333a9508dcb";
     const contributor="0xd6b8a3a5eb329410d9504784812b8569afa8c2af";
     window.__account=owner;
     window.__listeners={};
