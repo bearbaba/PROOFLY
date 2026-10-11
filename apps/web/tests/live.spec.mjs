@@ -54,3 +54,44 @@ test("Contributor share link loads order ID automatically, without connecting wa
   await expect(page.locator("#orderId")).toHaveValue("2");
   await expect(page.locator("#createNow")).toBeDisabled();
 });
+
+test("Contributor account connects without installing a MetaMask Snap",async({page})=>{
+  await page.addInitScript(()=>{
+    window.__walletCalls=[];
+    window.ethereum={
+      isMetaMask:true,
+      on(){},
+      request:async({method})=>{
+        window.__walletCalls.push(method);
+        if(method==="eth_requestAccounts")return ["0xd6b8a3a5eb329410d9504784812b8569afa8c2af"];
+        if(method==="eth_chainId")return "0xf22f";
+        if(method==="wallet_getSnaps"||method==="wallet_requestSnaps")
+          throw new Error("Automatic Snap installation must not happen");
+        throw new Error("Unexpected injected wallet method: "+method);
+      }
+    };
+  });
+  await page.goto("/",{waitUntil:"domcontentloaded"});
+  await page.locator("#connectWallet").click();
+  await expect(page.locator("#walletState")).toContainText("Connected / 0xd6b8a3a5eb329410d9504784812b8569afa8c2af / Studionet 61999");
+  const calls=await page.evaluate(()=>window.__walletCalls);
+  expect(calls).toEqual(["eth_requestAccounts","eth_chainId"]);
+});
+test("wrong-chain account fails before SDK and never triggers Snap prompts",async({page})=>{
+  await page.addInitScript(()=>{
+    window.__walletCalls=[];
+    window.ethereum={
+      isMetaMask:true,on(){},request:async({method})=>{
+        window.__walletCalls.push(method);
+        if(method==="eth_requestAccounts")return ["0xd6b8a3a5eb329410d9504784812b8569afa8c2af"];
+        if(method==="eth_chainId")return "0x1";
+        throw Error("Unexpected wallet method");
+      }
+    };
+  });
+  await page.goto("/",{waitUntil:"domcontentloaded"});
+  await page.locator("#connectWallet").click();
+  await expect(page.locator("#walletState")).toContainText("Wrong network");
+  await expect(page.locator("#walletState")).toContainText("No Snap installation is needed");
+  expect(await page.evaluate(()=>window.__walletCalls)).toEqual(["eth_requestAccounts","eth_chainId"]);
+});

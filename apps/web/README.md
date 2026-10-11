@@ -185,3 +185,23 @@ The submitted hash and expected work-order identity are stored locally
 for read-only recovery on refresh. Unknown execution outcomes,
 unavailable RPC, or multiple matching orders do not trigger a
 new write or fake success. A user can manually re-track the saved hash.
+
+
+### Wallet connect compatibility: no MetaMask Snap prompt
+
+GenLayerJS 1.1.8's `client.connect("studionet")` automatically requests
+`wallet_getSnaps` and may trigger `wallet_requestSnaps`. It is **not**
+the same thing as plain EIP-1193 wallet permission; it used to produce
+a repeating third-party software notice when a user switched to the
+Contributor MetaMask account. The live dApp's `Connect wallet` now
+requests only `eth_requestAccounts` and `eth_chainId`, then creates
+a provider-bound GenLayer client. A wrong-chain wallet is rejected
+with clear instructions; we do not automatically install a Snap.
+The supported `writeContract` flow sends an `eth_sendTransaction`
+through the wallet after separate human fee/signature review.
+
+This does not automatically switch between the Owner and Contributor
+accounts. The user explicitly chooses the intended MetaMask account
+and grants it site access. Browser tests assert no `wallet_requestSnaps`
+or `wallet_getSnaps` calls in either the correct-network or wrong-
+network case.

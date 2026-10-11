@@ -213,11 +213,15 @@ async function connectWallet() {
     const accounts = await provider.request({method:"eth_requestAccounts"});
     if (!Array.isArray(accounts) || !/^0x[0-9a-fA-F]{40}$/.test(accounts[0] || "")) throw new Error("Wallet returned no valid account.");
     const account = accounts[0];
-    const client = createClient({chain:studionet,account,provider});
-    // SDK network connection is a user-triggered action, never automatic.
-    await client.connect("studionet");
+    // genlayer-js@1.1.8 client.connect("studionet") requests
+    // wallet_getSnaps/wallet_requestSnaps, even for plain EIP-1193
+    // eth_sendTransaction writes. That extra installation prompt can trap
+    // account switching behind a repeated third-party software disclaimer.
+    // Direct EIP-1193 wallet writes do NOT need a Snap. Never auto-install one.
     const chainHex = await provider.request({method:"eth_chainId"});
-    if (parseInt(String(chainHex),16) !== CHAIN_ID) throw new Error("Wrong chain. Switch wallet to Studionet (61999).");
+    if (parseInt(String(chainHex),16) !== CHAIN_ID)
+      throw new Error("Wrong network. Select GenLayer Studionet (61999) in MetaMask, then reconnect. No Snap installation is needed.");
+    const client = createClient({chain:studionet,account,provider});
     const bound = createWorkflowGateway({
       client,contractAddress:CONTRACT,
       finalVariant:TransactionHashVariant.LATEST_FINAL,isSuccessful
