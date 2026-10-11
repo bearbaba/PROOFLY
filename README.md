@@ -6,6 +6,8 @@ PROOFLY is an evidence-based work verification application built for GenLayer.
 
 Project owners and contributors agree on clear requirements before work begins. Contributors submit deliverables and supporting evidence, and verification produces a result for each requirement.
 
+**Builder review:** [Submission-ready technical overview](docs/BUILDER_SUBMISSION.md) · [Live Studio success case](docs/LIVE_STUDIO_DEMO.md).
+
 ## Core workflow
 
 Create a work order → Accept requirements → Submit evidence →
@@ -40,7 +42,7 @@ Technical errors are handled separately from work evaluation.
 
 ## Development status (October 2026)
 
-PROOFLY is a **pre-release prototype**. The develop branch includes a pure
+PROOFLY is a **pre-release prototype**. The main branch includes a pure
 Python domain model, a standalone GenLayer verification spike, offline
 requirements/evidence preflight, deterministic unit tests and CI.
 
