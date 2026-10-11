@@ -245,3 +245,19 @@ An Owner `create_order` was signed via the Vercel Preview and confirmed
 as GenVM SUCCESS in [Explorer](https://explorer-studio.genlayer.com/tx/0x38807bdccf485b5da0a0bb4f640db619d1e3c74a317c95be43bb822ee3a9c59b). No full
 new two-wallet workflow, negative-case live evaluation or deployed-bytecode
 attestation is yet verified.
+
+### Guided workspace release (pending deployment)
+
+The newest main implementation improves the end-user flow: the wallet
+and contextual action lead the screen; connected users see recent
+wallet-linked work automatically, while technical transaction details
+are hidden behind a disclosure. The app selects a safe next action from
+the finalized status, automatically checks a pasted pinned document,
+resumes submitted transactions **without resending**, and reads the
+verification receipt when completion is independently verified.
+
+**Deployment note:** the feature must not be described as live until
+the production Vercel alias is checked against its exact commit. Browser
+CI and unit tests are reproducible in GitHub Actions, but actual
+MetaMask signing of the full new release must be smoke-tested by a
+human user. The finite recent-25-work discovery is not a full indexer.
