@@ -449,6 +449,9 @@ function refreshCreateForm() {
 }
 function loadDemoRequirements(){
   $("jobTitle").value="PROOFLY Demo - User Guide Verification";
+  // A single action fills the entire safe testnet example, including
+  // the sample Contributor, unless it matches the current Owner wallet.
+  $("jobContributor").value=wallet===DEMO_CONTRIBUTOR ? "" : DEMO_CONTRIBUTOR;
   $("jobReference").value=DEMO_REFERENCE;
   $("jobR1").value="The guide explicitly states that this is a trial environment and that it does not accept real money.";
   $("jobR2").value="The guide gives all three steps for reading a saved draft in the order documented by the reference.";
@@ -456,7 +459,7 @@ function loadDemoRequirements(){
   $("submitDays").value="2";
   $("revisionDays").value="7";
   verifiedReference=null;
-  $("referenceStatus").textContent="Example loaded. Enter your contributor's wallet and verify the reference below.";
+  $("referenceStatus").textContent="Example loaded. Checking the reference document automatically…";
   $("referenceStatus").classList.remove("verified");
   refreshCreateForm();
   void verifyReference();
