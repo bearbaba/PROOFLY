@@ -95,3 +95,11 @@ test("wrong-chain account fails before SDK and never triggers Snap prompts",asyn
   await expect(page.locator("#walletState")).toContainText("No Snap installation is needed");
   expect(await page.evaluate(()=>window.__walletCalls)).toEqual(["eth_requestAccounts","eth_chainId"]);
 });
+
+test("My Work section is visible but requires connected wallet, no fabricated jobs",async({page})=>{
+  await page.goto("/",{waitUntil:"domcontentloaded"});
+  await expect(page.locator("#myWorkCard")).toBeVisible();
+  await expect(page.locator("#myWorkStatus")).toContainText("Connect your wallet");
+  await expect(page.locator("#myWorkList .my-work-row")).toHaveCount(0);
+  await expect(page.locator("#refreshMyWork")).toBeVisible();
+});

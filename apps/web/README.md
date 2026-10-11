@@ -205,3 +205,21 @@ accounts. The user explicitly chooses the intended MetaMask account
 and grants it site access. Browser tests assert no `wallet_requestSnaps`
 or `wallet_getSnaps` calls in either the correct-network or wrong-
 network case.
+
+
+### Wallet-aware My Work board and auto-refresh
+
+The public homepage includes a read-only **Your work orders** board,
+populated after wallet connection from up to the latest 25 finalized
+contract-stored orders. No transaction, seed phrase, or wallet signature
+is needed for reads. A connected user's created/assigned orders are
+filtered by on-chain Owner and Contributor addresses. All text is
+rendered using textContent; no injected contract strings become HTML.
+
+Recent on-chain status and the connected account are refreshed
+automatically and after writes or account switching. Default eligible
+actions follow the user's role and the finalized order state, never
+auto-trigger a transaction. Older orders remain accessible through
+their links. This bounded range is a prototype discovery method,
+not a complete historical index; a permanent indexer is a future
+scaling improvement.

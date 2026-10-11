@@ -21,6 +21,13 @@
 <a id="studio" target="_blank" rel="noopener noreferrer" href="https://studio.genlayer.com/?import-contract=0xEbb6E4D791299E79317DE796232029194e0F0aCb">Open in Studio ↗</a></div>
 <main class="layout">
 <section class="stack">
+<article class="panel" id="myWorkCard">
+<div class="heading"><div><div class="kicker">MY WORK / AUTO SYNC</div><h2>Your work orders</h2></div><span class="pill">FINALIZED STATE</span></div>
+<p class="guide-text">PROOFLY discovers work assigned to your connected wallet and keeps statuses up to date. No order number required.</p>
+<div id="myWorkStatus" class="hint" role="status" aria-live="polite">Connect your wallet to see your recent work orders.</div>
+<div id="myWorkList" class="my-work-list" aria-label="Recent work orders associated with your wallet"></div>
+<div class="my-work-footer"><span>Recent 25 on-chain orders · older orders can still be opened using their link</span><button id="refreshMyWork" type="button" class="secondary">Refresh</button></div>
+</article>
 <article class="panel">
 <div class="heading"><div><div class="kicker">01 / PUBLIC CONTRACT STATE</div><h2>Find a work order</h2></div><span class="pill">FINALIZED READS</span></div>
 <div class="field"><label for="orderId">ORDER NUMBER</label><div class="inline"><input type="text" id="orderId" inputmode="numeric" value="1" pattern="[1-9][0-9]*" aria-label="Order ID">
