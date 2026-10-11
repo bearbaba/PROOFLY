@@ -1,6 +1,6 @@
 # PROOFLY — GenLayer Builder contribution submission
 
-**Submission status: READY TO PASTE — NOT YET SUBMITTED TO THE PORTAL**
+**Submission status: CANDIDATE PACKAGE READY; PORTAL SUBMISSION NOT YET CONFIRMED.**
 
 This is an honest, reviewer-ready description of the **manual Studionet
 demo** and the reproducible public source. The submitter must select a
@@ -61,9 +61,12 @@ This is a demonstrated **Studio prototype**, not a fully shipped,
 wallet-connected consumer dApp. Full transaction hashes,
 independent Explorer/GenVM execution attestation, further
 negative/unverifiable live cases and production security auditing
-remain outstanding. The current web UI includes a specification
-builder and offline receipt inspector; live wallet integration is
-a future milestone.
+remain outstanding. The deployed website now offers a GenLayerJS-based Studionet console
+alongside a standalone offline Spec Builder and Proof Receipt Inspector.
+Web/Node browser checks have passed, and the Vercel production deployment
+reports READY, but its **browser-injected wallet write flow is not yet
+verified end-to-end** and should not be described as a proven signed
+dApp transaction.
 
 What makes GenLayer essential here is *AI-validator adjudication of
 real evidence*, including domain-specific equivalence checking —
@@ -71,6 +74,9 @@ not a hard-coded outcome, mock oracle, or client-provided verdict.
 
 ## Source and evidence links
 
+- Live production website: https://proofly-lovat.vercel.app/
+- Offline specification builder: https://proofly-lovat.vercel.app/builder.html
+- Offline receipt inspector: https://proofly-lovat.vercel.app/receipt.html
 - GitHub (main): https://github.com/bearbaba/PROOFLY
 - Intelligent Contract: https://github.com/bearbaba/PROOFLY/blob/main/contracts/proofly/work_order.py
 - Import deployed Studio instance: https://studio.genlayer.com/?import-contract=0xEbb6E4D791299E79317DE796232029194e0F0aCb
@@ -120,6 +126,8 @@ or independent blockchain provenance verification.
       prompt-injection defense cases.
 - [ ] Optional screen recording of two-wallet flow and stored
       Proof Receipt, linked here after recording.
+- [ ] Verify public deployed homepage and finalized RPC read in a real browser.
+- [ ] Verify an actual EIP-1193 injected-wallet signature, fee confirmation and tx receipt.
 - [ ] Actual portal submission confirmation/link.
 
 ## Suggested category / status
@@ -131,7 +139,9 @@ hackathon or claim that this is deployed on Bradbury.
 ## Demo script (60–90 seconds)
 
 1. Introduce PROOFLY as work verification using GenLayer.
-2. Show the two accounts and the deployed Studio contract.
+2. Open the production website's Studionet console, then show the two
+   accounts and the deployed Studio contract. Note clearly that the
+   successful two-wallet demo was conducted in Studio.
 3. Show `get_order("1")`: owner, contributor, spec hash and
    `COMPLETED`.
 4. Show `get_receipt("1", 1)`: three real SATISFIED decisions,
