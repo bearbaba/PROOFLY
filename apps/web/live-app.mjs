@@ -7,6 +7,7 @@ import { createClient } from "genlayer-js";
 import { studionet } from "genlayer-js/chains";
 import { TransactionHashVariant, TransactionStatus } from "genlayer-js/types";
 import {inspectTransaction} from "./tx-verdict.mjs";
+import {listRecentWork,recommendedOperation} from "./workboard.mjs";
 import {candidateFromArgs,restoreCandidate,discoverCreatedOrder,orderLink,queryOrder} from "./order-handoff.mjs";
 import { createWorkflowGateway, makeRead } from "./sdk-workflow.mjs";
 import { isPinnedUrl } from "./model.mjs";
@@ -37,6 +38,12 @@ let verifiedReference = null;
 let verifiedArtifact = null;
 let candidateOrder = null;
 let creationOutcome = null;
+let walletSequence = 0;
+let boardBusy = false;
+let lastBoardWallet = null;
+let boardItems = [];
+let userPickedOrder = Boolean(queryOrder(window.location.search));
+
 
 function elem(tag, text, className) {
   const node = document.createElement(tag);
@@ -66,6 +73,8 @@ function setBusy(value) {
   $("trackTx").disabled = value;
   refreshAction();
   refreshCreateForm();
+  const refresh=$("refreshMyWork");
+  if(refresh)refresh.disabled=value||boardBusy;
 }
 function getOrderId() {
   const id = $("orderId").value.trim();
@@ -95,6 +104,7 @@ function openVerifiedOrder(id,order) {
   currentOrder=order;
   currentReceipt=null;
   renderOrder();
+  selectNextOperation();
   try{localStorage.setItem(LAST_ORDER_KEY,String(id));}catch{}
   window.history.replaceState(null,"",orderLink(window.location.origin+window.location.pathname,String(id)));
 }
@@ -126,6 +136,86 @@ function renderOrder() {
     root.append(version);
   }
 }
+
+function selectNextOperation() {
+  const action=recommendedOperation(currentOrder,wallet);
+  if(action && $("operation").value!==action){
+    $("operation").value=action;
+    refreshExtras(); // never signs; only prepares the appropriate manual action
+  }else refreshAction();
+}
+function clearMyWork(message) {
+  boardItems=[];
+  lastBoardWallet=null;
+  const list=$("myWorkList");
+  if(list)list.replaceChildren();
+  if($("myWorkStatus"))$("myWorkStatus").textContent=message;
+}
+function renderMyWork(items) {
+  const root=$("myWorkList");
+  root.replaceChildren();
+  for(const item of items){
+    const order=item.order;
+    const row=elem("button",undefined,"my-work-row");
+    row.type="button";
+    const left=elem("div");
+    const title=elem("span","#"+order.id+" · "+String(order.title||"Untitled"),"my-work-name");
+    const next=item.next==="accept_order"?" · Accept next" :
+      item.next==="submit_evidence"?" · Submit evidence next" :
+      item.next==="evaluate_submission"?" · Verify next" : "";
+    const meta=elem("span",item.role.toUpperCase()+" · "+String(order.status)+next,"my-work-meta");
+    left.append(title,meta);
+    const right=elem("span","Open →","my-work-state");
+    row.append(left,right);
+    row.addEventListener("click",()=>{
+      userPickedOrder=true;
+      $("orderId").value=String(order.id);
+      // An existing snapshot has already been read from the blockchain.
+      openVerifiedOrder(String(order.id),order);
+      $("orderResult").scrollIntoView({behavior:"smooth",block:"center"});
+    });
+    root.append(row);
+  }
+}
+async function refreshMyWork({autoOpen=true}={}) {
+  if(busy||boardBusy||!wallet)return;
+  const account=wallet,sequence=walletSequence;
+  boardBusy=true;
+  $("refreshMyWork").disabled=true;
+  $("myWorkStatus").textContent="Finding your work from finalized on-chain records…";
+  try {
+    const result=await listRecentWork(readFinal,account,{limit:25,concurrency:4});
+    if(account!==wallet || sequence!==walletSequence)return;
+    boardItems=result.items;
+    lastBoardWallet=account;
+    renderMyWork(result.items);
+    $("myWorkStatus").textContent=result.items.length ?
+      result.items.length+" linked work order(s) · recent "+result.scanned+" checked"+
+      (result.errors?" · "+result.errors+" RPC read(s) unavailable":"") :
+      "No work orders for this wallet in the latest "+result.scanned+
+      " records"+(result.hasOlder?" (older orders may exist)":"")+".";
+    if(autoOpen && !userPickedOrder && result.items.length){
+      const actionable=result.items.find(x=>x.next&&x.role==="contributor") ||
+        result.items.find(x=>x.next) || result.items[0];
+      const currentForWallet=currentOrder &&
+        (currentOrder.owner?.toLowerCase()===account ||
+         currentOrder.contributor?.toLowerCase()===account);
+      if(!currentForWallet || (currentOrder.status==="COMPLETED" && actionable.next)){
+        openVerifiedOrder(String(actionable.order.id),actionable.order);
+      } else {
+        selectNextOperation();
+      }
+    }
+  } catch(error){
+    if(account===wallet&&sequence===walletSequence)
+      $("myWorkStatus").textContent="Could not refresh work orders: "+String(error?.message||error)+
+        ". Your current work order remains available.";
+  } finally {
+    boardBusy=false;
+    $("refreshMyWork").disabled=busy;
+  }
+}
+
 function renderReceipt() {
   const root = $("receiptResult");
   root.replaceChildren();
