@@ -196,6 +196,7 @@ async function refreshMyWork({autoOpen=true}={}) {
     if(account!==wallet || sequence!==walletSequence)return;
     boardItems=result.items;
     lastBoardWallet=account;
+    lastWorkboardRefresh=Date.now();
     renderMyWork(result.items);
     // A refreshed finalized record is the source of truth. Update status,
     // role and recommended action without manual "Load order" clicks.
@@ -361,7 +362,7 @@ async function bindAuthorizedWallet(accounts,provider=window.ethereum) {
   wallet=account.toLowerCase();
   gateway=bound;
   $("walletState").textContent="Connected / "+wallet+" / Studionet "+CHAIN_ID;
-  $("connectWallet").textContent="Connected · switch in MetaMask ↗";
+  $("connectWallet").textContent="Wallet connected · change in MetaMask";
   if(different)userPickedOrder=false; // prioritize tasks relevant to new account
   if(currentOrder)renderOrder();
   selectNextOperation();
@@ -524,7 +525,7 @@ async function createNewOrder(){
     });
     creationOutcome="Transaction submitted. Automatically verifying execution and finding your new order on-chain. Do not resubmit.";
     showTx("CREATION SUBMITTED — AUTO TRACKING",sent.txId);
-    $("txResult").scrollIntoView({behavior:"smooth",block:"start"});
+    $("createState").textContent=creationOutcome;
     // Start read-only tracking after the signing action releases its busy guard.
     Promise.resolve().then(()=>track());
   }catch(error){creationOutcome=String(error?.message||error);}
@@ -557,7 +558,8 @@ function refreshExtras() {
     example.addEventListener("click",()=>{
       $("artifactUrl").value="https://raw.githubusercontent.com/bearbaba/PROOFLY/fa4d29b0e6f8efb50e2472530aff1d0ab7aca77e/fixtures/evidence/pass.txt";
       verifiedArtifact=null;
-      $("artifactStatus").textContent="Example loaded. Click Verify deliverable automatically.";
+      $("artifactStatus").textContent="Checking the example deliverable…";
+      verify.click();
     });
     const status=elem("p","Verification pending. PROOFLY calculates the content hash for you.","hint");
     status.id="artifactStatus";
@@ -565,6 +567,9 @@ function refreshExtras() {
     $("artifactUrl").addEventListener("input",()=>{
       verifiedArtifact=null;
       status.textContent="Link changed. Verify again before signing.";
+    });
+    $("artifactUrl").addEventListener("change",()=>{
+      if(isPinnedUrl($("artifactUrl").value.trim()))verify.click();
     });
     verify.addEventListener("click",async()=>{
       if(busy)return;
@@ -735,6 +740,7 @@ async function submit() {
         "\n\nContinue to MetaMask cost review and signing? No automatic retries.");
     });
     showTx(r.status,r.txId);
+    $("actionInfo").textContent="Transaction sent. Checking the GenLayer result automatically; please do not sign the same action again.";
     trackedHash=r.txId;
   } catch(error) {showError(error);}
   finally {
@@ -851,6 +857,9 @@ $("fillDemoContributor").addEventListener("click",()=>{
   $("jobContributor").focus();
 });
 $("verifyReference").addEventListener("click",verifyReference);
+$("jobReference").addEventListener("change",()=>{
+  if(isPinnedUrl($("jobReference").value.trim()))void verifyReference();
+});
 $("createNow").addEventListener("click",createNewOrder);
 $("createForm").addEventListener("submit",event=>event.preventDefault());
 $("createForm").addEventListener("input",event=>{
@@ -881,8 +890,14 @@ $("copyOrderLink").addEventListener("click",async()=>{
   }
 });
 $("orderId").addEventListener("input",refreshAction);
-$("receiptResult").textContent="Read an order first, then select a receipt version.";
-$("txResult").textContent="Only real hashes from signed wallet transactions appear here.";
+$("receiptResult").textContent="Select a work order to see the verification result.";
+$("txResult").textContent="Real signed transactions are tracked automatically.";
+const transactionNotice=elem("div",undefined,"txn-notice");
+transactionNotice.id="transactionNotice";
+transactionNotice.hidden=true;
+transactionNotice.setAttribute("role","status");
+transactionNotice.setAttribute("aria-live","polite");
+$("writeAction").insertAdjacentElement("afterend",transactionNotice);
 refreshCreateForm();
 // Public deep links and last verified order load without MetaMask prompts.
 const requested=queryOrder(window.location.search);
@@ -921,7 +936,25 @@ if(window.ethereum?.on) {
 }
 refreshExtras();
 void syncAuthorizedWallet();
+// Selected order is cheap to refresh; the 25-order board is refreshed less often.
+// Never poll or trigger signatures in a background/invisible tab.
+async function refreshSelectedOrder() {
+  if(!currentOrderId||busy||selectedSyncBusy)return;
+  selectedSyncBusy=true;
+  const id=String(currentOrderId);
+  try{
+    const latest=await readFinal("get_order",[id]);
+    if(!latest || id!==String(currentOrderId))return;
+    if(currentOrder?.status!==latest.status)openVerifiedOrder(id,latest);
+  }catch{ /* Testnet reads may be intermittent. Keep the last verified state. */ }
+  finally{selectedSyncBusy=false;}
+}
 window.setInterval(()=>{
-  if(document.visibilityState!=="visible" || busy || boardBusy)return;
-  if(wallet)void refreshMyWork({autoOpen:false});
-},45000);
+  if(document.visibilityState!=="visible"||busy)return;
+  void refreshSelectedOrder();
+  if(wallet && !boardBusy && Date.now()-lastWorkboardRefresh>120000)
+    void refreshMyWork({autoOpen:false});
+},30000);
+window.addEventListener("focus",()=>{
+  if(!busy){void syncAuthorizedWallet();void refreshSelectedOrder();}
+});
