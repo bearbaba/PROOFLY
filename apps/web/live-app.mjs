@@ -7,6 +7,7 @@ import { createClient } from "genlayer-js";
 import { studionet } from "genlayer-js/chains";
 import { TransactionHashVariant, TransactionStatus } from "genlayer-js/types";
 import {inspectTransaction} from "./tx-verdict.mjs";
+import {candidateFromArgs,restoreCandidate,discoverCreatedOrder,orderLink,queryOrder} from "./order-handoff.mjs";
 import { createWorkflowGateway, makeRead } from "./sdk-workflow.mjs";
 import { isPinnedUrl } from "./model.mjs";
 import { CONTRACT, CHAIN_ID, EXPLORER, parseStudioPlan, decodeRead,
@@ -28,6 +29,8 @@ function isSuccessful(tx) {
 }
 const HEX = /^0x[0-9a-fA-F]{64}$/;
 const STORAGE_KEY = "proofly.studionet.61999.pending";
+const CREATE_KEY = "proofly.studionet.61999.pendingCreate";
+const LAST_ORDER_KEY = "proofly.studionet.61999.lastVerifiedOrder";
 const DEMO_REFERENCE = "https://raw.githubusercontent.com/bearbaba/PROOFLY/fa4d29b0e6f8efb50e2472530aff1d0ab7aca77e/fixtures/evidence/reference.txt";
 const DEMO_CONTRIBUTOR = "0xd6b8a3a5eb329410d9504784812b8569afa8c2af";
 let verifiedReference = null;
@@ -72,10 +75,34 @@ function getOrderId() {
 function requireWallet() {
   if (!wallet || !gateway) throw new Error("Connect an EIP-1193 wallet on Studionet before signing.");
 }
+function updateHandoff(order) {
+  const root=$("orderHandoff");
+  if(!root)return;
+  const ok=order && /^[1-9][0-9]{0,9}$/.test(String(order.id));
+  root.hidden=!ok;
+  if(!ok)return;
+  $("shareOrderUrl").value=orderLink(window.location.origin+window.location.pathname,order.id);
+  $("handoffHeading").textContent="Work order #"+order.id+" is ready to share";
+  $("handoffDescription").textContent=order.status==="PROPOSED" ?
+    "Send this link to the contributor. They can open and accept the order with their wallet." :
+    "This link opens the latest on-chain state for this work order.";
+}
+function openVerifiedOrder(id,order) {
+  if(!order || String(order.id)!==String(id))
+    throw Error("On-chain response does not match this order ID.");
+  $("orderId").value=String(id);
+  currentOrderId=String(id);
+  currentOrder=order;
+  currentReceipt=null;
+  renderOrder();
+  try{localStorage.setItem(LAST_ORDER_KEY,String(id));}catch{}
+  window.history.replaceState(null,"",orderLink(window.location.origin+window.location.pathname,String(id)));
+}
 function renderOrder() {
   const root = $("orderResult");
   root.replaceChildren();
   root.classList.remove("empty");
+  updateHandoff(currentOrder);
   if (!currentOrder) { root.textContent = "No work order found at this finalized state."; return; }
   const header = elem("div");
   header.append(elem("h3", "Work order #" + currentOrder.id), pill(String(currentOrder.status)));
@@ -142,10 +169,13 @@ async function loadOrder() {
   try {
     const id = getOrderId();
     const record = await readFinal("get_order",[id]);
-    currentOrderId = id;
-    currentOrder = record;
-    currentReceipt = null;
-    renderOrder();
+    if(record)openVerifiedOrder(id,record);
+    else{
+      currentOrderId=id;
+      currentOrder=null;
+      currentReceipt=null;
+      renderOrder();
+    }
     $("receiptResult").textContent = "Click Read finalized Proof Receipt to inspect results.";
   } catch(error) { showError(error,$("orderResult")); }
   finally { setBusy(false); }
