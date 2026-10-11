@@ -12,10 +12,10 @@
 <div class="wrap">
 <nav class="top"><a class="mark" href="./"><span class="monogram">P</span>PROOFLY <small> / STUDIO</small></a>
 <div class="top-links"><span class="testnet"><i></i> GENLAYER STUDIONET · 61999</span>
-<a href="./builder.html">Spec Builder</a><a href="./receipt.html">Receipt Inspector</a><a href="https://github.com/bearbaba/PROOFLY" target="_blank" rel="noopener noreferrer">Source ↗</a></div></nav>
+<a href="#createCard">Create Work Order</a><a href="./builder.html">Advanced Builder</a><a href="./receipt.html">Receipt Inspector</a><a href="https://github.com/bearbaba/PROOFLY" target="_blank" rel="noopener noreferrer">Source ↗</a></div></nav>
 <header class="hero"><div class="kicker">PROTOCOL / WORK ORDER CONSOLE</div>
 <h1>Prove the work.<br><em>Trust the evidence.</em></h1>
-<p>Read finalized GenLayer state, connect your own wallet to act, and inspect evidence-backed AI receipts. Every write is a real testnet transaction, not a simulated verdict.</p>
+<p>Create and review work orders directly with your wallet. GenLayer checks real evidence and publishes transparent AI Proof Receipts.</p>
 <div class="hero-row"><span>01 Agree</span><b>→</b><span>02 Submit</span><b>→</b><span>03 Adjudicate</span><b>→</b><span>04 Receipt</span></div></header>
 <div class="strip"><span><strong>REAL TESTNET</strong> · Studionet is an experimental network; no escrow, payments or warranties. Never enter seed phrases or private keys.</span>
 <a id="studio" target="_blank" rel="noopener noreferrer" href="https://studio.genlayer.com/?import-contract=0xEbb6E4D791299E79317DE796232029194e0F0aCb">Open in Studio ↗</a></div>
@@ -39,7 +39,7 @@
 </section>
 <aside class="stack">
 <article class="panel dark">
-<div class="heading"><div><div class="kicker">02 / SIGNED OPERATIONS</div><h2>Wallet & actions</h2></div></div>
+<div class="heading"><div><div class="kicker">02 / EXISTING WORK ACTIONS</div><h2>Wallet & actions</h2></div></div>
 <p class="soft">Reading is public. Writes require your own EIP-1193 wallet on GenLayer Studionet and explicit confirmation of wallet-displayed network costs.</p>
 <button id="connectWallet" class="wallet">Connect wallet ↗</button>
 <div id="walletState" class="wallet-state">No wallet connected · Read-only mode</div>
@@ -49,7 +49,7 @@
 <option value="accept_order">Accept order (Contributor)</option>
 <option value="submit_evidence">Submit evidence (Contributor)</option>
 <option value="evaluate_submission">Run GenLayer verification</option>
-<option value="create_order">Create from Spec Builder plan</option>
+
 <option value="cancel_order">Cancel proposed order (Owner)</option>
 <option value="close_expired">Close expired order</option>
 </select></div>
@@ -57,6 +57,31 @@
 <div id="actionInfo" class="action-info">Load an order to review its exact requirements before signing.</div>
 <button id="writeAction" class="sign" disabled>Review cost & sign →</button>
 <p class="hint light">We never request a secret key. SDK 1.1.8 cannot estimate protocol fees here. You must explicitly review network costs in MetaMask before signing. No automatic retries; testnet GEN may be needed.</p>
+</article>
+<article class="panel" id="createCard">
+<div class="heading"><div><div class="kicker">NEW WORK / NO JSON FILES</div><h2>Create a work order</h2></div><span class="pill">WALLET SIGNED</span></div>
+<p class="guide-text">Describe the job, assign a contributor, and agree on three clear checkpoints. PROOFLY prepares the contract call for you.</p>
+<div class="how-steps"><span>1. Describe</span><span>2. Review</span><span>3. Sign</span></div>
+<button id="loadDemo" type="button" class="secondary">Fill example requirements</button>
+<form id="createForm" novalidate autocomplete="off">
+<div class="field"><label for="jobTitle">WORK ORDER TITLE</label><input id="jobTitle" maxlength="120" required placeholder="e.g. Write a simple user guide"></div>
+<div class="field"><label for="jobContributor">CONTRIBUTOR WALLET</label><input id="jobContributor" required spellcheck="false" placeholder="0x… address of the person doing the work"><p class="hint">A different wallet from yours. The contributor will accept and submit the work.</p></div>
+<div class="field"><label for="jobReference">AGREED REFERENCE DOCUMENT</label><input id="jobReference" required spellcheck="false" placeholder="Permanent public GitHub raw .txt URL"><p class="hint">For verifiable evidence, the current contract requires a publicly readable GitHub .txt file pinned to a commit. You can use the demo example to test the flow.</p></div>
+<button id="verifyReference" type="button" class="secondary">Verify reference & calculate hash</button>
+<p class="hint" id="referenceStatus" role="status" aria-live="polite">No document verified yet. The SHA-256 is calculated automatically.</p>
+<div class="divider-line"></div>
+<div class="kicker">WHAT MUST THE CONTRIBUTOR PROVE?</div>
+<div class="field"><label for="jobR1">REQUIREMENT 1</label><textarea id="jobR1" rows="2" maxlength="500" required placeholder="An objective, measurable checkpoint"></textarea></div>
+<div class="field"><label for="jobR2">REQUIREMENT 2</label><textarea id="jobR2" rows="2" maxlength="500" required placeholder="A second clear checkpoint"></textarea></div>
+<div class="field"><label for="jobR3">REQUIREMENT 3</label><textarea id="jobR3" rows="2" maxlength="500" required placeholder="A third clear checkpoint"></textarea></div>
+<div class="deadline-grid">
+<div class="field"><label for="submitDays">SUBMIT IN (DAYS)</label><input id="submitDays" type="number" value="2" min="1" max="59"></div>
+<div class="field"><label for="revisionDays">REVISION DEADLINE (DAYS)</label><input id="revisionDays" type="number" value="7" min="2" max="60"></div></div>
+<div id="createState" role="status" class="result empty" aria-live="polite">Connect your wallet and verify the reference document before creating a work order.</div>
+<button id="createNow" type="button" class="primary full-button" disabled>Create Work Order →</button>
+</form>
+<p class="hint">Signing sends a real Studionet transaction. You will review network costs in MetaMask. No escrow, no uploaded private files, and no automatic retries.</p>
+<details class="advanced-info"><summary>Developer tools (advanced)</summary><p>Need to inspect raw contract parameters? Use the <a href="./builder.html">offline Spec Builder</a>. Most users do not need this.</p></details>
 </article>
 <article class="panel side-note">
 <div class="kicker">REVIEWER / DEMO</div><h3>First verified sample</h3>

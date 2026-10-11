@@ -1,5 +1,6 @@
 /** Pure, SDK-free boundaries for the public Studionet client. */
 import { validateDraft } from "./model.mjs";
+import { createStudioPlan } from "./studio-plan.mjs";
 import { makeRead, makeWrite } from "./sdk-workflow.mjs";
 
 export const CONTRACT = "0xEbb6E4D791299E79317DE796232029194e0F0aCb";
@@ -77,4 +78,25 @@ export function describeReceipt(receipt) {
     rows.some(r => r.status === "UNVERIFIABLE") ? "EVIDENCE_REQUIRED" : "ACCEPTED";
   return { status: String(receipt.outcome || ""), satisfied: rows.filter(r => r.status === "SATISFIED").length,
     total: rows.length, consistent: outcome === receipt.outcome };
+}
+
+
+/** End-user form => seven canonical contract parameters. No JSON upload. */
+export function prepareUserOrder(fields, now = Date.now()) {
+  const submitDays=Number(fields.submit_days);
+  const revisionDays=Number(fields.revision_days);
+  if (!Number.isInteger(submitDays) || !Number.isInteger(revisionDays) ||
+      submitDays < 1 || revisionDays <= submitDays || revisionDays > 60)
+    throw new Error("Choose a submission deadline of at least one day and a later revision deadline within 60 days.");
+  const nowSeconds=Math.floor(now/1000);
+  const data={
+    title:String(fields.title||"").trim(),
+    contributor:String(fields.contributor||"").trim(),
+    reference_url:String(fields.reference_url||"").trim(),
+    reference_sha256:String(fields.reference_sha256||"").trim(),
+    criteria:[1,2,3].map(i=>({id:"R"+i,text:String(fields["criterion"+i]||"").trim()})),
+    submit_deadline:nowSeconds+submitDays*86400,
+    revision_deadline:nowSeconds+revisionDays*86400
+  };
+  return createStudioPlan(data,now).args;
 }

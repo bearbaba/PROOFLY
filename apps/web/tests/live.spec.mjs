@@ -15,3 +15,22 @@ test("live UI fits narrow mobile viewport",async({page})=>{
   const sizes=await page.evaluate(()=>({inner:window.innerWidth,scroll:document.documentElement.scrollWidth}));
   expect(sizes.scroll).toBeLessThanOrEqual(sizes.inner+2);
 });
+
+test("customer creation is a normal form, not a required JSON upload",async({page})=>{
+  await page.goto("/",{waitUntil:"domcontentloaded"});
+  await expect(page.locator("#createCard")).toBeVisible();
+  await expect(page.locator("#createNow")).toBeDisabled();
+  await expect(page.locator("#planJson")).toHaveCount(0);
+  await page.locator("#loadDemo").click();
+  await expect(page.locator("#jobTitle")).toHaveValue(/PROOFLY Demo/);
+  await expect(page.locator("#jobReference")).toHaveValue(/raw.githubusercontent.com/);
+  await expect(page.locator("#jobContributor")).toHaveValue("");
+  await expect(page.locator("#createNow")).toBeDisabled();
+});
+test("untrusted reference URL fails closed before hashing or wallet write",async({page})=>{
+  await page.goto("/",{waitUntil:"domcontentloaded"});
+  await page.locator("#jobReference").fill("https://evil.example/reference.txt");
+  await page.locator("#verifyReference").click();
+  await expect(page.locator("#referenceStatus")).toContainText("commit-pinned GitHub");
+  await expect(page.locator("#createNow")).toBeDisabled();
+});
