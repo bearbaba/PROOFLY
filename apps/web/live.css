@@ -44,3 +44,66 @@
 .my-work-footer button{flex-shrink:0}
 #myWorkStatus{min-height:1.3em}
 @media(max-width:550px){.my-work-footer{align-items:start}.my-work-state{font-size:10px}}
+
+/* Guided workspace: wallet and next action come first; technical tools stay optional. */
+html{scroll-behavior:smooth}
+body{background:#f5f9fa}
+.hero{padding:42px 0 28px}
+.hero h1{font-size:clamp(35px,4.8vw,59px);margin:10px 0 13px}
+.hero p{font-size:15px;max-width:630px}
+.hero-row{margin-top:19px;gap:12px}
+.strip{margin-bottom:8px}
+.app-shell{display:grid;gap:24px;padding:24px 0 48px;min-width:0}
+.workspace-grid{display:grid;grid-template-columns:minmax(0,1.17fr) minmax(300px,.83fr);gap:24px;align-items:start;min-width:0}
+.workspace-grid>section,.workspace-grid>aside{min-width:0}
+.workspace-wallet{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+column-gap:32px;row-gap:13px;grid-template-areas:
+"heading heading"
+"intro next"
+"connect next"
+"state next"
+"info info"
+"extra extra"
+"sign sign"
+"advanced advanced"
+"foot foot"}
+.workspace-wallet .heading{grid-area:heading;margin-bottom:0}
+.workspace-wallet .soft{grid-area:intro;margin:0;font-size:13px}
+.workspace-wallet #connectWallet{grid-area:connect;max-width:450px}
+.workspace-wallet #walletState{grid-area:state;margin:0;max-width:450px}
+.workspace-wallet .next-step{grid-area:next}
+.workspace-wallet #actionInfo{grid-area:info;margin:2px 0 0}
+.workspace-wallet #actionExtra{grid-area:extra}
+.workspace-wallet #writeAction{grid-area:sign;font-size:16px;min-height:50px}
+.workspace-wallet .advanced-actions{grid-area:advanced}
+.workspace-wallet .hint.light{grid-area:foot;margin:0}
+.next-step{background:rgba(248,255,254,.095);border:1px solid rgba(178,236,229,.24);border-radius:16px;padding:19px;display:flex;flex-direction:column;justify-content:center;min-height:155px}
+.next-step-eyebrow{font-size:10px;letter-spacing:.13em;font-weight:800;color:#9fe6d5}
+.next-step h3{font:800 clamp(19px,2vw,25px) Manrope,sans-serif;letter-spacing:-.035em;margin:7px 0}
+.next-step p{margin:0;color:#b9d4d8;font-size:12px;line-height:1.6}
+.workflow-mini{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.workflow-mini span{padding:5px 9px;border:1px solid #476777;border-radius:20px;font-size:10px;color:#c8e7e5}
+.workflow-mini span.is-active{background:#e1faf1;color:#0c665f;border-color:#e1faf1;font-weight:900}
+.workspace-wallet .advanced-actions{border-top:1px solid #42616b;padding-top:12px}
+.advanced-actions summary{cursor:pointer;font-weight:700;color:#b7d5d9;font-size:12px}
+.advanced-actions .field{max-width:420px}
+#myWorkCard .heading,#currentOrderCard .heading{margin-bottom:12px}
+#myWorkCard .guide-text{margin:7px 0 15px;color:#708490}
+#currentOrderCard #orderResult{margin-top:10px}
+.manual-lookup{margin:13px 0;padding:10px 12px;background:#f5f9fa;border:1px solid #e2edef;border-radius:10px}
+.manual-lookup summary{cursor:pointer;color:#708792;font-size:12px;font-weight:700}
+.manual-lookup .field{margin:12px 0 2px}
+.receipt-heading{padding-top:15px;border-top:1px solid #e1e9ed;margin-top:18px}
+.receipt-heading h3{margin:0;font:800 17px Manrope,sans-serif}
+.receipt-heading p{color:#789099;margin:4px 0 8px;font-size:12px}
+.technical-drawer{border:1px solid #dce7ec;border-radius:16px;background:white;overflow:hidden}
+.technical-drawer>summary{padding:19px 23px;cursor:pointer;font-weight:800;color:#345568;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.technical-drawer .drawer-sub{font-size:11px;color:#79919a;font-weight:500}
+.technical-content{display:grid;grid-template-columns:minmax(0,1fr) minmax(270px,.55fr);gap:16px;padding:0 16px 16px}
+.technical-content>.panel{box-shadow:none;padding:18px}
+.technical-content>.advanced-links{grid-column:1/-1;display:flex;gap:18px;flex-wrap:wrap;padding:8px}
+.advanced-links a{font-size:12px;font-weight:750;color:#087f8a}
+#myWorkList .my-work-row:focus-visible{outline:3px solid #40afb2;outline-offset:2px}
+@media(max-width:900px){.workspace-grid{grid-template-columns:1fr}.technical-content{grid-template-columns:1fr}.workspace-wallet{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+@media(max-width:640px){.app-shell{gap:16px}.workspace-grid{gap:16px}.panel{padding:20px}.workspace-wallet{display:flex;flex-direction:column;align-items:stretch;gap:14px}.workspace-wallet .soft,.workspace-wallet #connectWallet,.workspace-wallet #walletState{max-width:none}.next-step{min-height:unset}.hero{padding:31px 0 22px}.hero h1{font-size:36px}.hero-row{gap:8px}.hero-row b{font-size:13px}.strip{flex-wrap:wrap}.technical-drawer>summary{padding:16px}.technical-content{padding:0 10px 10px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}

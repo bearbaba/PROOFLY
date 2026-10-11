@@ -10,55 +10,32 @@
 </head>
 <body>
 <div class="wrap">
-<nav class="top"><a class="mark" href="./"><span class="monogram">P</span>PROOFLY <small> / STUDIO</small></a>
+<nav class="top"><a class="mark" href="./"><span class="monogram">P</span>PROOFLY <small> / WORKSPACE</small></a>
 <div class="top-links"><span class="testnet"><i></i> GENLAYER STUDIONET · 61999</span>
-<a href="#createCard">Create Work Order</a><a href="./builder.html">Advanced Builder</a><a href="./receipt.html">Receipt Inspector</a><a href="https://github.com/bearbaba/PROOFLY" target="_blank" rel="noopener noreferrer">Source ↗</a></div></nav>
-<header class="hero"><div class="kicker">PROTOCOL / WORK ORDER CONSOLE</div>
-<h1>Prove the work.<br><em>Trust the evidence.</em></h1>
-<p>Create and review work orders directly with your wallet. GenLayer checks real evidence and publishes transparent AI Proof Receipts.</p>
-<div class="hero-row"><span>01 Agree</span><b>→</b><span>02 Submit</span><b>→</b><span>03 Adjudicate</span><b>→</b><span>04 Receipt</span></div></header>
+<a href="#myWorkCard">My work</a><a href="#createCard">Create a job</a><a href="#currentOrderCard">Work details</a><a href="https://github.com/bearbaba/PROOFLY" target="_blank" rel="noopener noreferrer">Source ↗</a></div></nav>
+<header class="hero"><div class="kicker">WORKSPACE / GENLAYER</div>
+<h1>Agree on the job.<br><em>Prove the result.</em></h1>
+<p>Create a job, accept the requirements, and verify delivered work. Your wallet determines which step comes next.</p>
+<div class="hero-row" aria-label="Workflow"><span>1 · Create</span><b>→</b><span>2 · Accept</span><b>→</b><span>3 · Submit evidence</span><b>→</b><span>4 · Verify</span></div></header>
 <div class="strip"><span><strong>REAL TESTNET</strong> · Studionet is an experimental network; no escrow, payments or warranties. Never enter seed phrases or private keys.</span>
 <a id="studio" target="_blank" rel="noopener noreferrer" href="https://studio.genlayer.com/?import-contract=0xEbb6E4D791299E79317DE796232029194e0F0aCb">Open in Studio ↗</a></div>
-<main class="layout">
-<section class="stack">
-<article class="panel" id="myWorkCard">
-<div class="heading"><div><div class="kicker">MY WORK / AUTO SYNC</div><h2>Your work orders</h2></div><span class="pill">FINALIZED STATE</span></div>
-<p class="guide-text">PROOFLY discovers work assigned to your connected wallet and keeps statuses up to date. No order number required.</p>
-<div id="myWorkStatus" class="hint" role="status" aria-live="polite">Connect your wallet to see your recent work orders.</div>
-<div id="myWorkList" class="my-work-list" aria-label="Recent work orders associated with your wallet"></div>
-<div class="my-work-footer"><span>Recent 25 on-chain orders · older orders can still be opened using their link</span><button id="refreshMyWork" type="button" class="secondary">Refresh</button></div>
-</article>
-<article class="panel">
-<div class="heading"><div><div class="kicker">01 / PUBLIC CONTRACT STATE</div><h2>Find a work order</h2></div><span class="pill">FINALIZED READS</span></div>
-<div class="field"><label for="orderId">ORDER NUMBER</label><div class="inline"><input type="text" id="orderId" inputmode="numeric" value="1" pattern="[1-9][0-9]*" aria-label="Order ID">
-<button id="loadOrder" class="primary">Load order →</button></div></div>
-<div class="factgrid"><div><span>CHAIN</span><strong>Studionet / 61999</strong></div><div><span>CONTRACT</span><a id="contractLink" target="_blank" rel="noopener noreferrer" href="https://studio.genlayer.com/?import-contract=0xEbb6E4D791299E79317DE796232029194e0F0aCb">0xEbb6…0aCb ↗</a></div></div>
-<div id="orderResult" class="result empty" aria-live="polite">Load an order to view its on-chain requirements, participants and current status.</div>
-<div id="orderHandoff" class="order-handoff" hidden>
-<div class="kicker">SHARE &amp; CONTINUE</div>
-<h3 id="handoffHeading">Verified work order</h3>
-<p id="handoffDescription">Send a link to open this on-chain work order.</p>
-<div class="inline"><input id="shareOrderUrl" readonly aria-label="Verified work order share link"><button id="copyOrderLink" class="secondary" type="button">Copy link ↗</button></div>
-<p class="hint">The contributor can read the requirements without signing. Connecting their wallet is needed only to accept the work.</p>
-</div>
-<div class="inline"><label for="receiptVersion" style="align-self:center;font-size:11px;font-weight:700">VERSION</label><input type="number" id="receiptVersion" value="1" min="1" max="2" style="max-width:70px"><button id="loadReceipt" class="secondary">Read finalized Proof Receipt →</button></div>
-<div id="receiptResult" class="receipt empty" aria-live="polite">A Proof Receipt appears after a finalized successful evaluation.</div>
-</article>
-<article class="panel">
-<div class="heading"><div><div class="kicker">03 / CONSENSUS TRACKING</div><h2>Transaction lifecycle</h2></div><span class="pill neutral">NO AUTO-RETRY</span></div>
-<div id="txResult" class="result empty" aria-live="polite">Submit a signed write or paste a previous transaction hash to track finality.</div>
-<div class="field"><label for="txHash">TRANSACTION HASH</label><div class="inline"><input id="txHash" placeholder="0x… (64 hex characters)" spellcheck="false"><button id="trackTx" class="secondary">Track finality</button></div></div>
-<p class="hint">Consensus accepted and contract execution success are different checks. Never resend automatically while a transaction is unresolved.</p>
-</article>
-</section>
-<aside class="stack">
-<article class="panel dark">
-<div class="heading"><div><div class="kicker">02 / EXISTING WORK ACTIONS</div><h2>Wallet & actions</h2></div></div>
-<p class="soft">Reading is public. Writes require your own EIP-1193 wallet on GenLayer Studionet and explicit confirmation of wallet-displayed network costs.</p>
+<main class="app-shell">
+<article class="panel dark workspace-wallet" id="walletActionsCard">
+<div class="heading"><div><div class="kicker">YOUR WALLET / YOUR NEXT STEP</div><h2>Continue your work</h2></div></div>
+<p class="soft">Connect once. PROOFLY will find your assigned work and show what to do next.</p>
 <button id="connectWallet" class="wallet">Connect wallet ↗</button>
 <div id="walletState" class="wallet-state">No wallet connected · Read-only mode</div>
-<div class="separator"></div>
-<div class="field"><label for="operation">OPERATION</label>
+<div class="next-step" id="nextStepPanel" aria-live="polite">
+<div class="next-step-eyebrow" id="nextStepState">GET STARTED</div>
+<h3 id="nextStepTitle">Connect your wallet</h3>
+<p id="nextStepDescription">You can also read and share work orders without connecting.</p>
+<div class="workflow-mini" aria-hidden="true"><span>Create</span><span>Accept</span><span>Submit</span><span>Verify</span></div>
+</div>
+<div id="actionInfo" class="action-info">Your next step appears here.</div>
+<div id="actionExtra" class="action-extra"></div>
+<button id="writeAction" class="sign" disabled>Choose a work order →</button>
+<details class="advanced-actions"><summary>Other actions and troubleshooting</summary>
+<div class="field"><label for="operation">MANUAL ACTION</label>
 <select id="operation">
 <option value="accept_order">Accept order (Contributor)</option>
 <option value="submit_evidence">Submit evidence (Contributor)</option>
@@ -67,21 +44,47 @@
 <option value="cancel_order">Cancel proposed order (Owner)</option>
 <option value="close_expired">Close expired order</option>
 </select></div>
-<div id="actionExtra" class="action-extra"></div>
-<div id="actionInfo" class="action-info">Load an order to review its exact requirements before signing.</div>
-<button id="writeAction" class="sign" disabled>Review cost & sign →</button>
-<p class="hint light">We never request a secret key. SDK 1.1.8 cannot estimate protocol fees here. You must explicitly review network costs in MetaMask before signing. No automatic retries; testnet GEN may be needed.</p>
+</details>
+<p class="hint light">Only you approve signatures in MetaMask. PROOFLY never requests private keys or sends a transaction twice automatically. Check any network fee before signing.</p>
 </article>
+<div class="workspace-grid">
+<section class="stack">
+<article class="panel" id="myWorkCard">
+<div class="heading"><div><div class="kicker">MY WORK / AUTO SYNC</div><h2>Your work orders</h2></div><span class="pill">FINALIZED STATE</span></div>
+<p class="guide-text">PROOFLY discovers work assigned to your connected wallet and keeps statuses up to date. No order number required.</p>
+<div id="myWorkStatus" class="hint" role="status" aria-live="polite">Connect your wallet to see your recent work orders.</div>
+<div id="myWorkList" class="my-work-list" aria-label="Recent work orders associated with your wallet"></div>
+<div class="my-work-footer"><span>Recent 25 on-chain orders · older orders can still be opened using their link</span><button id="refreshMyWork" type="button" class="secondary">Refresh</button></div>
+</article>
+<article class="panel" id="currentOrderCard">
+<div class="heading"><div><div class="kicker">SELECTED WORK / LIVE STATE</div><h2>Work details</h2></div><span class="pill">ON-CHAIN</span></div>
+<details class="manual-lookup"><summary>Open a work order by number (optional)</summary>
+<div class="field"><label for="orderId">WORK ORDER NUMBER</label><div class="inline"><input type="text" id="orderId" inputmode="numeric" value="1" pattern="[1-9][0-9]*" aria-label="Order ID">
+<button id="loadOrder" class="secondary">Open work →</button></div></div></details>
+<div class="factgrid"><div><span>CHAIN</span><strong>Studionet / 61999</strong></div><div><span>CONTRACT</span><a id="contractLink" target="_blank" rel="noopener noreferrer" href="https://studio.genlayer.com/?import-contract=0xEbb6E4D791299E79317DE796232029194e0F0aCb">0xEbb6…0aCb ↗</a></div></div>
+<div id="orderResult" class="result empty" aria-live="polite">Select a work order above to view the agreed requirements and current status.</div>
+<div id="orderHandoff" class="order-handoff" hidden>
+<div class="kicker">SHARE &amp; CONTINUE</div>
+<h3 id="handoffHeading">Verified work order</h3>
+<p id="handoffDescription">Send a link to open this on-chain work order.</p>
+<div class="inline"><input id="shareOrderUrl" readonly aria-label="Verified work order share link"><button id="copyOrderLink" class="secondary" type="button">Copy link ↗</button></div>
+<p class="hint">The contributor can read the requirements without signing. Connecting their wallet is needed only to accept the work.</p>
+</div>
+<div class="receipt-heading"><h3>Verification result</h3><p>Appears here automatically after completed verification.</p></div><div class="inline"><label for="receiptVersion" style="align-self:center;font-size:11px;font-weight:700">VERSION</label><input type="number" id="receiptVersion" value="1" min="1" max="2" style="max-width:70px"><button id="loadReceipt" class="secondary">Refresh result ↻</button></div>
+<div id="receiptResult" class="receipt empty" aria-live="polite">A Proof Receipt appears after a finalized successful evaluation.</div>
+</article>
+</section>
+<aside class="stack">
 <article class="panel" id="createCard">
-<div class="heading"><div><div class="kicker">NEW WORK / NO JSON FILES</div><h2>Create a work order</h2></div><span class="pill">WALLET SIGNED</span></div>
-<p class="guide-text">Describe the job, assign a contributor, and agree on three clear checkpoints. PROOFLY prepares the contract call for you.</p>
-<div class="how-steps"><span>1. Describe</span><span>2. Review</span><span>3. Sign</span></div>
-<button id="loadDemo" type="button" class="secondary">Fill example requirements</button>
+<div class="heading"><div><div class="kicker">START A NEW JOB</div><h2>Create a job</h2></div><span class="pill">WALLET SIGNED</span></div>
+<p class="guide-text">Describe the work, choose who will deliver it, and set three simple acceptance checks. PROOFLY handles the contract details.</p>
+<div class="how-steps"><span>1. Describe</span><span>2. Check</span><span>3. Approve</span></div>
+<button id="loadDemo" type="button" class="secondary">Try a prefilled example</button>
 <form id="createForm" novalidate autocomplete="off">
 <div class="field"><label for="jobTitle">WORK ORDER TITLE</label><input id="jobTitle" maxlength="120" required placeholder="e.g. Write a simple user guide"></div>
-<div class="field"><label for="jobContributor">CONTRIBUTOR WALLET</label><input id="jobContributor" required spellcheck="false" autocomplete="off" aria-describedby="contributorHint" placeholder="0x… address of the person doing the work"><p class="hint" id="contributorHint">Enter a different 0x wallet address from yours. The contributor will accept and submit the work.</p><button id="fillDemoContributor" type="button" class="secondary demo-contributor">Use sample contributor (demo only)</button></div>
+<div class="field"><label for="jobContributor">CONTRIBUTOR WALLET</label><input id="jobContributor" required spellcheck="false" autocomplete="off" aria-describedby="contributorHint" placeholder="0x… address of the person doing the work"><p class="hint" id="contributorHint">Enter a different 0x wallet address from yours. The contributor will accept and submit the work.</p><button id="fillDemoContributor" type="button" class="secondary demo-contributor">Use demo contributor wallet</button></div>
 <div class="field"><label for="jobReference">AGREED REFERENCE DOCUMENT</label><input id="jobReference" required spellcheck="false" placeholder="Permanent public GitHub raw .txt URL"><p class="hint">For verifiable evidence, the current contract requires a publicly readable GitHub .txt file pinned to a commit. You can use the demo example to test the flow.</p></div>
-<button id="verifyReference" type="button" class="secondary">Verify reference & calculate hash</button>
+<button id="verifyReference" type="button" class="secondary">Check document</button>
 <p class="hint" id="referenceStatus" role="status" aria-live="polite">No document verified yet. The SHA-256 is calculated automatically.</p>
 <div class="divider-line"></div>
 <div class="kicker">WHAT MUST THE CONTRIBUTOR PROVE?</div>
@@ -92,18 +95,29 @@
 <div class="field"><label for="submitDays">SUBMIT IN (DAYS)</label><input id="submitDays" type="number" value="2" min="1" max="59"></div>
 <div class="field"><label for="revisionDays">REVISION DEADLINE (DAYS)</label><input id="revisionDays" type="number" value="7" min="2" max="60"></div></div>
 <div id="createState" role="status" class="result empty" aria-live="polite">Connect your wallet and verify the reference document before creating a work order.</div>
-<button id="createNow" type="button" class="primary full-button" disabled>Create Work Order →</button>
+<button id="createNow" type="button" class="primary full-button" disabled>Create job & review in MetaMask →</button>
 </form>
 <p class="hint">Signing sends a real Studionet transaction. You will review network costs in MetaMask. No escrow, no uploaded private files, and no automatic retries.</p>
 <details class="advanced-info"><summary>Developer tools (advanced)</summary><p>Need to inspect raw contract parameters? Use the <a href="./builder.html">offline Spec Builder</a>. Most users do not need this.</p></details>
 </article>
+</aside>
+</div>
+<details class="technical-drawer" id="advancedTools">
+<summary><span>Transaction details & advanced tools</span><span class="drawer-sub">For troubleshooting or verifying a transaction hash</span></summary>
+<div class="technical-content">
+<article class="panel" id="technicalTransaction">
+<div class="heading"><div><div class="kicker">ADVANCED / NETWORK TRANSACTION</div><h2>Transaction details</h2></div><span class="pill neutral">NO AUTO-RETRY</span></div>
+<div id="txResult" class="result empty" aria-live="polite">Your signed transaction status will appear here automatically.</div>
+<div class="field"><label for="txHash">TRANSACTION HASH</label><div class="inline"><input id="txHash" placeholder="0x… (64 hex characters)" spellcheck="false"><button id="trackTx" class="secondary">Check again</button></div></div>
+<p class="hint">Consensus accepted and contract execution success are different checks. Never resend automatically while a transaction is unresolved.</p>
+</article>
 <article class="panel side-note">
-<div class="kicker">REVIEWER / DEMO</div><h3>First verified sample</h3>
+<div class="kicker">REVIEWER / DEMO</div><h3>Previous on-chain demonstration</h3>
 <p>Order #1 was executed manually in Studio with two accounts. The published archive records <strong>COMPLETED / ACCEPTED</strong> and 3/3 SATISFIED criteria. That history is separate from your current finalized RPC read.</p>
 <a href="https://github.com/bearbaba/PROOFLY/blob/main/docs/LIVE_STUDIO_DEMO.md" target="_blank" rel="noopener noreferrer">View archived Studio evidence ↗</a>
 </article>
-</aside>
-</main>
+<div class="advanced-links"><a href="./builder.html">Advanced Spec Builder ↗</a><a href="./receipt.html">Receipt Inspector ↗</a><a href="https://github.com/bearbaba/PROOFLY" target="_blank" rel="noopener noreferrer">Open source ↗</a></div>
+</div></details></main>
 <footer><span>PROOFLY / Evidence-driven adjudication</span><span>Studionet experimental · No payments · Open source</span></footer>
 </div>
 </body>

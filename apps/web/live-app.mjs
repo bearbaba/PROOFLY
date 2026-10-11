@@ -42,6 +42,8 @@ let walletSequence = 0;
 let boardBusy = false;
 let lastBoardWallet = null;
 let boardItems = [];
+let lastWorkboardRefresh = 0;
+let selectedSyncBusy = false;
 let userPickedOrder = Boolean(queryOrder(window.location.search));
 
 
@@ -52,6 +54,10 @@ function elem(tag, text, className) {
   return node;
 }
 function showError(error, region = $("txResult")) {
+  if(region===$("txResult")){
+    const quick=$("transactionNotice");
+    if(quick){quick.hidden=false;quick.textContent="Transaction needs attention: "+String(error?.message || error);}
+  }
   region.replaceChildren(elem("strong", String(error?.message || error), "error-text"));
   region.classList.remove("empty");
 }
@@ -104,7 +110,9 @@ function openVerifiedOrder(id,order) {
   currentOrder=order;
   currentReceipt=null;
   renderOrder();
+  renderReceipt();
   selectNextOperation();
+  if(order.status==="COMPLETED")void autoLoadReceipt(id,order);
   try{localStorage.setItem(LAST_ORDER_KEY,String(id));}catch{}
   window.history.replaceState(null,"",orderLink(window.location.origin+window.location.pathname,String(id)));
 }
@@ -223,6 +231,22 @@ async function refreshMyWork({autoOpen=true}={}) {
   }
 }
 
+async function autoLoadReceipt(id,order) {
+  if(!Array.isArray(order?.submissions)||!order.submissions.length)return;
+  const version=Number(order.submissions[order.submissions.length-1]?.version);
+  if(!Number.isInteger(version)||version<1||version>2)return;
+  $("receiptVersion").value=String(version);
+  $("receiptResult").textContent="Loading the finalized verification result…";
+  try{
+    const receipt=await readFinal("get_receipt",[String(id),version]);
+    if(String(currentOrderId)!==String(id))return;
+    currentReceipt=receipt;
+    renderReceipt();
+  }catch(error){
+    if(String(currentOrderId)===String(id))
+      $("receiptResult").textContent="Result read unavailable. Use Refresh result to try again.";
+  }
+}
 function renderReceipt() {
   const root = $("receiptResult");
   root.replaceChildren();
@@ -247,6 +271,16 @@ function renderReceipt() {
   } catch (error) { showError(error,root); }
 }
 function showTx(label, hash = "") {
+  const quick=$("transactionNotice");
+  if(quick){
+    quick.hidden=false;
+    quick.replaceChildren(elem("strong",label),
+      elem("span"," · "+(hash ? hash.slice(0,12)+"…"+hash.slice(-8) : "See status below.")));
+    const link=elem("a","View transaction details ↗");
+    link.href="#advancedTools";
+    link.addEventListener("click",()=>{$("advancedTools").open=true;});
+    quick.append(link);
+  }
   const root = $("txResult");
   root.replaceChildren();
   root.classList.remove("empty");
@@ -562,7 +596,56 @@ function refreshExtras() {
   root.addEventListener("input", refreshAction, {once:true});
   refreshAction();
 }
+function updateNextStep() {
+  const role=roleFor(currentOrder,wallet);
+  const status=String(currentOrder?.status||"");
+  const id=currentOrder?.id;
+  let label="GET STARTED",title="Connect your wallet",
+    detail="Your assigned jobs will appear automatically. You can browse public work without connecting.",
+    progress=0;
+  if(wallet && !currentOrder){
+    label="CHOOSE A JOB";title="Select a work order";
+    detail="Pick an assigned job from Your work orders below, or create a new job.";
+  }else if(currentOrder){
+    const suffix=" · Work order #"+id;
+    if(status==="PROPOSED"){
+      progress=1;
+      if(role==="contributor"){
+        label="ACTION REQUIRED"+suffix;title="Accept this work";
+        detail="Review the three agreed requirements, then approve acceptance in MetaMask.";
+      } else {
+        label="AWAITING ACCEPTANCE"+suffix;title="Waiting for contributor";
+        detail="Your job is created. Share its link; the assigned contributor must accept before submitting.";
+      }
+    }else if(status==="ACTIVE"||status==="REVIEWED"){
+      progress=2;
+      if(role==="contributor"){
+        label="ACTION REQUIRED"+suffix;title="Submit your finished work";
+        detail="Add a public, commit-pinned deliverable link. PROOFLY checks its content before your signature.";
+      }else {
+        label="IN PROGRESS"+suffix;title="Waiting for evidence";
+        detail="The contributor is working. The next step is their evidence submission.";
+      }
+    }else if(status==="SUBMITTED"){
+      progress=3;label="READY TO VERIFY"+suffix;title="Verify the submitted work";
+      detail="Run GenLayer verification and review the cost in MetaMask. The result will appear automatically.";
+    }else if(status==="COMPLETED"){
+      progress=4;label="VERIFIED"+suffix;title="Verification complete";
+      detail="The outcome and requirement-level Proof Receipt are shown in Work details.";
+    }else {
+      label=status+suffix;title="Review this work order";
+      detail="Check the latest on-chain status and any available verification result.";
+    }
+    if(!wallet){label="PUBLIC VIEW"+suffix;detail+=" Connect the assigned wallet to take action.";}
+  }
+  $("nextStepState").textContent=label;
+  $("nextStepTitle").textContent=title;
+  $("nextStepDescription").textContent=detail;
+  const steps=$("nextStepPanel").querySelectorAll(".workflow-mini span");
+  steps.forEach((el,i)=>el.classList.toggle("is-active",progress>0 && i<progress));
+}
 function refreshAction() {
+  updateNextStep();
   const op = $("operation").value;
   const role = roleFor(currentOrder,wallet);
   let explanation = "";
@@ -596,8 +679,13 @@ function refreshAction() {
     cancel_order:"Cancel work order →",
     close_expired:"Close expired order →"
   };
-  $("writeAction").textContent=names[op]||"Review cost & sign →";
-  $("writeAction").disabled = busy || !wallet || !needed || !correctRole || !validState;
+  const waiting=!!currentOrder && (
+    (role==="owner" && ["PROPOSED","ACTIVE","REVIEWED"].includes(currentOrder.status)) ||
+    currentOrder.status==="COMPLETED");
+  $("writeAction").textContent=waiting ?
+    (currentOrder.status==="COMPLETED" ? "View verification result below ↓" : "Waiting for contributor") :
+    names[op]||"Review cost & sign →";
+  $("writeAction").disabled = busy || !wallet || !needed || !correctRole || !validState || waiting;
 }
 function parameters() {
   const op = $("operation").value;
