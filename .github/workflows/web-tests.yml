@@ -17,7 +17,7 @@ permissions:
   contents: read
 
 jobs:
-  web:
+  unit:
     runs-on: ubuntu-latest
     timeout-minutes: 6
     steps:
@@ -31,3 +31,21 @@ jobs:
       - name: Specification logic regressions
         working-directory: apps/web
         run: npm test
+
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install browser test dependency
+        working-directory: apps/web
+        run: npm install --no-audit --no-fund
+      - name: Install browser
+        working-directory: apps/web
+        run: npx playwright install --with-deps chromium
+      - name: Run browser regressions
+        working-directory: apps/web
+        run: npm run test:browser

@@ -42,3 +42,19 @@ this UI does not mean wallet integration or consensus is operational.
 Future integration requires actual contract ABI confirmation, wallet
 transaction status/finality handling, evidence hosting, trusted source
 hash checks, and browser-level security regression tests.
+
+
+## Browser regression checks
+
+Browser E2E runs using Playwright/Chromium. It covers the loaded preview,
+draft validity, add/remove controls, exported JSON, HTML-like input safety,
+bad URL/hash and mobile overflow. It stubs only Google Fonts for stability.
+
+    cd apps/web
+    npm install
+    npx playwright install chromium
+    npm run test:browser
+
+The GitHub Actions workflow runs these cases on changes to apps/web.
+The tests do not simulate wallet, contract, chain finality or true evidence
+consensus; those belong to a separate live integration milestone.

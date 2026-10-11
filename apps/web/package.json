@@ -4,6 +4,10 @@
   "type": "module",
   "scripts": {
     "test": "node --test model.test.mjs",
-    "build": "node --check app.mjs && node --check model.mjs"
+    "build": "node --check app.mjs && node --check model.mjs",
+    "test:browser": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.56.1"
   }
 }
