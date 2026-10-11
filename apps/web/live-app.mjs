@@ -336,13 +336,17 @@ async function createNewOrder(){
     const next=await readFinal("next_order",[]);
     if(!/^[1-9][0-9]*$/.test(String(next)))
       throw new Error("Next order ID could not be read from finalized chain state.");
-    const planned={id:String(next),title:fields.title,owner:wallet,
-      contributor:fields.contributor.toLowerCase()};
+    // The counter here is a pre-sign snapshot, never a verified order ID.
+    // At finality discover the EXACT matching order, even if others create
+    // their orders concurrently.
     const sent=await gateway.submit("create_order",args,hash=>{
-      candidateOrder=planned;
+      candidateOrder=candidateFromArgs({before:next,hash,owner:wallet,args});
       $("txHash").value=hash;
-      try{localStorage.setItem(STORAGE_KEY,hash);}catch{}
-      showTx("SUBMITTED — CHECK FINALITY",hash);
+      try{
+        localStorage.setItem(STORAGE_KEY,hash);
+        localStorage.setItem(CREATE_KEY,JSON.stringify(candidateOrder));
+      }catch{}
+      showTx("SUBMITTED — AUTOMATIC VERIFICATION",hash);
     },estimate=>{
       const feeMessage=estimate ?
         "Estimated protocol feeValue (raw units): "+String(estimate.feeValue) :
@@ -351,10 +355,11 @@ async function createNewOrder(){
         "\nContract: "+CONTRACT+"\n"+feeMessage+
         "\nThis is not escrow or a payment.\n\nProceed to wallet approval?");
     });
-    creationOutcome="Transaction submitted! Expected work order #"+
-      planned.id+". Click Track finality to confirm. Do not create again while pending.";
-    showTx("CREATION SUBMITTED — TRACK FINALITY",sent.txId);
+    creationOutcome="Transaction submitted. Automatically verifying execution and finding your new order on-chain. Do not resubmit.";
+    showTx("CREATION SUBMITTED — AUTO TRACKING",sent.txId);
     $("txResult").scrollIntoView({behavior:"smooth",block:"start"});
+    // Start read-only tracking after the signing action releases its busy guard.
+    Promise.resolve().then(()=>track());
   }catch(error){creationOutcome=String(error?.message||error);}
   finally{setBusy(false);}
 }
