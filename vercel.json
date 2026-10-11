@@ -1,0 +1,7 @@
+{
+  "version": 2,
+  "framework": null,
+  "outputDirectory": "apps/web",
+  "buildCommand": "echo 'Static PROOFLY preview - no build required'",
+  "installCommand": "echo 'No dependencies to install'"
+}

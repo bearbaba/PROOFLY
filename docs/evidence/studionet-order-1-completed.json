@@ -1,0 +1,40 @@
+{
+  "accepted_at": 1791712092,
+  "contributor": "0xd6b8a3a5eb329410d9504784812b8569afa8c2af",
+  "created_at": 1791711441,
+  "id": "1",
+  "owner": "0x4c7cb73ac8f8999af21cfc9ff4cf2333a9508dcb",
+  "spec": {
+    "criteria": [
+      {
+        "id": "R1",
+        "text": "The guide explicitly states that this is a trial environment and that it does not accept real money."
+      },
+      {
+        "id": "R2",
+        "text": "The guide gives all three steps for reading a saved draft in the order documented by the reference."
+      },
+      {
+        "id": "R3",
+        "text": "The guide provides two troubleshooting instructions whose claimed remedies are supported by the reference. Remedies for undocumented error codes are unverifiable, not automatically false."
+      }
+    ],
+    "policy": "proofly.work-order.v1",
+    "reference_sha256": "9edf98b490eeb1b64f5e3f0b71a368ce38e9ba0e79070818eae3b2c70bb48527",
+    "reference_url": "https://raw.githubusercontent.com/bearbaba/PROOFLY/fa4d29b0e6f8efb50e2472530aff1d0ab7aca77e/fixtures/evidence/reference.txt",
+    "revision_deadline": 1792929600,
+    "submit_deadline": 1792497600
+  },
+  "spec_sha256": "e4aac1e77ba1c291394f053893dcd0488381dfcbe13bafe95659018282e21f19",
+  "status": "COMPLETED",
+  "submissions": [
+    {
+      "artifact_sha256": "8a087bffcffd9809daff7c53e56940b3974398ca58976693100b723bd015da1a",
+      "artifact_url": "https://raw.githubusercontent.com/bearbaba/PROOFLY/fa4d29b0e6f8efb50e2472530aff1d0ab7aca77e/fixtures/evidence/pass.txt",
+      "outcome": "ACCEPTED",
+      "submitted_at": 1791712317,
+      "version": 1
+    }
+  ],
+  "title": "Proofly Demo Service - User Guide"
+}

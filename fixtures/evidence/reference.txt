@@ -1,0 +1,6 @@
+FICTIONAL TEST FIXTURE: Proofly Demo Service. This is not GenLayer documentation.
+The service is a trial environment. It does not accept real money.
+To read a saved draft, connect a demo account, open the draft, then select Read.
+For error D01, reconnect the demo account and retry Read.
+For error D02, reopen the draft and retry Read.
+This reference does not document other error codes.

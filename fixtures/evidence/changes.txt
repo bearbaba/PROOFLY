@@ -1,0 +1,5 @@
+FICTIONAL TEST FIXTURE: Guide to Proofly Demo Service.
+This is a trial environment and it does not accept real money.
+To read a saved draft: first select Read, next open the draft, then connect a demo account.
+If error D01 appears, reconnect the demo account and retry Read.
+If error D02 appears, reopen the draft and retry Read.

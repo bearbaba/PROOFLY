@@ -1,0 +1,13 @@
+{
+  "name": "proofly-spec-builder",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test *.test.mjs",
+    "build": "node --check app.mjs && node --check model.mjs && node --check receipt.mjs && node --check receipt-model.mjs && node --check studio-plan.mjs && node --check sdk-workflow.mjs",
+    "test:browser": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.56.1"
+  }
+}

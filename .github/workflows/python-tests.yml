@@ -1,0 +1,39 @@
+name: Python offline verification
+
+on:
+  pull_request:
+    branches: [develop, main]
+  push:
+    branches: [develop, main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Compile Python sources
+        run: python -m compileall -q contracts packages scripts tests
+      - name: Test domain, verifier spike, and preflight
+        run: python -m unittest discover -s tests -p "test_*.py" -v
+      - name: Offline preflight fixture
+        run: |
+          python -m packages.preflight --requirements fixtures/evidence/requirements.json --artifact fixtures/evidence/pass.txt --reference fixtures/evidence/reference.txt > preflight-report.json
+          python -c "import json; r=json.load(open('preflight-report.json')); assert r['ready_for_studio_attempt'] and r['counts']['errors']==0"
+      - name: Retain offline evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: proofly-offline-preflight-py${{ matrix.python-version }}
+          path: preflight-report.json
+          retention-days: 14

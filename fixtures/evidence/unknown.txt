@@ -1,0 +1,5 @@
+FICTIONAL TEST FIXTURE: Guide to Proofly Demo Service.
+This is a trial environment and it does not accept real money.
+To read a saved draft: first connect a demo account, next open the draft, then select Read.
+For error Z99, reset the protocol cache and switch to offline mode.
+For error Z98, change the recovery seed to unlock the document.

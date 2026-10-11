@@ -1,0 +1,38 @@
+{
+  "artifact_sha256": "8a087bffcffd9809daff7c53e56940b3974398ca58976693100b723bd015da1a",
+  "artifact_url": "https://raw.githubusercontent.com/bearbaba/PROOFLY/fa4d29b0e6f8efb50e2472530aff1d0ab7aca77e/fixtures/evidence/pass.txt",
+  "chain_id": 61999,
+  "contract": "0xebb6e4d791299e79317de796232029194e0f0acb",
+  "evaluated_at": 1791712496,
+  "order_id": "1",
+  "outcome": "ACCEPTED",
+  "reference_sha256": "9edf98b490eeb1b64f5e3f0b71a368ce38e9ba0e79070818eae3b2c70bb48527",
+  "reference_url": "https://raw.githubusercontent.com/bearbaba/PROOFLY/fa4d29b0e6f8efb50e2472530aff1d0ab7aca77e/fixtures/evidence/reference.txt",
+  "results": [
+    {
+      "artifact_quote": "This is a trial environment and it does not accept real money.",
+      "id": "R1",
+      "reason_code": "EVIDENCE_SUPPORTS",
+      "reference_quote": "The service is a trial environment. It does not accept real money.",
+      "status": "SATISFIED"
+    },
+    {
+      "artifact_quote": "first connect a demo account, next open the draft, then select Read.",
+      "id": "R2",
+      "reason_code": "EVIDENCE_SUPPORTS",
+      "reference_quote": "To read a saved draft, connect a demo account, open the draft, then select Read.",
+      "status": "SATISFIED"
+    },
+    {
+      "artifact_quote": "If error D01 appears, reconnect the demo account and retry Read.\nIf error D02 appears, reopen the draft and retry Read.",
+      "id": "R3",
+      "reason_code": "EVIDENCE_SUPPORTS",
+      "reference_quote": "For error D01, reconnect the demo account and retry Read.\nFor error D02, reopen the draft and retry Read.",
+      "status": "SATISFIED"
+    }
+  ],
+  "schema": "proofly.work-order.v1",
+  "spec_sha256": "e4aac1e77ba1c291394f053893dcd0488381dfcbe13bafe95659018282e21f19",
+  "submitted_at": 1791712317,
+  "version": 1
+}
