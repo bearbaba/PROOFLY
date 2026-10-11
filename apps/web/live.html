@@ -65,7 +65,7 @@
 <button id="loadDemo" type="button" class="secondary">Fill example requirements</button>
 <form id="createForm" novalidate autocomplete="off">
 <div class="field"><label for="jobTitle">WORK ORDER TITLE</label><input id="jobTitle" maxlength="120" required placeholder="e.g. Write a simple user guide"></div>
-<div class="field"><label for="jobContributor">CONTRIBUTOR WALLET</label><input id="jobContributor" required spellcheck="false" placeholder="0x… address of the person doing the work"><p class="hint">A different wallet from yours. The contributor will accept and submit the work.</p></div>
+<div class="field"><label for="jobContributor">CONTRIBUTOR WALLET</label><input id="jobContributor" required spellcheck="false" autocomplete="off" aria-describedby="contributorHint" placeholder="0x… address of the person doing the work"><p class="hint" id="contributorHint">Enter a different 0x wallet address from yours. The contributor will accept and submit the work.</p><button id="fillDemoContributor" type="button" class="secondary demo-contributor">Use sample contributor (demo only)</button></div>
 <div class="field"><label for="jobReference">AGREED REFERENCE DOCUMENT</label><input id="jobReference" required spellcheck="false" placeholder="Permanent public GitHub raw .txt URL"><p class="hint">For verifiable evidence, the current contract requires a publicly readable GitHub .txt file pinned to a commit. You can use the demo example to test the flow.</p></div>
 <button id="verifyReference" type="button" class="secondary">Verify reference & calculate hash</button>
 <p class="hint" id="referenceStatus" role="status" aria-live="polite">No document verified yet. The SHA-256 is calculated automatically.</p>

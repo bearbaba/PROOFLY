@@ -29,6 +29,7 @@ function isSuccessful(tx) {
 const HEX = /^0x[0-9a-fA-F]{64}$/;
 const STORAGE_KEY = "proofly.studionet.61999.pending";
 const DEMO_REFERENCE = "https://raw.githubusercontent.com/bearbaba/PROOFLY/fa4d29b0e6f8efb50e2472530aff1d0ab7aca77e/fixtures/evidence/reference.txt";
+const DEMO_CONTRIBUTOR = "0xd6b8a3a5eb329410d9504784812b8569afa8c2af";
 let verifiedReference = null;
 let verifiedArtifact = null;
 let candidateOrder = null;
@@ -225,6 +226,10 @@ function refreshCreateForm() {
   try{pending=localStorage.getItem(STORAGE_KEY);}catch{}
   if(HEX.test(String(pending||""))) message="A previous transaction is unresolved. Track its hash before creating another work order.";
   else if(!wallet) message="Connect your wallet first.";
+  else if(!/^0x[0-9a-fA-F]{40}$/.test($("jobContributor").value.trim()))
+    message="Enter the Contributor Wallet: a valid 0x address with 40 hexadecimal characters.";
+  else if($("jobContributor").value.trim().toLowerCase()===wallet.toLowerCase())
+    message="Contributor must be another wallet, not your connected Owner wallet.";
   else if(!verifiedReference ||
       verifiedReference.url!==$("jobReference").value.trim())
     message="Verify the public reference document to calculate its SHA-256.";
@@ -241,6 +246,7 @@ function refreshCreateForm() {
   $("createNow").disabled=busy||!ready;
   $("createState").textContent=creationOutcome || message;
   $("createState").classList.toggle("empty",!ready);
+  $("jobContributor").setAttribute("aria-invalid", wallet && !/^0x[0-9a-fA-F]{40}$/.test($("jobContributor").value.trim()) ? "true" : "false");
 }
 function loadDemoRequirements(){
   $("jobTitle").value="PROOFLY Demo - User Guide Verification";
@@ -510,6 +516,12 @@ async function track() {
 }
 $("loadOrder").addEventListener("click",loadOrder);
 $("loadDemo").addEventListener("click",loadDemoRequirements);
+$("fillDemoContributor").addEventListener("click",()=>{
+  $("jobContributor").value=DEMO_CONTRIBUTOR;
+  creationOutcome=null;
+  refreshCreateForm();
+  $("jobContributor").focus();
+});
 $("verifyReference").addEventListener("click",verifyReference);
 $("createNow").addEventListener("click",createNewOrder);
 $("createForm").addEventListener("submit",event=>event.preventDefault());

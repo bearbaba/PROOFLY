@@ -21,3 +21,6 @@
 .advanced-info summary{cursor:pointer;font-weight:800}
 .advanced-info a{text-decoration:underline}
 @media(max-width:420px){.deadline-grid{grid-template-columns:1fr}}
+
+.demo-contributor{font-size:12px;margin-top:6px;white-space:normal;text-align:left}
+#jobContributor[aria-invalid="true"]{border-color:#c78475}

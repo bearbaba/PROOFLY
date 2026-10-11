@@ -34,3 +34,11 @@ test("untrusted reference URL fails closed before hashing or wallet write",async
   await expect(page.locator("#referenceStatus")).toContainText("commit-pinned GitHub");
   await expect(page.locator("#createNow")).toBeDisabled();
 });
+
+test("sample contributor button is clearly labeled and fills known demo wallet",async({page})=>{
+  await page.goto("/",{waitUntil:"domcontentloaded"});
+  await expect(page.locator("#fillDemoContributor")).toBeVisible();
+  await page.locator("#fillDemoContributor").click();
+  await expect(page.locator("#jobContributor")).toHaveValue("0xd6b8a3a5eb329410d9504784812b8569afa8c2af");
+  await expect(page.locator("#createNow")).toBeDisabled(); // no wallet signature automatically
+});
