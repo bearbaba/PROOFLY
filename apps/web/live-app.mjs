@@ -166,6 +166,7 @@ function walletChanged(message) {
   $("connectWallet").textContent = "Connect wallet ↗";
   if (currentOrder) renderOrder();
   refreshAction();
+  refreshCreateForm();
 }
 async function connectWallet() {
   if (busy) return;
@@ -194,6 +195,7 @@ async function connectWallet() {
     $("connectWallet").textContent = "Reconnect / switch account";
     renderOrder();
     refreshAction();
+    refreshCreateForm();
   } catch(error) { walletChanged(String(error?.message || error)); showError(error,$("walletState")); }
   finally { setBusy(false); }
 }
@@ -217,7 +219,10 @@ function refreshCreateForm() {
   if(!$("createNow")) return;
   let message;
   let ready=false;
-  if(!wallet) message="Connect your wallet first.";
+  let pending=null;
+  try{pending=localStorage.getItem(STORAGE_KEY);}catch{}
+  if(HEX.test(String(pending||""))) message="A previous transaction is unresolved. Track its hash before creating another work order.";
+  else if(!wallet) message="Connect your wallet first.";
   else if(!verifiedReference ||
       verifiedReference.url!==$("jobReference").value.trim())
     message="Verify the public reference document to calculate its SHA-256.";
@@ -291,9 +296,10 @@ async function createNewOrder(){
     const next=await readFinal("next_order",[]);
     if(!/^[1-9][0-9]*$/.test(String(next)))
       throw new Error("Next order ID could not be read from finalized chain state.");
-    candidateOrder={id:String(next),title:fields.title,owner:wallet,
+    const planned={id:String(next),title:fields.title,owner:wallet,
       contributor:fields.contributor.toLowerCase()};
     const sent=await gateway.submit("create_order",args,hash=>{
+      candidateOrder=planned;
       $("txHash").value=hash;
       try{localStorage.setItem(STORAGE_KEY,hash);}catch{}
       showTx("SUBMITTED — CHECK FINALITY",hash);
@@ -306,7 +312,7 @@ async function createNewOrder(){
         "\nThis is not escrow or a payment.\n\nProceed to wallet approval?");
     });
     $("createState").textContent="Transaction submitted! Expected work order #"+
-      candidateOrder.id+". Click Track finality to confirm. Do not create again while pending.";
+      planned.id+". Click Track finality to confirm. Do not create again while pending.";
     showTx("CREATION SUBMITTED — TRACK FINALITY",sent.txId);
     $("txResult").scrollIntoView({behavior:"smooth",block:"start"});
   }catch(error){showError(error,$("createState"));}
