@@ -17,7 +17,7 @@ export function myWorkSummary(records,account) {
   return records.filter(o=>o?.id && (o.owner?.toLowerCase()===a || o.contributor?.toLowerCase()===a))
     .sort((x,y)=>Number(y.id)-Number(x.id)).map(order=>({
       order,
-      role:order.owner.toLowerCase()===a?"owner":"contributor",
+      role:String(order.owner||"").toLowerCase()===a?"owner":"contributor",
       next:recommendedOperation(order,account)
     }));
 }
