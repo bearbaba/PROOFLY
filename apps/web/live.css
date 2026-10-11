@@ -65,6 +65,7 @@ column-gap:32px;row-gap:13px;grid-template-areas:
 "info info"
 "extra extra"
 "sign sign"
+"notice notice"
 "advanced advanced"
 "foot foot"}
 .workspace-wallet .heading{grid-area:heading;margin-bottom:0}
@@ -107,3 +108,9 @@ column-gap:32px;row-gap:13px;grid-template-areas:
 @media(max-width:900px){.workspace-grid{grid-template-columns:1fr}.technical-content{grid-template-columns:1fr}.workspace-wallet{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
 @media(max-width:640px){.app-shell{gap:16px}.workspace-grid{gap:16px}.panel{padding:20px}.workspace-wallet{display:flex;flex-direction:column;align-items:stretch;gap:14px}.workspace-wallet .soft,.workspace-wallet #connectWallet,.workspace-wallet #walletState{max-width:none}.next-step{min-height:unset}.hero{padding:31px 0 22px}.hero h1{font-size:36px}.hero-row{gap:8px}.hero-row b{font-size:13px}.strip{flex-wrap:wrap}.technical-drawer>summary{padding:16px}.technical-content{padding:0 10px 10px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+
+.txn-notice{grid-area:notice;background:#e6f8f0;color:#145e54;border:1px solid #9dd3c2;border-radius:11px;padding:11px 14px;font-size:12px;display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+.txn-notice[hidden]{display:none}
+.txn-notice span{font-family:monospace;font-size:11px}
+.txn-notice a{font-weight:800;color:#087e89;text-decoration:underline;margin-left:auto}
+#technicalTransaction .result{font-size:12px}
