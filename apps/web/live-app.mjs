@@ -189,6 +189,12 @@ async function refreshMyWork({autoOpen=true}={}) {
     boardItems=result.items;
     lastBoardWallet=account;
     renderMyWork(result.items);
+    // A refreshed finalized record is the source of truth. Update status,
+    // role and recommended action without manual "Load order" clicks.
+    const selected=result.items.find(x=>String(x.order.id)===String(currentOrderId));
+    if(selected && currentOrder?.status!==selected.order.status) {
+      openVerifiedOrder(selected.order.id,selected.order);
+    }
     $("myWorkStatus").textContent=result.items.length ?
       result.items.length+" linked work order(s) · recent "+result.scanned+" checked"+
       (result.errors?" · "+result.errors+" RPC read(s) unavailable":"") :
@@ -268,7 +274,7 @@ async function loadOrder() {
     }
     $("receiptResult").textContent = "Click Read finalized Proof Receipt to inspect results.";
   } catch(error) { showError(error,$("orderResult")); }
-  finally { setBusy(false); }
+  finally { setBusy(false); if(wallet && !boardBusy) void refreshMyWork({autoOpen:false}); }
 }
 async function loadReceipt() {
   if (busy) return;
@@ -599,6 +605,7 @@ function parameters() {
 }
 async function submit() {
   if (busy) return;
+  let trackedHash=null;
   setBusy(true);
   try {
     requireWallet();
@@ -624,8 +631,14 @@ async function submit() {
         "\n\nContinue to MetaMask cost review and signing? No automatic retries.");
     });
     showTx(r.status,r.txId);
+    trackedHash=r.txId;
   } catch(error) {showError(error);}
-  finally { setBusy(false); }
+  finally {
+    setBusy(false);
+    // Read-only transaction tracking follows wallet approval automatically.
+    // Never trigger another signature or retry this transaction.
+    if(trackedHash)window.setTimeout(()=>{if(!busy)void track();},0);
+  }
 }
 async function track() {
   if (busy) return;
@@ -716,9 +729,16 @@ async function track() {
     }
   } catch(error){
     showError(new Error("Tracking unresolved or failed: " + String(error?.message||error)+". Check transaction hash before retrying."));
-  } finally {setBusy(false);}
+  } finally {
+    setBusy(false);
+    if(wallet)void refreshMyWork({autoOpen:false});
+  }
 }
-$("loadOrder").addEventListener("click",loadOrder);
+$("loadOrder").addEventListener("click",()=>{
+  userPickedOrder=true;
+  void loadOrder();
+});
+$("refreshMyWork").addEventListener("click",()=>{void refreshMyWork({autoOpen:false});});
 $("loadDemo").addEventListener("click",loadDemoRequirements);
 $("fillDemoContributor").addEventListener("click",()=>{
   $("jobContributor").value=DEMO_CONTRIBUTOR;
@@ -783,7 +803,21 @@ try {
   }
 }catch{}
 if(window.ethereum?.on) {
-  window.ethereum.on("accountsChanged",()=>walletChanged("Wallet account changed. Reconnect before signing."));
-  window.ethereum.on("chainChanged",()=>walletChanged("Wallet network changed. Reconnect to Studionet."));
+  window.ethereum.on("accountsChanged",accounts=>{
+    if(!Array.isArray(accounts)||!accounts.length) {
+      walletChanged("No wallet selected. Connect a wallet to act.");
+      return;
+    }
+    void bindAuthorizedWallet(accounts).catch(error=>walletChanged(String(error?.message||error)));
+  });
+  window.ethereum.on("chainChanged",()=>{
+    // Revalidate silently. No wallet signature, Snap, or requestAccounts prompt.
+    void syncAuthorizedWallet();
+  });
 }
 refreshExtras();
+void syncAuthorizedWallet();
+window.setInterval(()=>{
+  if(document.visibilityState!=="visible" || busy || boardBusy)return;
+  if(wallet)void refreshMyWork({autoOpen:false});
+},45000);
