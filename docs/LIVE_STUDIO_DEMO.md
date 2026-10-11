@@ -109,3 +109,30 @@ python -m packages.receipt \\
 is included. The complete Studio manual workflow has a successful
 reported final state; this does **not** mean the hosted UI has actual
 wallet/RPC integration or all outcome branches have been tested.
+
+
+## Live production browser RPC proof — observed 2026-10-11
+
+After merging the `genlayer-js@1.1.8` wallet SDK compatibility fix,
+Vercel reported a READY production deployment of commit `f14305f1` on
+https://proofly-lovat.vercel.app/.
+
+The owner provided two subsequent browser text readbacks from that website:
+
+1. Connected EIP-1193 account
+   `0x4c7cb73ac8f8999af21cfc9ff4cf2333a9508dcb` on Studionet
+   61999, with role `owner`. The website's finalized `get_order("1")`
+   view showed `COMPLETED`, one submission and submission
+   outcome `ACCEPTED`. The Owner was correctly blocked from the
+   Contributor-only `accept_order` write.
+2. The site's finalized `get_receipt("1",1)` panel displayed
+   `Proof Receipt / v1`, `ACCEPTED`, `3 / 3 SATISFIED`,
+   `CONSISTENT`, `CHAIN=61999`, and local timestamp
+   `16:54:56 11/10/2026` (UTC+7), consistent with the archived
+   receipt's `evaluated_at=1791712496`.
+
+These results support live production **wallet connection and two public
+contract RPC read paths**. The site has not yet been proven to send,
+finalize and execute a **new signed write transaction** end-to-end.
+Explorer-authenticated transaction hashes, adversarial case live tests
+and deployed-source attestation remain separately outstanding.

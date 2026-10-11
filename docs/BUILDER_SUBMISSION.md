@@ -5,9 +5,13 @@ The Vercel production domain has been confirmed READY at commit
 `f14305f1`, containing the MetaMask SDK compatibility fix. The project
 owner reported a real browser-wallet connection on GenLayer Studionet
 (chain ID 61999) and a successful live finalized `get_order("1")`
-readback showing `COMPLETED` and submission `ACCEPTED`. The website's
-`get_receipt("1",1)` button and a fresh signed transaction have not
-yet been demonstrated, so full hosted E2E write capability remains unverified.
+readback showing `COMPLETED` and submission `ACCEPTED`. The owner has since confirmed that the deployed website's
+`get_receipt("1",1)` returned business outcome `ACCEPTED`,
+`3 / 3 SATISFIED`, aggregation `CONSISTENT`, chain ID `61999`,
+and the expected evaluated time `2026-10-11 16:54:56` local UTC+7
+(`evaluated_at=1791712496` from the archived Studio receipt).
+A fresh signed write through the hosted website has NOT yet been
+demonstrated, so full hosted E2E write capability remains unverified.
 
 This is an honest, reviewer-ready description of the **manual Studionet
 demo** and the reproducible public source. The submitter must select a
@@ -139,9 +143,16 @@ Studionet 61999, role `owner`, and an actual
 `outcome=ACCEPTED`. The browser UI correctly blocks owner access to
 the Contributor-only `accept_order` action.
 
-**Still outstanding:** independently validate the on-website
-`get_receipt("1",1)` response and conduct a new explicitly authorized
-wallet-signed write, fee review and finalized execution check.
+**Website receipt read also confirmed (owner-provided 2026-10-11):**
+`Proof Receipt / v1`, `ACCEPTED`, `3 / 3 SATISFIED`,
+`CONSISTENT`, chain `61999`, evaluated `16:54:56 11/10/2026`.
+These displayed fields match the earlier full Studio receipt. This is
+evidence of the hosted website's real RPC read, not a new proof of
+validator source-code integrity or a signed website transaction.
+
+**Still outstanding:** a fresh explicitly authorized
+wallet-signed write, actual wallet fee review, transaction-hash capture,
+and finalized execution check.
 The previous Vercel API daily-deployment limit was an intermittent
 deployment blocker, not an application defect; it was bypassed by the
 owner's successful manual production deployment.
@@ -159,7 +170,7 @@ owner's successful manual production deployment.
 - [ ] Optional screen recording of two-wallet flow and stored
       Proof Receipt, linked here after recording.
 - [x] Verify public deployed homepage and finalized RPC read in a real browser (owner-provided transcript, 2026-10-11).
-- [ ] Verify website's `get_receipt("1",1)` read against the archived receipt.
+- [x] Verify website's `get_receipt("1",1)` summary matches the archived receipt (owner-provided browser readback, 2026-10-11).
 - [ ] Verify an actual EIP-1193 injected-wallet signature, fee confirmation and tx receipt.
 - [ ] Actual portal submission confirmation/link.
 

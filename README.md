@@ -8,7 +8,7 @@ Project owners and contributors agree on clear requirements before work begins. 
 
 **Builder review:** [Submission-ready technical overview](docs/BUILDER_SUBMISSION.md) · [Live Studio success case](docs/LIVE_STUDIO_DEMO.md).
 
-[**Open the Studionet live-workflow console**](apps/web/live.html) (requires a web deployment) · [Builder submission](docs/BUILDER_SUBMISSION.md).
+[**Open PROOFLY live on Studionet**](https://proofly-lovat.vercel.app/) · [Builder submission](docs/BUILDER_SUBMISSION.md).
 
 ## Core workflow
 
@@ -224,3 +224,16 @@ offline tests and browser rendering. End-to-end signed wallet / RPC
 compatibility is pending user-authenticated testing after deployment.
 Do not confuse this new wallet-enabled integration with an already
 verified hosted production app.
+
+
+### Browser RPC acceptance check (2026-10-11)
+
+The user confirmed that the Vercel production site connects their
+Studionet Owner MetaMask account, reads order #1 as
+`COMPLETED`/`ACCEPTED`, and reads Proof Receipt v1 as
+`ACCEPTED` with **3/3 SATISFIED** and **CONSISTENT** aggregation.
+The receipt timestamp matches the archived Studio result.
+See [manual evidence](docs/LIVE_STUDIO_DEMO.md) and
+[Builder handoff](docs/BUILDER_SUBMISSION.md).
+A fresh real wallet-signed write on the deployed website, third-party
+Explorer attestation and negative-case live evaluation remain unverified.
