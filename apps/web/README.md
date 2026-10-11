@@ -1,6 +1,6 @@
 # PROOFLY — browser-only Spec Builder preview
 
-This page is a **local, offline specification drafting prototype**.
+The Spec Builder at `/builder.html` is a **local, offline specification drafting prototype**. The site homepage `/` is now a separate, wallet-capable Studionet console.
 It does not connect a wallet, deploy contracts, upload files, call LLMs,
 read public URLs or produce a finalized proof receipt.
 
@@ -10,7 +10,7 @@ From the repository root:
 
     python -m http.server 4173 --directory apps/web
 
-Visit http://localhost:4173 . This must be served over HTTP, not by
+Visit http://localhost:4173/builder.html for the offline Spec Builder, or `/` for the live console (after `npm run bundle`). This must be served over HTTP, not by
 double-clicking index.html, because the browser loads JavaScript modules.
 
 No install required for the preview itself. For JS unit tests (Node 22+):
