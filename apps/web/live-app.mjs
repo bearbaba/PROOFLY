@@ -544,36 +544,50 @@ async function track() {
       // Preserve pending local transaction hash, protecting users from repeats.
       return;
     }
-    try {localStorage.removeItem(STORAGE_KEY);} catch {}
     if (verdict.kind === "failed") {
-      textPair($("txResult"),"NEXT STEP","Read GenVM execution error and revert reason on Explorer before considering a new attempt.");
-    }
-    const ok = verdict.kind === "success";
-    // Read the latest finalized state only after checking execution.
-    if (ok && candidateOrder) {
       try{
-        const proposed=await readFinal("get_order",[candidateOrder.id]);
-        if(proposed?.owner?.toLowerCase()===candidateOrder.owner &&
-           proposed?.contributor?.toLowerCase()===candidateOrder.contributor &&
-           proposed?.title===candidateOrder.title){
-          $("orderId").value=candidateOrder.id;
-          currentOrderId=candidateOrder.id;
-          currentOrder=proposed;
-          renderOrder();
-          creationOutcome="Work order #"+candidateOrder.id+
-            " created and finalized. Share this order number with your contributor.";
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(CREATE_KEY);
+      }catch{}
+      candidateOrder=null;
+      textPair($("txResult"),"NEXT STEP","GenVM execution failed. Inspect the full error in Explorer before considering a new action.");
+      return;
+    }
+    // Consensus + execution succeeded. Do not assume order ID from a
+    // previous counter snapshot. Recover exactly one matching on-chain order.
+    if(candidateOrder && candidateOrder.hash===hash){
+      try{
+        const found=await discoverCreatedOrder(candidateOrder,readFinal);
+        if(found.status==="verified"){
+          openVerifiedOrder(found.order.id,found.order);
+          creationOutcome="Work order #"+found.order.id+" created. Share its link with the contributor.";
+          $("createState").textContent=creationOutcome;
+          textPair($("txResult"),"ON-CHAIN ORDER","#"+found.order.id+" / "+found.order.status);
           candidateOrder=null;
-        }else{
-          $("createState").textContent="Transaction finalized, but the proposed order ID could not be confirmed. Check on-chain orders before another write.";
+          try{
+            localStorage.removeItem(STORAGE_KEY);
+            localStorage.removeItem(CREATE_KEY);
+          }catch{}
+          $("orderHandoff").scrollIntoView({behavior:"smooth",block:"center"});
+          return;
         }
-      }catch(error){showError(error,$("createState"));}
-    } else if (ok && currentOrderId) {
-      try {
-        currentOrder = await readFinal("get_order",[currentOrderId]);
-        renderOrder();
-        currentReceipt = null;
-        $("receiptResult").textContent = "Refresh receipt after successful evaluation.";
-      } catch(error){showError(error,$("orderResult"));}
+        textPair($("txResult"),"ORDER IDENTIFICATION","Execution succeeded; on-chain order not uniquely confirmed ("+found.status+"). Keep the hash. PROOFLY will not guess an ID or resend.");
+      }catch(error){
+        textPair($("txResult"),"ORDER IDENTIFICATION","Could not read the new order: "+String(error?.message||error)+". Keep the hash and retry tracking later.");
+      }
+      // Preserve pending metadata: user can reload and resume reads safely.
+      return;
+    }
+    try{
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(CREATE_KEY);
+    }catch{}
+    if(currentOrderId){
+      try{
+        const order=await readFinal("get_order",[currentOrderId]);
+        if(order)openVerifiedOrder(currentOrderId,order);
+        $("receiptResult").textContent="Refresh receipt after successful evaluation.";
+      }catch(error){showError(error,$("orderResult"));}
     }
   } catch(error){
     showError(new Error("Tracking unresolved or failed: " + String(error?.message||error)+". Check transaction hash before retrying."));
