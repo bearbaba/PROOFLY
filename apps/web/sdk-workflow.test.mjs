@@ -44,7 +44,7 @@ test("fails closed without verified nonzero address and SDK semantics", () => {
   }), /nonzero/);
   assert.throws(() => createWorkflowGateway({
     client:{}, contractAddress:CONTRACT, finalVariant:"LATEST_FINAL", isSuccessful:()=>true
-  }), /compatible initialized/);
+  }), /does not support contract reads/);
   const {client} = fake();
   assert.throws(() => createWorkflowGateway({
     client,contractAddress:CONTRACT,isSuccessful:()=>true
