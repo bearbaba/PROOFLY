@@ -123,3 +123,5 @@ footer { border-top: 1px solid var(--line); padding: 23px 0 35px; display: flex;
 @media (max-width: 740px) { .shell { padding: 0 16px; } .nav { padding: 16px 0; } .nav-actions { gap: 12px; } .hero { padding: 46px 0; grid-template-columns: 1fr; } .hero h1 { font-size: clamp(37px, 8.3vw, 57px); } .hero p { font-size: 16px; } .hero-visual { display: none; } .card { padding: 20px 16px; } .section-heading { flex-wrap: wrap; } .next-stage { grid-template-columns: 1fr; } .form-grid { grid-template-columns: 1fr; } .field.full { grid-column: auto; } }
 @media (max-width: 450px) { .env { font-size: 9px; } .docs-link { font-size: 10px; } .form-foot { flex-direction: column; align-items: stretch; } .form-foot > span { text-align: center; } footer { flex-direction: column; gap: 5px; } .stage-steps { grid-template-columns: 1fr; } }
 @media (prefers-reduced-motion: reduce) { *,*::before,*::after { transition: none !important; scroll-behavior: auto !important; } }
+
+@media (max-width: 450px) { .nav { flex-wrap: wrap; align-items: flex-start; } .nav-actions { width: 100%; justify-content: space-between; gap: 9px; flex-wrap: wrap; } }
