@@ -3,7 +3,7 @@
  * fabricated verdicts. No write occurs unless wallet, confirmation and fee
  * estimate are all explicitly provided by the user.
  */
-import { createClient, isSuccessful } from "genlayer-js";
+import { createClient } from "genlayer-js";
 import { studionet } from "genlayer-js/chains";
 import { TransactionHashVariant } from "genlayer-js/types";
 import { createWorkflowGateway, makeRead } from "./sdk-workflow.mjs";
@@ -20,6 +20,13 @@ let currentOrder = null;
 let currentOrderId = null;
 let currentReceipt = null;
 let busy = false;
+// Stable genlayer-js@1.1.8 does not export the newer isSuccessful helper.
+// Enforce the protocol's two-part success condition rather than trusting a
+// FINALIZED status alone. Unknown SDK transaction shape must fail closed.
+function isSuccessful(tx) {
+  return ["ACCEPTED", "FINALIZED"].includes(String(tx?.statusName || "")) &&
+    tx?.txExecutionResultName === "FINISHED_WITH_RETURN";
+}
 const HEX = /^0x[0-9a-fA-F]{64}$/;
 const STORAGE_KEY = "proofly.studionet.61999.pending";
 
