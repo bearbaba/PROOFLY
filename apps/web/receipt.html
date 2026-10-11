@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="theme-color" content="#f7f9fb">
+  <meta name="description" content="PROOFLY offline receipt integrity inspector. Local files only; no GenLayer finality verification.">
+  <title>Proof Receipt Inspector — PROOFLY</title>
+  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./receipt.css">
+</head>
+<body>
+  <div class="shell">
+    <nav class="nav" aria-label="Main navigation">
+      <a class="brand" href="./" aria-label="PROOFLY home"><span class="brand-mark">P</span>PROOFLY</a>
+      <div class="nav-actions">
+        <a class="docs-link" href="./">← Spec Builder</a>
+        <span class="env">OFFLINE / NO RPC</span>
+        <a class="docs-link" href="https://github.com/bearbaba/PROOFLY" target="_blank" rel="noopener noreferrer">GitHub ↗</a>
+      </div>
+    </nav>
+    <header class="receipt-hero">
+      <div class="eyebrow">PROOFLY / PROOF RECEIPT INSPECTOR</div>
+      <h1>Inspect the proof.<br><em>Verify the bytes.</em></h1>
+      <p>Check that a supplied work order, versioned receipt, artifact and reference fit together cryptographically — directly in your browser.</p>
+    </header>
+    <div class="notice" role="note">
+      <span class="notice-symbol">!</span>
+      <p><strong>Offline integrity is not onchain verification.</strong> This tool cannot establish where the JSON came from, authenticate the GenLayer contract, verify network finality, or prove the AI judgment was correct. Independently compare records against a finalized transaction from a trusted RPC/explorer. No files are uploaded or fetched.</p>
+    </div>
+    <main class="receipt-layout">
+      <section class="card" aria-labelledby="inputHeading">
+        <div class="section-heading">
+          <div><div class="eyebrow">INPUT / LOCAL FILES</div><h2 id="inputHeading">Load receipt bundle</h2></div>
+        </div>
+        <p class="section-desc">Export <code>get_order</code> and <code>get_receipt</code> as JSON, and obtain the exact original text bytes. The four files remain in your browser.</p>
+        <form id="receiptForm">
+          <div class="receipt-fields">
+            <div class="field"><label for="orderFile">01 · WORK ORDER JSON</label><input type="file" id="orderFile" accept=".json,application/json" required></div>
+            <div class="field"><label for="receiptFile">02 · RECEIPT JSON</label><input type="file" id="receiptFile" accept=".json,application/json" required></div>
+            <div class="field"><label for="artifactFile">03 · ARTIFACT TEXT</label><input type="file" id="artifactFile" accept=".txt,text/plain" required></div>
+            <div class="field"><label for="referenceFile">04 · REFERENCE TEXT</label><input type="file" id="referenceFile" accept=".txt,text/plain" required></div>
+          </div>
+          <button class="primary-button receipt-action" type="submit" id="verifyButton">Inspect local bundle <span>→</span></button>
+        </form>
+        <p id="message" role="status" aria-live="polite" class="action-message"></p>
+      </section>
+      <aside class="card receipt-summary" aria-labelledby="resultHeading">
+        <div class="eyebrow">INTEGRITY RESULT</div>
+        <h2 id="resultHeading">Local verification</h2>
+        <p class="receipt-result" id="verdict" data-state="idle">Not checked</p>
+        <div id="summary" class="summary-grid">
+          <div><span>Checked assertions</span><strong id="passedCount">—</strong></div>
+          <div><span>Integrity errors</span><strong id="errorCount">—</strong></div>
+        </div>
+        <p class="inspector-caption">Successful checks establish only consistency among the supplied files. A forged bundle can pass without ever being onchain.</p>
+      </aside>
+    </main>
+    <section class="card findings" aria-labelledby="findingsHeading" hidden id="findingsSection">
+      <div class="section-heading"><div><div class="eyebrow">RESULT / BREAKDOWN</div><h2 id="findingsHeading">Evidence audit</h2></div></div>
+      <div id="errors" class="issue-list" aria-live="polite"></div>
+      <dl class="proof-meta" id="metadata"></dl>
+      <div id="requirements" class="receipt-requirements"></div>
+      <p class="inspector-caption">Claimed onchain status, validator agreement, fee and finality are intentionally not displayed as verified.</p>
+    </section>
+    <footer><span>PROOFLY / OFFLINE RECEIPT TOOL</span><span>No wallet · No uploads · No real-money support</span></footer>
+  </div>
+  <script type="module" src="./receipt.mjs"></script>
+</body>
+</html>

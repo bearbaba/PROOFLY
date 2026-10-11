@@ -127,3 +127,25 @@ JavaScript unit and syntax checks (Node 22+):
 It can be deployed to a Vercel static preview using the root vercel.json,
 but **it has no wallet, backend, stored user data, real LLM verdict, or
 GenLayer RPC integration yet**. This UI is not a production verification app.
+
+
+## Offline Receipt Inspector — browser
+
+The static preview also includes a **Proof Receipt Inspector** at
+`/receipt.html`. Upload work-order JSON, receipt JSON and both source
+documents to verify local SHA-256 commitments, quote presence, version
+binding and result aggregation. All files are processed in the browser
+without uploading them to a server. The inspector rejects duplicate JSON
+keys and renders untrusted text using safe DOM text nodes.
+
+Run the static preview from the repository root:
+
+    python -m http.server 4173 --directory apps/web
+
+Then open `http://localhost:4173/receipt.html`.
+Run unit and browser tests using the commands in
+[apps/web/README.md](apps/web/README.md).
+
+**A consistent receipt bundle is NOT proof of GenLayer deployment, authenticity,
+consensus, finality or semantic truth.** Live network verification remains an
+explicit unfinished release gate.

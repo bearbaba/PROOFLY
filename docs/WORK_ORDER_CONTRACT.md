@@ -93,3 +93,18 @@ Run all offline regression tests with:
 
 A green mocked test suite does not prove successful deployment, semantic
 quality, consensus robustness, rollback or finality.
+
+
+## Browser-based offline receipt inspection
+
+A complementary inspector is available at `apps/web/receipt.html` via the
+static web preview. It checks the integrity of the supplied four-file bundle
+without uploads or wallet access. It is independently tested using Node and
+Playwright. It never authenticates provenance or finality and should not be
+presented as an onchain explorer.
+
+The authoritative offline reference remains `python -m packages.receipt`.
+The browser verifies the core digest, quote, status and version invariants
+using browser Web Crypto. For network-authenticated evidence, compare records
+against a trusted finalized GenLayer RPC/explorer result manually until a
+separately tested network adapter is available.

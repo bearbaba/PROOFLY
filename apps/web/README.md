@@ -58,3 +58,21 @@ bad URL/hash and mobile overflow. It stubs only Google Fonts for stability.
 The GitHub Actions workflow runs these cases on changes to apps/web.
 The tests do not simulate wallet, contract, chain finality or true evidence
 consensus; those belong to a separate live integration milestone.
+
+
+## Offline Proof Receipt Inspector
+
+Visit `http://localhost:4173/receipt.html` (or use **Receipt Inspector**
+in the main navigation). Upload four files: JSON from `get_order`, JSON
+from `get_receipt`, the original artifact TXT, and the original reference
+TXT. The browser rejects duplicate JSON keys and malformed files, recomputes
+the version/contract/chain-bound spec commitment, hashes both documents,
+checks literal citations and verifies deterministic outcome aggregation.
+
+The inspector never sends uploaded bytes anywhere, makes no RPC requests and
+does **not** authenticate JSON provenance, GenLayer consensus or transaction
+finality. An attacker can fabricate four internally consistent files. Always
+compare exported records with finalized trusted network state separately.
+
+Both Node tests and Playwright browser tests cover tampering, malformed JSON,
+HTML injection, mobile display and the explicit offline boundary.
