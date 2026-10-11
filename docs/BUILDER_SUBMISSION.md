@@ -1,6 +1,9 @@
 # PROOFLY — GenLayer Builder contribution submission
 
-**Submission status: CANDIDATE PACKAGE READY; PORTAL SUBMISSION NOT YET CONFIRMED.**
+**Submission status: HOLD — web wallet connection fix has passed CI on main,
+but the Vercel production domain is still serving an older commit because
+the deployment API reached the account's daily 100-deployment limit (402).
+Portal submission NOT YET CONFIRMED.**
 
 This is an honest, reviewer-ready description of the **manual Studionet
 demo** and the reproducible public source. The submitter must select a
@@ -113,6 +116,22 @@ python -m packages.receipt \
 
 The offline verifier must never be represented as chain finality
 or independent blockchain provenance verification.
+
+## Current production deployment caveat (2026-10-11)
+
+A browser wallet-connect attempt at https://proofly-lovat.vercel.app/
+reported `A compatible initialized GenLayer SDK client is required`.
+The root cause was the website requiring newer SDK methods that do not
+exist in pinned `genlayer-js@1.1.8`. The fix was merged on main
+(`2e804b02`) and passed Python + Node/browser GitHub Actions.
+
+**The Vercel domain still serves commit `f3f7329`**, without the fix.
+A deploy attempt returned HTTP 402, resource
+`api-deployments-free-per-day`, retry-after 86400 seconds. Do not
+claim that signed browser writes work on the hosted site until Vercel
+deploys `2e804b02` (or later) and an actual browser-wallet smoke test
+succeeds. No payment token, private key or wallet seed should be
+provided for this fix.
 
 ## Reviewer evidence still to collect
 
