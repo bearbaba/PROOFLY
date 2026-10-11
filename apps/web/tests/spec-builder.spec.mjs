@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises";
 test.beforeEach(async ({ page }) => {
   // Keep the browser suite deterministic even without third-party font CDNs.
   await page.route(/https:\/\/fonts\.(?:googleapis|gstatic)\.com\//, route => route.abort());
-  await page.goto("/", { waitUntil: "domcontentloaded" });
+  await page.goto("/builder.html", { waitUntil: "domcontentloaded" });
 });
 
 test("loads a visibly offline, structurally valid sample", async ({ page }) => {

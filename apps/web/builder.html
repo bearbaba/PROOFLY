@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="description" content="PROOFLY — Agree on the work. Verify the evidence. Offline specification builder prototype.">
+  <meta name="theme-color" content="#f7f9fb">
+  <title>PROOFLY — Offline Spec Builder</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="shell">
+    <nav class="nav" aria-label="Main navigation">
+      <a class="brand" href="./" aria-label="PROOFLY home"><span class="brand-mark">P</span>PROOFLY</a>
+      <div class="nav-actions">
+        <span class="env"><span class="env-dot"></span>LOCAL PROTOTYPE</span>
+        <a class="docs-link" href="./">Live Studionet ↗</a>
+        <a class="docs-link" href="./receipt.html">Receipt Inspector ↗</a>
+        <a class="docs-link" href="https://github.com/bearbaba/PROOFLY" target="_blank" rel="noopener noreferrer">GitHub ↗</a>
+      </div>
+    </nav>
+
+    <header class="hero">
+      <div>
+        <div class="eyebrow"><span class="pulse"></span> EVIDENCE-FIRST WORK VERIFICATION</div>
+        <h1>Agree on the work.<br><em>Prove the outcome.</em></h1>
+        <p>Make acceptance criteria clear before work begins. Build an evidence-ready specification you can review, share and eventually lock through GenLayer.</p>
+        <div class="hero-meta">
+          <span>01 / Define</span><span class="arrow">→</span>
+          <span>02 / Validate</span><span class="arrow">→</span>
+          <span>03 / Export</span>
+        </div>
+      </div>
+      <div class="hero-visual" aria-hidden="true">
+        <div class="proof-badge">PROOF / 001</div>
+        <div class="proof-rail"><span class="dot ok"></span><span class="rule"></span><span class="dot ok"></span><span class="rule"></span><span class="dot pending"></span></div>
+        <div class="visual-lines">
+          <div><span class="check">✓</span><span class="skeleton wide"></span></div>
+          <div><span class="check">✓</span><span class="skeleton medium"></span></div>
+          <div><span class="pending-symbol">?</span><span class="skeleton short"></span></div>
+        </div>
+        <div class="visual-footer"><span>EVIDENCE</span><strong>NOT YET VERIFIED</strong></div>
+      </div>
+    </header>
+
+    <div class="notice" role="note">
+      <span class="notice-symbol">i</span>
+      <p><strong>Build preview, not a live dApp.</strong> This page runs structural checks in your browser. It does not connect a wallet, upload documents, verify source hashes online, execute GenLayer consensus or create onchain receipts.</p>
+    </div>
+
+    <main class="workspace">
+      <section class="editor card" aria-labelledby="editor-heading">
+        <div class="section-heading">
+          <div><div class="eyebrow">WORKSPACE / NEW SPEC</div><h2 id="editor-heading">Create a work order</h2></div>
+          <button type="button" class="quiet-button" id="fillSample">Load example ↗</button>
+        </div>
+        <form id="specForm" novalidate>
+          <div class="section-label"><span class="section-index">01</span><span>Work details</span></div>
+          <div class="form-grid">
+            <div class="field full"><label for="title">WORK ORDER TITLE</label><input id="title" name="title" maxlength="120" placeholder="e.g. Developer onboarding documentation" required autocomplete="off"></div>
+            <div class="field full"><label for="contributor">CONTRIBUTOR WALLET</label><input id="contributor" name="contributor" placeholder="0x…" spellcheck="false" autocomplete="off" required></div>
+            <div class="field full"><label for="source">REFERENCE URL · COMMIT PINNED</label><input id="source" name="reference_url" placeholder="https://raw.githubusercontent.com/.../commit/...txt" spellcheck="false" autocomplete="off" required></div>
+            <div class="field full"><label for="sourceHash">REFERENCE SHA-256</label><input id="sourceHash" name="reference_sha256" placeholder="64 lowercase hex characters" spellcheck="false" autocomplete="off" required></div>
+          </div>
+          <div class="section-label"><span class="section-index">02</span><span>Acceptance criteria</span></div>
+          <p class="section-desc">Write 3–5 observable conditions. Avoid vague promises like “professional” or “high quality”. No AI scores are generated here.</p>
+          <div id="criteria" class="criteria-list"></div>
+          <button type="button" id="addCriterion" class="add-button">+ Add another criterion <span id="criterionCount">3 / 5</span></button>
+          <div class="section-label"><span class="section-index">03</span><span>Time window</span></div>
+          <div class="form-grid">
+            <div class="field"><label for="submitDeadline">SUBMISSION DEADLINE</label><input id="submitDeadline" type="datetime-local" required></div>
+            <div class="field"><label for="revisionDeadline">REVISION DEADLINE</label><input id="revisionDeadline" type="datetime-local" required></div>
+          </div>
+          <div class="form-foot">
+            <button class="primary-button" type="submit" id="validateButton">Review specification <span>→</span></button>
+            <span>Nothing is transmitted from this page.</span>
+          </div>
+        </form>
+      </section>
+
+      <aside class="inspector card" aria-labelledby="inspector-heading">
+        <div class="section-heading">
+          <div><div class="eyebrow">PREFLIGHT / OFFLINE</div><h2 id="inspector-heading">Spec health</h2></div>
+          <span id="healthBadge" class="health-badge">Needs review</span>
+        </div>
+        <div class="meter"><div id="healthBar" class="meter-bar"></div></div>
+        <div class="metric-pair">
+          <div class="metric"><span>BLOCKING ISSUES</span><strong id="errorCount">—</strong></div>
+          <div class="metric"><span>ADVISORY NOTES</span><strong id="warningCount">—</strong></div>
+        </div>
+        <div id="issues" class="issues" aria-live="polite"></div>
+        <div class="inspector-divider"></div>
+        <div class="eyebrow">SPEC PREVIEW</div>
+        <div class="preview-meta"><span>Schema</span><code>proofly.offline-draft.v1</code></div>
+        <div class="preview-meta"><span>Requirements</span><strong id="criteriaPreview">—</strong></div>
+        <div class="preview-meta"><span>Security</span><strong>Public source only</strong></div>
+        <div class="inspector-divider"></div>
+        <p class="inspector-caption">An exported draft is unsigned. Only a successfully deployed GenLayer contract and finalized transaction can establish an accepted onchain specification.</p>
+        <button id="exportButton" class="secondary-button" disabled>Export JSON draft <span>↓</span></button>
+        <button id="copyButton" class="text-button" disabled>Copy specification JSON</button>
+        <button id="studioButton" class="text-button" disabled>Export Studio call plan (unsigned) ↗</button>
+        <p id="actionMessage" role="status" aria-live="polite" class="action-message"></p>
+      </aside>
+    </main>
+
+    <section class="next-stage">
+      <div>
+        <div class="eyebrow">WHAT COMES NEXT</div>
+        <h2>From clear requirements<br>to verifiable acceptance.</h2>
+      </div>
+      <div class="stage-steps">
+        <div><span>01</span><strong>Agree</strong><small>Both parties approve the same specification</small></div>
+        <div><span>02</span><strong>Submit</strong><small>Attach hash-pinned public evidence</small></div>
+        <div><span>03</span><strong>Verify</strong><small>GenLayer independently evaluates each criterion</small></div>
+        <div><span>04</span><strong>Receipt</strong><small>Inspect immutable, versioned acceptance evidence</small></div>
+      </div>
+    </section>
+
+    <footer><span>PROOFLY / WORK IN PROGRESS</span><span>Evidence over assumption. No real-money support.</span></footer>
+  </div>
+  <script type="module" src="./app.mjs"></script>
+</body>
+</html>

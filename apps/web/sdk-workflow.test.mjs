@@ -110,3 +110,18 @@ test("invalid saved transaction ID is rejected before network read", async () =>
   await assert.rejects(()=>gateway.resumeFinalization("0xbad"),IntegrationError);
   assert.equal(calls.length,0);
 });
+
+test("explicit fee review cancellation blocks signing",async()=>{
+  const {gateway,calls}=fake();
+  await assert.rejects(()=>gateway.submit("evaluate_submission",["2"],null,estimate=>{
+    assert.equal(estimate.feeValue,22n);
+    return false;
+  }),/cancelled/);
+  assert.deepEqual(calls.map(x=>x[0]),["estimate"]);
+});
+test("fee review approval submits exactly once",async()=>{
+  const {gateway,calls}=fake();
+  const r=await gateway.submit("evaluate_submission",["2"],null,()=>true);
+  assert.equal(r.status,"SUBMITTED_NOT_FINAL");
+  assert.deepEqual(calls.map(x=>x[0]),["estimate","write"]);
+});

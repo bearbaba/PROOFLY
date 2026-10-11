@@ -27,9 +27,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - name: Static syntax checks
+      - name: Install pinned SDK and build tool
         working-directory: apps/web
-        run: npm run build
+        run: npm install --no-audit --no-fund
+      - name: Static syntax checks and bundled live client
+        working-directory: apps/web
+        run: npm run build && npm run bundle
       - name: Specification logic regressions
         working-directory: apps/web
         run: npm test
@@ -48,6 +51,9 @@ jobs:
       - name: Install browser
         working-directory: apps/web
         run: npx playwright install --with-deps chromium
+      - name: Bundle verified live client
+        working-directory: apps/web
+        run: npm run bundle
       - name: Run browser regressions
         working-directory: apps/web
         run: npm run test:browser

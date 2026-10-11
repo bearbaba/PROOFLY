@@ -1,6 +1,6 @@
 # PROOFLY — browser-only Spec Builder preview
 
-This page is a **local, offline specification drafting prototype**.
+The Spec Builder at `/builder.html` is a **local, offline specification drafting prototype**. The site homepage `/` is now a separate, wallet-capable Studionet console.
 It does not connect a wallet, deploy contracts, upload files, call LLMs,
 read public URLs or produce a finalized proof receipt.
 
@@ -10,7 +10,7 @@ From the repository root:
 
     python -m http.server 4173 --directory apps/web
 
-Visit http://localhost:4173 . This must be served over HTTP, not by
+Visit http://localhost:4173/builder.html for the offline Spec Builder, or `/` for the live console (after `npm run bundle`). This must be served over HTTP, not by
 double-clicking index.html, because the browser loads JavaScript modules.
 
 No install required for the preview itself. For JS unit tests (Node 22+):
@@ -91,3 +91,37 @@ It does not verify public evidence URLs or send a transaction.
 The SDK gateway is intentionally **not wired into the preview UI** until
 live Studio proof has established runtime/chain/ABI compatibility.
 See [Studio integration runbook](../../docs/SDK_WORKFLOW.md).
+
+
+## Live Studionet console (wallet-backed, experimental)
+
+After \`npm install && npm run bundle\` in \`apps/web\`, open
+\`/live.html\` alongside the existing offline Spec Builder.
+
+- Read \`get_order\` and \`get_receipt\` from \`LATEST_FINAL\` using
+  \`genlayer-js@1.1.8\`, pointing at the **actual** contract deployed to
+  Studionet chain ID 61999.
+- Use an injected EIP-1193 wallet (e.g., MetaMask) to opt into the
+  chain and authenticate writes. The site never generates or holds
+  wallet secrets. Studio's built-in **local development accounts are not
+  automatically available as injected browser wallets**.
+- Owner \`create_order\` imports a validated, unsigned call-plan JSON
+  from the offline Spec Builder; accepted spec digest is loaded from chain.
+- Contributor \`accept_order\` and \`submit_evidence\` are permission-gated
+  in UI and rechecked inside the contract. \`evaluate_submission\`
+  is permissionless; \`cancel_order\` is owner-only.
+- Fee estimation and explicit confirmation occur **before** signing.
+  Submitted tx hashes are retained for manual finality tracking.
+  The UI does not automatically resend on a timeout.
+- FINALIZED and GenVM SUCCESS must be confirmed separately before
+  showing final execution success; readback is refreshed afterward.
+- Unknown RPC/CORS/fee/provider errors are shown, not hidden by
+  fallbacks, mocked balances or offline receipts.
+
+The compiled \`live.bundle.js\` is a build artifact, not checked into Git.
+Production/preview builds bundle pinned SDK dependencies in Vercel.
+The UI has not yet undergone a signed browser-wallet end-to-end test;
+**do not report production readiness until a real injected-wallet
+transaction and finalized read have been verified on the deployment**.
+
+\`npm run bundle\` requires network access to install npm dependencies.
