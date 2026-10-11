@@ -30,6 +30,7 @@ const HEX = /^0x[0-9a-fA-F]{64}$/;
 const STORAGE_KEY = "proofly.studionet.61999.pending";
 const DEMO_REFERENCE = "https://raw.githubusercontent.com/bearbaba/PROOFLY/fa4d29b0e6f8efb50e2472530aff1d0ab7aca77e/fixtures/evidence/reference.txt";
 let verifiedReference = null;
+let verifiedArtifact = null;
 let candidateOrder = null;
 
 function elem(tag, text, className) {
@@ -336,8 +337,37 @@ function refreshExtras() {
   const root = $("actionExtra");
   root.replaceChildren();
   if (op === "submit_evidence") {
-    root.append(field("PUBLIC COMMIT-PINNED ARTIFACT URL","artifactUrl","https://raw.githubusercontent.com/.../commit/...txt"),
-      field("ARTIFACT SHA-256 / LOWERCASE HEX","artifactHash","64 lowercase hex characters"));
+    verifiedArtifact=null;
+    root.append(field("PUBLIC DELIVERABLE LINK","artifactUrl","Permanent public GitHub raw .txt URL"));
+    const verify=document.createElement("button");
+    verify.type="button";verify.className="secondary";verify.textContent="Verify deliverable automatically";
+    const example=document.createElement("button");
+    example.type="button";example.className="secondary";example.textContent="Use sample deliverable";
+    example.addEventListener("click",()=>{
+      $("artifactUrl").value="https://raw.githubusercontent.com/bearbaba/PROOFLY/fa4d29b0e6f8efb50e2472530aff1d0ab7aca77e/fixtures/evidence/pass.txt";
+      verifiedArtifact=null;
+      $("artifactStatus").textContent="Example loaded. Click Verify deliverable automatically.";
+    });
+    const status=elem("p","Verification pending. PROOFLY calculates the content hash for you.","hint");
+    status.id="artifactStatus";
+    root.append(example,verify,status);
+    $("artifactUrl").addEventListener("input",()=>{
+      verifiedArtifact=null;
+      status.textContent="Link changed. Verify again before signing.";
+    });
+    verify.addEventListener("click",async()=>{
+      if(busy)return;
+      setBusy(true);
+      try{
+        const url=$("artifactUrl").value.trim();
+        const hash=await hashPublicReference(url);
+        verifiedArtifact={url,hash};
+        status.textContent="Document verified. SHA-256: "+hash;
+      }catch(error){
+        verifiedArtifact=null;
+        status.textContent=String(error?.message||error);
+      }finally{setBusy(false);}
+    });
   }
   if (op === "create_order") {
     root.append(field("PASTE EXPORTED UNSIGNED STUDIO CALL PLAN","planJson","Paste the JSON exported from Spec Builder","textarea"));
@@ -361,7 +391,7 @@ function refreshAction() {
   let explanation = "";
   if (op === "create_order") explanation = "Create a new order as connected Owner from a reviewed Spec Builder plan. You must control the wallet.";
   if (op === "accept_order") explanation = "Requires Contributor wallet, an existing PROPOSED order, and its exact on-chain spec hash.";
-  if (op === "submit_evidence") explanation = "Requires Contributor wallet and ACTIVE or REVIEWED order. Evidence is PUBLIC and immutable.";
+  if (op === "submit_evidence") explanation = "As the contributor, share a permanent public deliverable link. PROOFLY verifies its hash automatically.";
   if (op === "evaluate_submission") explanation = "Permissionless AI + independent validators. Requires SUBMITTED order. Fees may be significant.";
   if (op === "cancel_order") explanation = "Requires Owner and PROPOSED order. This cannot be reversed.";
   if (op === "close_expired") explanation = "Permissionless closing after the revision deadline; only certain states allow it.";
@@ -390,8 +420,11 @@ function parameters() {
   if (!currentOrder || currentOrderId !== id) throw new Error("Read the finalized order before signing.");
   if (op === "submit_evidence" && !isPinnedUrl($("artifactUrl")?.value?.trim()))
     throw new Error("Only public 40-character commit-pinned GitHub raw TXT URLs are allowed.");
+  if(op==="submit_evidence" &&
+     (!verifiedArtifact || verifiedArtifact.url!==$("artifactUrl").value.trim()))
+    throw new Error("Verify the current deliverable link before signing.");
   const args = preparedAction(op,id,currentOrder,{
-    artifact_url:$("artifactUrl")?.value,artifact_sha256:$("artifactHash")?.value
+    artifact_url:$("artifactUrl")?.value,artifact_sha256:verifiedArtifact?.hash
   });
   return {op,args};
 }
@@ -401,6 +434,11 @@ async function submit() {
   try {
     requireWallet();
     const {op,args} = parameters();
+    if(op==="submit_evidence") {
+      const fresh=await hashPublicReference(verifiedArtifact.url);
+      if(fresh!==verifiedArtifact.hash)
+        throw new Error("Deliverable bytes changed. Verify the link again before signing.");
+    }
     const r = await gateway.submit(op,args,hash=>{
       $("txHash").value = hash;
       try {localStorage.setItem(STORAGE_KEY,hash);} catch {}
