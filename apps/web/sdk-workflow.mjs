@@ -1,3 +1,4 @@
+import {inspectTransaction} from "./tx-verdict.mjs";
 /**
  * Minimal GenLayer SDK adapter for PROOFLY's work-order candidate.
  *
@@ -157,16 +158,18 @@ export function createWorkflowGateway({ client, contractAddress, finalVariant, i
           note: "Network wait failed or timed out. Resume this transaction ID, never blindly resend.",
           error: String(error?.message || error) };
       }
-      // Even finalized consensus can contain a contract execution failure.
-      const success = isSuccessful(tx);
+      // Never confuse "unable to decode execution" with execution ERROR.
+      // Only explicitly normalized FINALIZED + FINISHED_WITH_RETURN succeeds.
+      const verdict = inspectTransaction(tx);
       return {
         txId,
-        status: success ? "FINALIZED_SUCCESS" : "FINALIZED_EXECUTION_FAILED",
-        final: true,
-        executionSuccessful: Boolean(success),
-        statusName: typeof tx?.statusName === "string" ? tx.statusName : null,
-        executionResultName: typeof tx?.txExecutionResultName === "string" ?
-          tx.txExecutionResultName : null
+        status: verdict.kind === "success" ? "FINALIZED_SUCCESS" :
+          verdict.kind === "failed" ? "FINALIZED_EXECUTION_FAILED" :
+          "FINALIZED_VERDICT_UNKNOWN",
+        final: verdict.finalized,
+        executionSuccessful: verdict.kind === "success",
+        statusName: verdict.consensus,
+        executionResultName: verdict.execution
       };
     }
   });

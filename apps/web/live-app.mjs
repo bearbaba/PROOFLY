@@ -6,6 +6,7 @@
 import { createClient } from "genlayer-js";
 import { studionet } from "genlayer-js/chains";
 import { TransactionHashVariant, TransactionStatus } from "genlayer-js/types";
+import {inspectTransaction} from "./tx-verdict.mjs";
 import { createWorkflowGateway, makeRead } from "./sdk-workflow.mjs";
 import { isPinnedUrl } from "./model.mjs";
 import { CONTRACT, CHAIN_ID, EXPLORER, parseStudioPlan, decodeRead,
@@ -23,8 +24,7 @@ let busy = false;
 // Enforce the protocol's two-part success condition rather than trusting a
 // FINALIZED status alone. Unknown SDK transaction shape must fail closed.
 function isSuccessful(tx) {
-  return ["ACCEPTED", "FINALIZED"].includes(String(tx?.statusName || "")) &&
-    tx?.txExecutionResultName === "FINISHED_WITH_RETURN";
+  return inspectTransaction(tx).kind === "success";
 }
 const HEX = /^0x[0-9a-fA-F]{64}$/;
 const STORAGE_KEY = "proofly.studionet.61999.pending";
@@ -477,13 +477,43 @@ async function track() {
     const tx = typeof readClient.waitForFinalization === "function" ?
       await readClient.waitForFinalization({hash}) :
       await readClient.waitForTransactionReceipt({
-        hash, status: TransactionStatus.FINALIZED, fullTransaction: false
+        hash, status: TransactionStatus.FINALIZED, fullTransaction: true
       });
-    const ok = isSuccessful(tx);
-    showTx(ok ? "FINALIZED / EXECUTION SUCCESS" : "FINALIZED / EXECUTION FAILED",hash);
-    textPair($("txResult"),"CONSENSUS",String(tx?.statusName || "Inspect transaction record"));
-    textPair($("txResult"),"EXECUTION",String(tx?.txExecutionResultName || (ok ? "SUCCESS" : "ERROR")));
+    let verdict = inspectTransaction(tx);
+    // The pinned GenLayerJS 1.1.8 simplified receipt renames statusName
+    // to status_name and can omit execution fields. Attempt a full
+    // independent SDK read rather than displaying a fabricated ERROR.
+    if (verdict.kind === "unverified" && typeof readClient.getTransaction === "function") {
+      try {
+        const extended = await readClient.getTransaction({hash});
+        const inspected = inspectTransaction(extended);
+        if (inspected.kind === "success" || inspected.kind === "failed")
+          verdict = inspected;
+      } catch (_) { /* Full receipt remains unknown; never fake failure. */ }
+    }
+    const outcome = verdict.kind === "success" ? "FINALIZED / EXECUTION SUCCESS" :
+      verdict.kind === "failed" ? "FINALIZED / EXECUTION FAILED" :
+      verdict.kind === "unverified" ? "FINALIZED / EXECUTION NOT VERIFIED" :
+      "TRANSACTION STATUS NOT VERIFIED";
+    showTx(outcome,hash);
+    textPair($("txResult"),"CONSENSUS",verdict.consensus);
+    textPair($("txResult"),"EXECUTION",verdict.execution);
+    const explorer = document.createElement("a");
+    explorer.href = EXPLORER + "/tx/" + hash;
+    explorer.target = "_blank";
+    explorer.rel = "noopener noreferrer";
+    explorer.textContent = "Inspect original transaction and GenVM logs in Explorer ↗";
+    $("txResult").append(explorer);
+    if (verdict.kind !== "success" && verdict.kind !== "failed") {
+      textPair($("txResult"),"NEXT STEP","Receipt lacks enough detail to classify execution. Keep this hash, check Explorer and do NOT resend.");
+      // Preserve pending local transaction hash, protecting users from repeats.
+      return;
+    }
     try {localStorage.removeItem(STORAGE_KEY);} catch {}
+    if (verdict.kind === "failed") {
+      textPair($("txResult"),"NEXT STEP","Read GenVM execution error and revert reason on Explorer before considering a new attempt.");
+    }
+    const ok = verdict.kind === "success";
     // Read the latest finalized state only after checking execution.
     if (ok && candidateOrder) {
       try{

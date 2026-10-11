@@ -167,3 +167,20 @@ test("legacy 1.1.8 requires explicit cost warning before any signed write",async
   assert.equal(final.status,"FINALIZED_SUCCESS");
   assert.deepEqual(calls[1][1],{hash:TXID,status:"FINALIZED",fullTransaction:false});
 });
+
+test("legacy simplified receipt with missing execution evidence is unknown, not FAILED",async()=>{
+  const calls=[];
+  const client={
+    readContract:async()=>"",
+    writeContract:async()=>TXID,
+    waitForTransactionReceipt:async args=>{calls.push(args);return {status_name:"FINALIZED"};}
+  };
+  const gateway=createWorkflowGateway({client,contractAddress:CONTRACT,finalVariant:"latest-final",
+    isSuccessful:()=>false});
+  const state=await gateway.resumeFinalization(TXID);
+  assert.equal(state.status,"FINALIZED_VERDICT_UNKNOWN");
+  assert.equal(state.final,true);
+  assert.equal(state.executionSuccessful,false);
+  assert.equal(state.statusName,"FINALIZED");
+  assert.equal(state.executionResultName,"UNKNOWN");
+});
