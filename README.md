@@ -149,3 +149,18 @@ Run unit and browser tests using the commands in
 **A consistent receipt bundle is NOT proof of GenLayer deployment, authenticity,
 consensus, finality or semantic truth.** Live network verification remains an
 explicit unfinished release gate.
+
+
+## Studio create_order export and SDK workflow boundary
+
+The static Spec Builder can now export an **unsigned** `create_order` call
+plan containing the exact seven method arguments, suitable for manual review
+and entry into GenLayer Studio. The source data is not uploaded and no
+transaction is sent. A client-injected SDK gateway validates allowed methods,
+requests finalized-state reads, estimates fees before a single write, and
+tracks finalization separately from contract execution success.
+
+**The gateway uses test doubles in CI and is not connected to a real wallet.**
+Read [SDK and Studio integration runbook](docs/SDK_WORKFLOW.md) before any
+attempt to deploy or submit a transaction. Neither the export nor the tests
+establish a live GenLayer deployment, finality, or an accepted work order.

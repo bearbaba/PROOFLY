@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "test": "node --test *.test.mjs",
-    "build": "node --check app.mjs && node --check model.mjs && node --check receipt.mjs && node --check receipt-model.mjs",
+    "build": "node --check app.mjs && node --check model.mjs && node --check receipt.mjs && node --check receipt-model.mjs && node --check studio-plan.mjs && node --check sdk-workflow.mjs",
     "test:browser": "playwright test"
   },
   "devDependencies": {

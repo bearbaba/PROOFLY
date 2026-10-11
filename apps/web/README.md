@@ -76,3 +76,18 @@ compare exported records with finalized trusted network state separately.
 
 Both Node tests and Playwright browser tests cover tampering, malformed JSON,
 HTML injection, mobile display and the explicit offline boundary.
+
+
+## Studio call-plan export (unsigned)
+
+When the Spec Builder draft passes offline checks, select **Export Studio
+call plan (unsigned)**. The downloaded JSON maps directly to the seven
+arguments of `ProoflyWorkOrder.create_order` in the order expected by the
+candidate GenLayer contract. The criteria argument is a JSON **string**.
+The export contains no contract address, wallet signature, tx ID or verdict.
+It does not verify public evidence URLs or send a transaction.
+
+`studio-plan.mjs` and `sdk-workflow.mjs` have isolated Node tests.
+The SDK gateway is intentionally **not wired into the preview UI** until
+live Studio proof has established runtime/chain/ABI compatibility.
+See [Studio integration runbook](../../docs/SDK_WORKFLOW.md).

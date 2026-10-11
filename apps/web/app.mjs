@@ -1,4 +1,5 @@
 import { validateDraft, normalizeDraft } from "./model.mjs";
+import { createStudioPlan } from "./studio-plan.mjs";
 
 const $ = selector => document.querySelector(selector);
 const SAMPLE_REFERENCE = "https://raw.githubusercontent.com/bearbaba/PROOFLY/" +
@@ -121,6 +122,7 @@ function update() {
   $("#healthBar").className = "meter-bar" + (report.valid ? " is-valid" : "");
   $("#exportButton").disabled = !report.valid;
   $("#copyButton").disabled = !report.valid;
+  $("#studioButton").disabled = !report.valid;
   showIssues(report);
   return report;
 }
@@ -167,6 +169,26 @@ $("#exportButton").addEventListener("click", () => {
   a.remove();
   URL.revokeObjectURL(objectURL);
   $("#actionMessage").textContent = "Unsigned JSON draft exported. No transaction was submitted.";
+});
+
+$("#studioButton").addEventListener("click", () => {
+  const report = update();
+  if (!report.valid) return;
+  try {
+    const plan = createStudioPlan(draft());
+    const data = JSON.stringify(plan, null, 2) + "\n";
+    const url = URL.createObjectURL(new Blob([data], { type: "application/json" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "proofly-studio-create-order-unsigned.json";
+    document.body.append(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    $("#actionMessage").textContent = "Unsigned Studio call plan exported. No wallet was accessed or transaction submitted.";
+  } catch (error) {
+    $("#actionMessage").textContent = "Studio call plan not ready: " + String(error?.message || error);
+  }
 });
 
 $("#copyButton").addEventListener("click", async () => {

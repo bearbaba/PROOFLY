@@ -79,3 +79,25 @@ test("bad reference URL and hash cannot be exported", async ({ page }) => {
   await expect(page.locator("#issues")).toContainText("reference_url");
   await expect(page.locator("#issues")).toContainText("reference_sha256");
 });
+
+test("exports exact seven-argument Studio call plan without submitting transactions", async ({ page }) => {
+  await expect(page.locator("#studioButton")).toBeEnabled();
+  const downloadPromise = page.waitForEvent("download");
+  await page.locator("#studioButton").click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toBe("proofly-studio-create-order-unsigned.json");
+  const plan = JSON.parse(await readFile(await download.path(), "utf8"));
+  expect(plan.functionName).toBe("create_order");
+  expect(plan.schema).toBe("proofly.studio-create-order.v1");
+  expect(plan.args).toHaveLength(7);
+  expect(typeof plan.args[2]).toBe("string");
+  expect(JSON.parse(plan.args[2])).toHaveLength(3);
+  expect(plan.stage).toBe("UNSIGNED_CALL_PLAN");
+  expect(plan).not.toHaveProperty("transactionHash");
+  expect(plan).not.toHaveProperty("contract_address");
+  await expect(page.locator("#actionMessage")).toContainText("No wallet was accessed");
+});
+test("invalid spec blocks Studio call export", async ({ page }) => {
+  await page.locator("#sourceHash").fill("nope");
+  await expect(page.locator("#studioButton")).toBeDisabled();
+});
