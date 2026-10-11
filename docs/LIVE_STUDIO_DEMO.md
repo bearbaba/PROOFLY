@@ -25,7 +25,7 @@ deployed bytecode attestation has been collected yet.**
 | `submit_evidence` | readback showed `SUBMITTED`, submitted_at 1791712317 |
 | `evaluate_submission` | Studio transaction history showed green FINALIZED and consensus ACCEPTED |
 | `get_receipt("1", 1)` | **Nonempty returned receipt**: business outcome **ACCEPTED**, 3/3 SATISFIED, evaluated_at 1791712496 |
-| `get_order("1")` after evaluation | **PENDING READBACK**; expected `COMPLETED` and first submission outcome `ACCEPTED` |
+| `get_order("1")` after evaluation | **CONFIRMED IN USER-PROVIDED ACCEPTED-STATE READBACK**: `COMPLETED`, `submissions[0].outcome=ACCEPTED`; [order JSON](evidence/studionet-order-1-completed.json) |
 
 ### Actual per-requirement verdicts
 
@@ -62,8 +62,9 @@ The fixtures are **fictional documentation**, not real customers or funds.
 
 ## Reviewer follow-up / release gates
 
-1. Read `get_order("1")` after evaluation, and preserve the complete JSON.
-   Confirm `status=COMPLETED` and `submissions[0].outcome=ACCEPTED`.
+1. **DONE (user-provided Studio readback):** `get_order("1")` now reports
+   `status=COMPLETED`, `submissions[0].outcome=ACCEPTED`. Full normalized
+   [order archive](evidence/studionet-order-1-completed.json).
 2. Capture the **complete** deployment, create, accept, submit and evaluate
    transaction hashes; verify onchain FINALIZED **and GenVM execution SUCCESS**.
 3. Confirm deployed source matches the pinned `work_order.py` candidate.
@@ -76,3 +77,35 @@ The fixtures are **fictional documentation**, not real customers or funds.
 
 For the historical first-deployment ABI error, see
 [DEPLOYMENT_EVIDENCE.md](DEPLOYMENT_EVIDENCE.md).
+
+
+## Final Accepted-state readback — observed 2026-10-11
+
+The user subsequently ran `Read Methods → get_order("1")` with
+**State = Accepted** and supplied the full response. Its final
+`status` is **COMPLETED** and first submission has
+`outcome` **ACCEPTED**, matching `get_receipt("1",1)`.
+
+Archive: [docs/evidence/studionet-order-1-completed.json](evidence/studionet-order-1-completed.json).
+The original pasted response rendered GitHub raw URLs as Markdown links;
+the archive normalizes those two URLs to the exact raw, commit-pinned URLs
+already recorded in earlier unambiguous readbacks and the receipt. All other
+fields are transcribed from the final Studio response.
+
+**Reproducible offline evidence integrity test** (does not verify RPC or
+chain finality):
+
+```bash
+python -m unittest tests.test_studio_evidence -v
+python -m packages.receipt \\
+  --order docs/evidence/studionet-order-1-completed.json \\
+  --receipt docs/evidence/studionet-order-1-receipt.json \\
+  --artifact fixtures/evidence/pass.txt \\
+  --reference fixtures/evidence/reference.txt
+```
+
+`packages.receipt` should report `valid=true` and
+`chain_finality_verified=false` until independent Explorer/RPC proof
+is included. The complete Studio manual workflow has a successful
+reported final state; this does **not** mean the hosted UI has actual
+wallet/RPC integration or all outcome branches have been tested.

@@ -159,5 +159,19 @@ their respective public documents. Full result:
 [LIVE_STUDIO_DEMO.md](LIVE_STUDIO_DEMO.md) and
 [receipt JSON](evidence/studionet-order-1-receipt.json).
 
-**Still pending:** final `get_order("1")` readback, complete tx IDs,
-explorer-authenticated finality/execution checks and adversarial live cases.
+**Final accepted-state readback subsequently received:** `get_order("1")`
+returned `COMPLETED` and `submissions[0].outcome=ACCEPTED`; normalized
+[archived order JSON](evidence/studionet-order-1-completed.json).
+**Still pending:** full tx IDs, independent Explorer confirmation of
+finality/execution, deployed code verification and adversarial live cases.
+
+
+## Final order readback — 2026-10-11
+
+The owner supplied a full `get_order("1")` response while Studio was set
+ to **Accepted** state: **`status=COMPLETED`**, first submission
+ **`outcome=ACCEPTED`**, `accepted_at=1791712092`,
+ `submitted_at=1791712317`. The full normalized JSON is stored in
+ [docs/evidence/studionet-order-1-completed.json](evidence/studionet-order-1-completed.json).
+ Together with the preceding Proof Receipt this completes a **user-reported
+ manual Studio successful workflow**; it is not an independent RPC attestation.

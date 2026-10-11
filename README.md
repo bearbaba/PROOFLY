@@ -46,8 +46,10 @@ requirements/evidence preflight, deterministic unit tests and CI.
 
 **Manual Studio evidence is now available:** on 2026-10-11, a PROOFLY
 work-order instance on Studionet (chain ID 61999) returned a user-reported
-Proof Receipt with three SATISFIED criteria and ACCEPTED business outcome.
-See [Live Studio demo](docs/LIVE_STUDIO_DEMO.md) and the archived
+Proof Receipt with three SATISFIED criteria and ACCEPTED business outcome,
+and a subsequent Accepted-state `get_order("1")` returned `COMPLETED`.
+See [Live Studio demo](docs/LIVE_STUDIO_DEMO.md), archived
+[completed order](docs/evidence/studionet-order-1-completed.json) and
 [receipt JSON](docs/evidence/studionet-order-1-receipt.json).
 Explorer-independent execution proof, later state readback, hosted wallet
 integration and security audit are still pending. The separate verifier spike
@@ -183,3 +185,21 @@ and reads timestamp from GenVM transaction context. Deploy a **new instance**
 from the updated source; the previous deployment is not patched onchain.
 See [Work Order contract notes](docs/WORK_ORDER_CONTRACT.md) and
 [Deployment evidence](docs/DEPLOYMENT_EVIDENCE.md).
+
+
+### Reproduce first successful Studio evidence bundle offline
+
+A full owner-create → contributor-accept → submit-evidence → AI-evaluate →
+completed-order demonstration was reported from Studio on Studionet.
+Both actual Studio JSON readbacks are archived with original public fixture
+bytes in the repo. Recheck the bundle locally:
+
+```bash
+python -m unittest tests.test_studio_evidence -v
+python -m packages.receipt --order docs/evidence/studionet-order-1-completed.json --receipt docs/evidence/studionet-order-1-receipt.json --artifact fixtures/evidence/pass.txt --reference fixtures/evidence/reference.txt
+```
+
+**This validates offline integrity; not chain finality or semantic correctness.**
+The Studio screenshot shows the evaluation as FINALIZED but complete tx IDs,
+independent Explorer validation, other verdict branches and wallet-enabled
+hosted app integration remain unfinished.
