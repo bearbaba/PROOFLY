@@ -582,7 +582,21 @@ function refreshAction() {
     (op === "submit_evidence" && ["ACTIVE","REVIEWED"].includes(currentOrder?.status)) ||
     (op === "evaluate_submission" && currentOrder?.status === "SUBMITTED") ||
     (op === "cancel_order" && currentOrder?.status === "PROPOSED");
-  $("actionInfo").textContent = explanation + (!wallet ? " Connect a wallet first." : !needed ? " Load a finalized order first." : !correctRole ? " Current wallet is not authorized." : !validState ? " Order state does not allow this call." : "");
+  const waiting=role==="owner" && op==="accept_order" && currentOrder?.status==="PROPOSED";
+  const roleInfo=waiting ? " Waiting for the Contributor wallet to accept this order." :
+    role==="viewer" ? " Connect the assigned wallet to act on this order." :
+    !correctRole ? " This action is not available to your wallet role." : "";
+  $("actionInfo").textContent = explanation + (!wallet ? " Connect your wallet to continue." :
+    !needed ? " Choose a work order from Your work orders above." :
+    roleInfo || (!validState ? " This step is not available in the current order state." : " Ready to review and sign."));
+  const names={
+    accept_order:"Accept this work order →",
+    submit_evidence:"Submit evidence & sign →",
+    evaluate_submission:"Run AI verification →",
+    cancel_order:"Cancel work order →",
+    close_expired:"Close expired order →"
+  };
+  $("writeAction").textContent=names[op]||"Review cost & sign →";
   $("writeAction").disabled = busy || !wallet || !needed || !correctRole || !validState;
 }
 function parameters() {
