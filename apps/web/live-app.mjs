@@ -619,11 +619,44 @@ $("connectWallet").addEventListener("click",connectWallet);
 $("operation").addEventListener("change",refreshExtras);
 $("writeAction").addEventListener("click",submit);
 $("trackTx").addEventListener("click",track);
+$("copyOrderLink").addEventListener("click",async()=>{
+  const link=$("shareOrderUrl").value;
+  if(!link)return;
+  try{
+    await navigator.clipboard.writeText(link);
+    $("copyOrderLink").textContent="Copied ✓";
+  }catch{
+    $("shareOrderUrl").focus();
+    $("shareOrderUrl").select();
+    $("copyOrderLink").textContent="Select the link and copy it";
+  }
+});
 $("orderId").addEventListener("input",refreshAction);
 $("receiptResult").textContent="Read an order first, then select a receipt version.";
 $("txResult").textContent="Only real hashes from signed wallet transactions appear here.";
 refreshCreateForm();
-try { const pending=localStorage.getItem(STORAGE_KEY); if (pending && HEX.test(pending)) $("txHash").value=pending; } catch {}
+// Public deep links and last verified order load without MetaMask prompts.
+const requested=queryOrder(window.location.search);
+let last=null;
+try{last=localStorage.getItem(LAST_ORDER_KEY);}catch{}
+const initial=requested||(/^[1-9][0-9]{0,9}$/.test(last||"")?last:null);
+if(initial){
+  $("orderId").value=initial;
+  void loadOrder();
+}
+// Resume read-only finality monitoring after a page reload. No new signature.
+try {
+  const pending=localStorage.getItem(STORAGE_KEY);
+  if(pending && HEX.test(pending)){
+    $("txHash").value=pending;
+    candidateOrder=restoreCandidate(localStorage.getItem(CREATE_KEY),pending);
+    const resume=()=>{
+      if(!busy)void track();
+      else window.setTimeout(resume,300);
+    };
+    window.setTimeout(resume,0);
+  }
+}catch{}
 if(window.ethereum?.on) {
   window.ethereum.on("accountsChanged",()=>walletChanged("Wallet account changed. Reconnect before signing."));
   window.ethereum.on("chainChanged",()=>walletChanged("Wallet network changed. Reconnect to Studionet."));
