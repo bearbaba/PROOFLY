@@ -64,7 +64,8 @@ def validate(order: Any, receipt: Any, artifact: bytes, reference: bytes) -> dic
     ):
         return _report(errors + ["INVALID_CRITERIA"])
     ids = [row["id"] for row in criteria]
-    check(all(type(x) is str for x in ids) and len(set(ids)) == len(ids), "DUPLICATE_CRITERIA")
+    check(all(type(x) is str for x in ids) and (len(set(ids)) == len(ids)
+          if all(type(x) is str for x in ids) else False), "DUPLICATE_CRITERIA")
 
     envelope = {"policy": POLICY, "chain_id": receipt.get("chain_id"),
                 "contract": receipt.get("contract"), "order_id": order.get("id"),
@@ -118,7 +119,7 @@ def validate(order: Any, receipt: Any, artifact: bytes, reference: bytes) -> dic
         check(result["id"] == ident, "RESULT_ID_ORDER_MISMATCH_" + str(i))
         status = result["status"]
         check(type(status) is str and status in REASONS, "INVALID_STATUS_" + str(i))
-        if status not in REASONS:
+        if type(status) is not str or status not in REASONS:
             continue
         statuses.append(status)
         check(result["reason_code"] == REASONS[status], "REASON_CODE_MISMATCH_" + str(i))

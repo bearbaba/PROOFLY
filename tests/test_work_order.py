@@ -130,6 +130,28 @@ class WorkOrderTests(unittest.TestCase):
         self.assertEqual(self.calls.count(REFERENCE), 2)
         self.assertEqual(self.contract.next_order(), "2")
 
+    def test_contract_receipt_matches_offline_checker(self):
+        from packages.receipt import validate
+        self.accept()
+        self.submit()
+        self.contract.evaluate_submission("1")
+        order = json.loads(self.contract.get_order("1"))
+        receipt = json.loads(self.contract.get_receipt("1", 1))
+        checked = validate(order, receipt, self.blobs[ARTIFACT], self.blobs[REFERENCE])
+        self.assertTrue(checked["valid"], checked)
+        self.assertFalse(checked["chain_finality_verified"])
+
+    def test_accepted_digest_cannot_replay_on_another_order(self):
+        first = self.create()
+        self.contract.create_order(CONTRIBUTOR, "Docs guide", json.dumps(CRITERIA),
+                                   REFERENCE, self.digest(REFERENCE),
+                                   self.now[0] + 3600, self.now[0] + 7200)
+        second = json.loads(self.contract.get_order("2"))
+        self.assertNotEqual(first["spec_sha256"], second["spec_sha256"])
+        self.as_actor(CONTRIBUTOR)
+        with self.assertRaisesRegex(UserError, "SPEC_MISMATCH"):
+            self.contract.accept_order("2", first["spec_sha256"])
+
     def test_authorization_for_accept_submit_and_cancel(self):
         order = self.create()
         with self.assertRaisesRegex(UserError, "ONLY_CONTRIBUTOR"):

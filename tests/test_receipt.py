@@ -100,6 +100,20 @@ class ReceiptTests(unittest.TestCase):
         self.assertFalse(validate([], {}, b"", b"")["valid"])
         self.assertFalse(validate({}, {}, b"", b"")["valid"])
 
+    def test_malformed_status_does_not_crash(self):
+        o, r = fixture()
+        r["results"][0]["status"] = {"unexpected": "type"}
+        result = validate(o, r, ARTEFACT, REFERENCE)
+        self.assertFalse(result["valid"])
+        self.assertIn("INVALID_STATUS_0", result["errors"])
+
+    def test_invalid_criterion_id_type_does_not_crash(self):
+        o, r = fixture()
+        o["spec"]["criteria"][0]["id"] = {"bad": "id"}
+        result = validate(o, r, ARTEFACT, REFERENCE)
+        self.assertFalse(result["valid"])
+        self.assertIn("DUPLICATE_CRITERIA", result["errors"])
+
     def test_duplicate_json_object_keys_fail(self):
         with self.assertRaises(ValueError):
             unique_json(b'{"id":"1","id":"2"}')
