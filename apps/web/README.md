@@ -145,7 +145,7 @@ adapter against a **real** pinned SDK client, not only mocked clients.
 
 ## User-facing creation workflow (no JSON required)
 
-The production homepage includes **Create a work order** directly.
+The latest source homepage includes **Create a work order** directly (the production deployment must be checked separately; at the last verified check it was on an older commit).
 A customer enters a job title, contributor wallet, three objective
 requirements, and a public commit-pinned reference text URL. The browser
 automatically downloads that reference and calculates/verifies its

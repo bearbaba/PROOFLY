@@ -6,9 +6,11 @@ PROOFLY is an evidence-based work verification application built for GenLayer.
 
 Project owners and contributors agree on clear requirements before work begins. Contributors submit deliverables and supporting evidence, and verification produces a result for each requirement.
 
-**Builder review:** [Submission-ready technical overview](docs/BUILDER_SUBMISSION.md) · [Live Studio success case](docs/LIVE_STUDIO_DEMO.md).
+**For Builder reviewers:** [Reviewer evidence and reproduction](REVIEWER_EVIDENCE.md) · [Submission draft](docs/BUILDER_SUBMISSION.md) · [Live Studio evidence](docs/LIVE_STUDIO_DEMO.md).
 
 [**Open PROOFLY live on Studionet**](https://proofly-lovat.vercel.app/) · [Builder submission](docs/BUILDER_SUBMISSION.md).
+
+**Production caveat (2026-10-11):** latest main includes a direct Create Work Order form, but production was still at an earlier build when last verified. Confirm the deployment commit before claiming this UI is live. See [reviewer gates](REVIEWER_EVIDENCE.md).
 
 ## Core workflow
 
@@ -55,8 +57,7 @@ and a subsequent Accepted-state `get_order("1")` returned `COMPLETED`.
 See [Live Studio demo](docs/LIVE_STUDIO_DEMO.md), archived
 [completed order](docs/evidence/studionet-order-1-completed.json) and
 [receipt JSON](docs/evidence/studionet-order-1-receipt.json).
-Explorer-independent execution proof, later state readback, hosted wallet
-integration and security audit are still pending. The separate verifier spike
+Independent Explorer proof, hosted *signed-write* end-to-end validation, and a security audit remain pending. Live Owner wallet connection and finalized order/receipt *reads* have been verified by the user on an earlier Vercel production build. The separate verifier spike
 is NOT the full owner/contributor work-order contract.
 
 ### Run every offline test

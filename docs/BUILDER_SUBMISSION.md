@@ -1,6 +1,8 @@
 # PROOFLY — GenLayer Builder contribution submission
 
-**Submission status: REVIEWER-READY STUDIO PROTOTYPE; PORTAL NOT SUBMITTED.**
+**Start here:** [Reviewer Evidence & reproduction checklist](../REVIEWER_EVIDENCE.md).
+
+**Submission status: Studio MVP demonstrated; production integration and evidence gates remain; PORTAL NOT SUBMITTED.**
 The Vercel production domain has been confirmed READY at commit
 `f14305f1`, containing the MetaMask SDK compatibility fix. The project
 owner reported a real browser-wallet connection on GenLayer Studionet
@@ -85,7 +87,8 @@ not a hard-coded outcome, mock oracle, or client-provided verdict.
 
 ## Source and evidence links
 
-- Live production website: https://proofly-lovat.vercel.app/
+- Live production website (check commit / intermittent RPC read): https://proofly-lovat.vercel.app/
+- Reviewer Evidence index: https://github.com/bearbaba/PROOFLY/blob/main/REVIEWER_EVIDENCE.md
 - Offline specification builder: https://proofly-lovat.vercel.app/builder.html
 - Offline receipt inspector: https://proofly-lovat.vercel.app/receipt.html
 - GitHub (main): https://github.com/bearbaba/PROOFLY
@@ -156,6 +159,10 @@ and finalized execution check.
 The previous Vercel API daily-deployment limit was an intermittent
 deployment blocker, not an application defect; it was bypassed by the
 owner's successful manual production deployment.
+
+## Deployment status of simplified end-user UI (2026-10-11)
+
+The main branch now includes a normal Create Work Order form and automatic public-reference SHA-256 hashing, plus simplified evidence submission. The revision is covered by unit and browser tests, but **was not yet deployed to the production URL** as of the last Vercel check (production still `f14305f1`). A later user screenshot also showed `No work order found at this finalized state` for order #1; the cause is not yet established. Do not present the new UX or stable RPC reads as fully verified on production until both issues are resolved. The browser's signed transaction flow has still not been tested end-to-end.
 
 ## Reviewer evidence still to collect
 
