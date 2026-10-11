@@ -166,3 +166,22 @@ hash is saved locally.
 must be publicly published as immutable GitHub commit-pinned .txt files.
 There is no built-in permanent document upload/storage backend yet.
 The application does not claim a file upload that does not exist.
+
+
+### No manual Work Order number after creating
+
+A real signed `create_order` now automatically triggers read-only
+finality tracking. The app verifies the actual order ID by checking
+every newly allocated order against **all seven creation arguments** and
+the Owner/Contributor addresses. It does not guess an ID from the
+pre-sign next-order counter.
+
+When uniquely verified, the work order is opened on the page and a
+shareable `?order=<id>` URL appears for the Contributor. Opening a
+shared link automatically reads that order from finalized state
+without requesting a wallet signature.
+
+The submitted hash and expected work-order identity are stored locally
+for read-only recovery on refresh. Unknown execution outcomes,
+unavailable RPC, or multiple matching orders do not trigger a
+new write or fake success. A user can manually re-track the saved hash.

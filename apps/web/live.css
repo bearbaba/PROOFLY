@@ -24,3 +24,11 @@
 
 .demo-contributor{font-size:12px;margin-top:6px;white-space:normal;text-align:left}
 #jobContributor[aria-invalid="true"]{border-color:#c78475}
+
+.order-handoff{border:1px solid #b9ddd9;background:#f1faf8;padding:18px 20px;border-radius:14px;margin:14px 0}
+.order-handoff[hidden]{display:none}
+.order-handoff h3{font-size:16px;margin:5px 0}
+.order-handoff p{font-size:12px;color:#476574;margin:5px 0 12px}
+.order-handoff .inline{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.order-handoff input{flex:1 1 230px;min-width:0}
+.order-handoff button{white-space:nowrap}

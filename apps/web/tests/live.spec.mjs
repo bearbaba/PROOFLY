@@ -42,3 +42,15 @@ test("sample contributor button is clearly labeled and fills known demo wallet",
   await expect(page.locator("#jobContributor")).toHaveValue("0xd6b8a3a5eb329410d9504784812b8569afa8c2af");
   await expect(page.locator("#createNow")).toBeDisabled(); // no wallet signature automatically
 });
+
+test("share URL panel is hidden before a contract read confirms a work order",async({page})=>{
+  await page.goto("/",{waitUntil:"domcontentloaded"});
+  await expect(page.locator("#orderHandoff")).toBeHidden();
+  await expect(page.locator("#shareOrderUrl")).toBeAttached();
+  await expect(page.locator("#copyOrderLink")).toBeAttached();
+});
+test("Contributor share link loads order ID automatically, without connecting wallet",async({page})=>{
+  await page.goto("/?order=2",{waitUntil:"domcontentloaded"});
+  await expect(page.locator("#orderId")).toHaveValue("2");
+  await expect(page.locator("#createNow")).toBeDisabled();
+});

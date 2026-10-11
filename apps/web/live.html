@@ -27,6 +27,13 @@
 <button id="loadOrder" class="primary">Load order →</button></div></div>
 <div class="factgrid"><div><span>CHAIN</span><strong>Studionet / 61999</strong></div><div><span>CONTRACT</span><a id="contractLink" target="_blank" rel="noopener noreferrer" href="https://studio.genlayer.com/?import-contract=0xEbb6E4D791299E79317DE796232029194e0F0aCb">0xEbb6…0aCb ↗</a></div></div>
 <div id="orderResult" class="result empty" aria-live="polite">Load an order to view its on-chain requirements, participants and current status.</div>
+<div id="orderHandoff" class="order-handoff" hidden>
+<div class="kicker">SHARE &amp; CONTINUE</div>
+<h3 id="handoffHeading">Verified work order</h3>
+<p id="handoffDescription">Send a link to open this on-chain work order.</p>
+<div class="inline"><input id="shareOrderUrl" readonly aria-label="Verified work order share link"><button id="copyOrderLink" class="secondary" type="button">Copy link ↗</button></div>
+<p class="hint">The contributor can read the requirements without signing. Connecting their wallet is needed only to accept the work.</p>
+</div>
 <div class="inline"><label for="receiptVersion" style="align-self:center;font-size:11px;font-weight:700">VERSION</label><input type="number" id="receiptVersion" value="1" min="1" max="2" style="max-width:70px"><button id="loadReceipt" class="secondary">Read finalized Proof Receipt →</button></div>
 <div id="receiptResult" class="receipt empty" aria-live="polite">A Proof Receipt appears after a finalized successful evaluation.</div>
 </article>

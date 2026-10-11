@@ -7,6 +7,7 @@ import { createClient } from "genlayer-js";
 import { studionet } from "genlayer-js/chains";
 import { TransactionHashVariant, TransactionStatus } from "genlayer-js/types";
 import {inspectTransaction} from "./tx-verdict.mjs";
+import {candidateFromArgs,restoreCandidate,discoverCreatedOrder,orderLink,queryOrder} from "./order-handoff.mjs";
 import { createWorkflowGateway, makeRead } from "./sdk-workflow.mjs";
 import { isPinnedUrl } from "./model.mjs";
 import { CONTRACT, CHAIN_ID, EXPLORER, parseStudioPlan, decodeRead,
@@ -28,6 +29,8 @@ function isSuccessful(tx) {
 }
 const HEX = /^0x[0-9a-fA-F]{64}$/;
 const STORAGE_KEY = "proofly.studionet.61999.pending";
+const CREATE_KEY = "proofly.studionet.61999.pendingCreate";
+const LAST_ORDER_KEY = "proofly.studionet.61999.lastVerifiedOrder";
 const DEMO_REFERENCE = "https://raw.githubusercontent.com/bearbaba/PROOFLY/fa4d29b0e6f8efb50e2472530aff1d0ab7aca77e/fixtures/evidence/reference.txt";
 const DEMO_CONTRIBUTOR = "0xd6b8a3a5eb329410d9504784812b8569afa8c2af";
 let verifiedReference = null;
@@ -72,10 +75,34 @@ function getOrderId() {
 function requireWallet() {
   if (!wallet || !gateway) throw new Error("Connect an EIP-1193 wallet on Studionet before signing.");
 }
+function updateHandoff(order) {
+  const root=$("orderHandoff");
+  if(!root)return;
+  const ok=order && /^[1-9][0-9]{0,9}$/.test(String(order.id));
+  root.hidden=!ok;
+  if(!ok)return;
+  $("shareOrderUrl").value=orderLink(window.location.origin+window.location.pathname,order.id);
+  $("handoffHeading").textContent="Work order #"+order.id+" is ready to share";
+  $("handoffDescription").textContent=order.status==="PROPOSED" ?
+    "Send this link to the contributor. They can open and accept the order with their wallet." :
+    "This link opens the latest on-chain state for this work order.";
+}
+function openVerifiedOrder(id,order) {
+  if(!order || String(order.id)!==String(id))
+    throw Error("On-chain response does not match this order ID.");
+  $("orderId").value=String(id);
+  currentOrderId=String(id);
+  currentOrder=order;
+  currentReceipt=null;
+  renderOrder();
+  try{localStorage.setItem(LAST_ORDER_KEY,String(id));}catch{}
+  window.history.replaceState(null,"",orderLink(window.location.origin+window.location.pathname,String(id)));
+}
 function renderOrder() {
   const root = $("orderResult");
   root.replaceChildren();
   root.classList.remove("empty");
+  updateHandoff(currentOrder);
   if (!currentOrder) { root.textContent = "No work order found at this finalized state."; return; }
   const header = elem("div");
   header.append(elem("h3", "Work order #" + currentOrder.id), pill(String(currentOrder.status)));
@@ -142,10 +169,13 @@ async function loadOrder() {
   try {
     const id = getOrderId();
     const record = await readFinal("get_order",[id]);
-    currentOrderId = id;
-    currentOrder = record;
-    currentReceipt = null;
-    renderOrder();
+    if(record)openVerifiedOrder(id,record);
+    else{
+      currentOrderId=id;
+      currentOrder=null;
+      currentReceipt=null;
+      renderOrder();
+    }
     $("receiptResult").textContent = "Click Read finalized Proof Receipt to inspect results.";
   } catch(error) { showError(error,$("orderResult")); }
   finally { setBusy(false); }
@@ -306,13 +336,17 @@ async function createNewOrder(){
     const next=await readFinal("next_order",[]);
     if(!/^[1-9][0-9]*$/.test(String(next)))
       throw new Error("Next order ID could not be read from finalized chain state.");
-    const planned={id:String(next),title:fields.title,owner:wallet,
-      contributor:fields.contributor.toLowerCase()};
+    // The counter here is a pre-sign snapshot, never a verified order ID.
+    // At finality discover the EXACT matching order, even if others create
+    // their orders concurrently.
     const sent=await gateway.submit("create_order",args,hash=>{
-      candidateOrder=planned;
+      candidateOrder=candidateFromArgs({before:next,hash,owner:wallet,args});
       $("txHash").value=hash;
-      try{localStorage.setItem(STORAGE_KEY,hash);}catch{}
-      showTx("SUBMITTED — CHECK FINALITY",hash);
+      try{
+        localStorage.setItem(STORAGE_KEY,hash);
+        localStorage.setItem(CREATE_KEY,JSON.stringify(candidateOrder));
+      }catch{}
+      showTx("SUBMITTED — AUTOMATIC VERIFICATION",hash);
     },estimate=>{
       const feeMessage=estimate ?
         "Estimated protocol feeValue (raw units): "+String(estimate.feeValue) :
@@ -321,10 +355,11 @@ async function createNewOrder(){
         "\nContract: "+CONTRACT+"\n"+feeMessage+
         "\nThis is not escrow or a payment.\n\nProceed to wallet approval?");
     });
-    creationOutcome="Transaction submitted! Expected work order #"+
-      planned.id+". Click Track finality to confirm. Do not create again while pending.";
-    showTx("CREATION SUBMITTED — TRACK FINALITY",sent.txId);
+    creationOutcome="Transaction submitted. Automatically verifying execution and finding your new order on-chain. Do not resubmit.";
+    showTx("CREATION SUBMITTED — AUTO TRACKING",sent.txId);
     $("txResult").scrollIntoView({behavior:"smooth",block:"start"});
+    // Start read-only tracking after the signing action releases its busy guard.
+    Promise.resolve().then(()=>track());
   }catch(error){creationOutcome=String(error?.message||error);}
   finally{setBusy(false);}
 }
@@ -509,36 +544,50 @@ async function track() {
       // Preserve pending local transaction hash, protecting users from repeats.
       return;
     }
-    try {localStorage.removeItem(STORAGE_KEY);} catch {}
     if (verdict.kind === "failed") {
-      textPair($("txResult"),"NEXT STEP","Read GenVM execution error and revert reason on Explorer before considering a new attempt.");
-    }
-    const ok = verdict.kind === "success";
-    // Read the latest finalized state only after checking execution.
-    if (ok && candidateOrder) {
       try{
-        const proposed=await readFinal("get_order",[candidateOrder.id]);
-        if(proposed?.owner?.toLowerCase()===candidateOrder.owner &&
-           proposed?.contributor?.toLowerCase()===candidateOrder.contributor &&
-           proposed?.title===candidateOrder.title){
-          $("orderId").value=candidateOrder.id;
-          currentOrderId=candidateOrder.id;
-          currentOrder=proposed;
-          renderOrder();
-          creationOutcome="Work order #"+candidateOrder.id+
-            " created and finalized. Share this order number with your contributor.";
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(CREATE_KEY);
+      }catch{}
+      candidateOrder=null;
+      textPair($("txResult"),"NEXT STEP","GenVM execution failed. Inspect the full error in Explorer before considering a new action.");
+      return;
+    }
+    // Consensus + execution succeeded. Do not assume order ID from a
+    // previous counter snapshot. Recover exactly one matching on-chain order.
+    if(candidateOrder && candidateOrder.hash===hash){
+      try{
+        const found=await discoverCreatedOrder(candidateOrder,readFinal);
+        if(found.status==="verified"){
+          openVerifiedOrder(found.order.id,found.order);
+          creationOutcome="Work order #"+found.order.id+" created. Share its link with the contributor.";
+          $("createState").textContent=creationOutcome;
+          textPair($("txResult"),"ON-CHAIN ORDER","#"+found.order.id+" / "+found.order.status);
           candidateOrder=null;
-        }else{
-          $("createState").textContent="Transaction finalized, but the proposed order ID could not be confirmed. Check on-chain orders before another write.";
+          try{
+            localStorage.removeItem(STORAGE_KEY);
+            localStorage.removeItem(CREATE_KEY);
+          }catch{}
+          $("orderHandoff").scrollIntoView({behavior:"smooth",block:"center"});
+          return;
         }
-      }catch(error){showError(error,$("createState"));}
-    } else if (ok && currentOrderId) {
-      try {
-        currentOrder = await readFinal("get_order",[currentOrderId]);
-        renderOrder();
-        currentReceipt = null;
-        $("receiptResult").textContent = "Refresh receipt after successful evaluation.";
-      } catch(error){showError(error,$("orderResult"));}
+        textPair($("txResult"),"ORDER IDENTIFICATION","Execution succeeded; on-chain order not uniquely confirmed ("+found.status+"). Keep the hash. PROOFLY will not guess an ID or resend.");
+      }catch(error){
+        textPair($("txResult"),"ORDER IDENTIFICATION","Could not read the new order: "+String(error?.message||error)+". Keep the hash and retry tracking later.");
+      }
+      // Preserve pending metadata: user can reload and resume reads safely.
+      return;
+    }
+    try{
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(CREATE_KEY);
+    }catch{}
+    if(currentOrderId){
+      try{
+        const order=await readFinal("get_order",[currentOrderId]);
+        if(order)openVerifiedOrder(currentOrderId,order);
+        $("receiptResult").textContent="Refresh receipt after successful evaluation.";
+      }catch(error){showError(error,$("orderResult"));}
     }
   } catch(error){
     showError(new Error("Tracking unresolved or failed: " + String(error?.message||error)+". Check transaction hash before retrying."));
@@ -570,11 +619,44 @@ $("connectWallet").addEventListener("click",connectWallet);
 $("operation").addEventListener("change",refreshExtras);
 $("writeAction").addEventListener("click",submit);
 $("trackTx").addEventListener("click",track);
+$("copyOrderLink").addEventListener("click",async()=>{
+  const link=$("shareOrderUrl").value;
+  if(!link)return;
+  try{
+    await navigator.clipboard.writeText(link);
+    $("copyOrderLink").textContent="Copied ✓";
+  }catch{
+    $("shareOrderUrl").focus();
+    $("shareOrderUrl").select();
+    $("copyOrderLink").textContent="Select the link and copy it";
+  }
+});
 $("orderId").addEventListener("input",refreshAction);
 $("receiptResult").textContent="Read an order first, then select a receipt version.";
 $("txResult").textContent="Only real hashes from signed wallet transactions appear here.";
 refreshCreateForm();
-try { const pending=localStorage.getItem(STORAGE_KEY); if (pending && HEX.test(pending)) $("txHash").value=pending; } catch {}
+// Public deep links and last verified order load without MetaMask prompts.
+const requested=queryOrder(window.location.search);
+let last=null;
+try{last=localStorage.getItem(LAST_ORDER_KEY);}catch{}
+const initial=requested||(/^[1-9][0-9]{0,9}$/.test(last||"")?last:null);
+if(initial){
+  $("orderId").value=initial;
+  void loadOrder();
+}
+// Resume read-only finality monitoring after a page reload. No new signature.
+try {
+  const pending=localStorage.getItem(STORAGE_KEY);
+  if(pending && HEX.test(pending)){
+    $("txHash").value=pending;
+    candidateOrder=restoreCandidate(localStorage.getItem(CREATE_KEY),pending);
+    const resume=()=>{
+      if(!busy)void track();
+      else window.setTimeout(resume,300);
+    };
+    window.setTimeout(resume,0);
+  }
+}catch{}
 if(window.ethereum?.on) {
   window.ethereum.on("accountsChanged",()=>walletChanged("Wallet account changed. Reconnect before signing."));
   window.ethereum.on("chainChanged",()=>walletChanged("Wallet network changed. Reconnect to Studionet."));
