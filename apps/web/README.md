@@ -223,3 +223,38 @@ auto-trigger a transaction. Older orders remain accessible through
 their links. This bounded range is a prototype discovery method,
 not a complete historical index; a permanent indexer is a future
 scaling improvement.
+
+### Guided user workspace (October 2026)
+
+The main page is now arranged for end users, not contract developers:
+
+1. **Continue your work**: wallet connection, role and the relevant next action;
+2. **Your work orders**: wallet-matched, finalized recent jobs and their status;
+3. **Work details**: agreement, shareable URL and auto-loaded Proof Receipt;
+4. **Create a job**: ordinary form, one-click complete demo example and
+   auto-verified public document bytes;
+5. **Transaction details & advanced tools**: opt-in disclosure only.
+
+The app never signs without deliberate MetaMask approval. Signed writes
+automatically display progress in the main workflow; tracking and original
+Explorer proof remain accessible in the advanced drawer. Selected order
+status is re-read roughly every 30 seconds while visible; the bounded work
+board refreshes roughly every two minutes (or on wallet change). No
+unnecessary continuous bulk RPC scans. A completed order's latest Proof
+Receipt is automatically loaded when safe to read.
+
+The fixed contract still requires public, immutable GitHub raw text URLs:
+this is a transparent technical limitation, not a promise of private
+document uploads or escrow. The normal flow stays fully English.
+
+### Release gate for the guided workspace
+
+Before treating this UX as production-ready, the review must confirm:
+- The normal dashboard works on desktop and mobile with no unexpected overflow.
+- The connected wallet changes passively when MetaMask changes account.
+- The selected order can be accepted or submitted only by an authorized wallet.
+- The app never sends another wallet transaction while read-only polling.
+- The full GenLayer receipt and direct evidence link match finalized state.
+- Production deploy commit exactly matches the reviewed GitHub main SHA.
+
+These are verification gates, not a claim that signing has already passed.

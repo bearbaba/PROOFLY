@@ -42,6 +42,8 @@ let walletSequence = 0;
 let boardBusy = false;
 let lastBoardWallet = null;
 let boardItems = [];
+let lastWorkboardRefresh = 0;
+let selectedSyncBusy = false;
 let userPickedOrder = Boolean(queryOrder(window.location.search));
 
 
@@ -52,6 +54,10 @@ function elem(tag, text, className) {
   return node;
 }
 function showError(error, region = $("txResult")) {
+  if(region===$("txResult")){
+    const quick=$("transactionNotice");
+    if(quick){quick.hidden=false;quick.textContent="Transaction needs attention: "+String(error?.message || error);}
+  }
   region.replaceChildren(elem("strong", String(error?.message || error), "error-text"));
   region.classList.remove("empty");
 }
@@ -104,7 +110,9 @@ function openVerifiedOrder(id,order) {
   currentOrder=order;
   currentReceipt=null;
   renderOrder();
+  renderReceipt();
   selectNextOperation();
+  if(order.status==="COMPLETED")void autoLoadReceipt(id,order);
   try{localStorage.setItem(LAST_ORDER_KEY,String(id));}catch{}
   window.history.replaceState(null,"",orderLink(window.location.origin+window.location.pathname,String(id)));
 }
@@ -188,6 +196,7 @@ async function refreshMyWork({autoOpen=true}={}) {
     if(account!==wallet || sequence!==walletSequence)return;
     boardItems=result.items;
     lastBoardWallet=account;
+    lastWorkboardRefresh=Date.now();
     renderMyWork(result.items);
     // A refreshed finalized record is the source of truth. Update status,
     // role and recommended action without manual "Load order" clicks.
@@ -223,6 +232,22 @@ async function refreshMyWork({autoOpen=true}={}) {
   }
 }
 
+async function autoLoadReceipt(id,order) {
+  if(!Array.isArray(order?.submissions)||!order.submissions.length)return;
+  const version=Number(order.submissions[order.submissions.length-1]?.version);
+  if(!Number.isInteger(version)||version<1||version>2)return;
+  $("receiptVersion").value=String(version);
+  $("receiptResult").textContent="Loading the finalized verification result…";
+  try{
+    const receipt=await readFinal("get_receipt",[String(id),version]);
+    if(String(currentOrderId)!==String(id))return;
+    currentReceipt=receipt;
+    renderReceipt();
+  }catch(error){
+    if(String(currentOrderId)===String(id))
+      $("receiptResult").textContent="Result read unavailable. Use Refresh result to try again.";
+  }
+}
 function renderReceipt() {
   const root = $("receiptResult");
   root.replaceChildren();
@@ -247,6 +272,16 @@ function renderReceipt() {
   } catch (error) { showError(error,root); }
 }
 function showTx(label, hash = "") {
+  const quick=$("transactionNotice");
+  if(quick){
+    quick.hidden=false;
+    quick.replaceChildren(elem("strong",label),
+      elem("span"," · "+(hash ? hash.slice(0,12)+"…"+hash.slice(-8) : "See status below.")));
+    const link=elem("a","View transaction details ↗");
+    link.href="#advancedTools";
+    link.addEventListener("click",()=>{$("advancedTools").open=true;});
+    quick.append(link);
+  }
   const root = $("txResult");
   root.replaceChildren();
   root.classList.remove("empty");
@@ -327,13 +362,14 @@ async function bindAuthorizedWallet(accounts,provider=window.ethereum) {
   wallet=account.toLowerCase();
   gateway=bound;
   $("walletState").textContent="Connected / "+wallet+" / Studionet "+CHAIN_ID;
-  $("connectWallet").textContent="Connected · switch in MetaMask ↗";
+  $("connectWallet").textContent="Wallet connected · change in MetaMask";
   if(different)userPickedOrder=false; // prioritize tasks relevant to new account
   if(currentOrder)renderOrder();
   selectNextOperation();
   refreshCreateForm();
   // Do not await a full dashboard RPC scan before the wallet can sign.
-  if(!busy)void refreshMyWork();
+  if(!busy && (different || Date.now()-lastWorkboardRefresh>120000))
+    void refreshMyWork();
   return true;
 }
 async function connectWallet() {
@@ -413,6 +449,9 @@ function refreshCreateForm() {
 }
 function loadDemoRequirements(){
   $("jobTitle").value="PROOFLY Demo - User Guide Verification";
+  // A single action fills the entire safe testnet example, including
+  // the sample Contributor, unless it matches the current Owner wallet.
+  $("jobContributor").value=wallet===DEMO_CONTRIBUTOR ? "" : DEMO_CONTRIBUTOR;
   $("jobReference").value=DEMO_REFERENCE;
   $("jobR1").value="The guide explicitly states that this is a trial environment and that it does not accept real money.";
   $("jobR2").value="The guide gives all three steps for reading a saved draft in the order documented by the reference.";
@@ -420,7 +459,7 @@ function loadDemoRequirements(){
   $("submitDays").value="2";
   $("revisionDays").value="7";
   verifiedReference=null;
-  $("referenceStatus").textContent="Example loaded. Enter your contributor's wallet and verify the reference below.";
+  $("referenceStatus").textContent="Example loaded. Checking the reference document automatically…";
   $("referenceStatus").classList.remove("verified");
   refreshCreateForm();
   void verifyReference();
@@ -490,7 +529,7 @@ async function createNewOrder(){
     });
     creationOutcome="Transaction submitted. Automatically verifying execution and finding your new order on-chain. Do not resubmit.";
     showTx("CREATION SUBMITTED — AUTO TRACKING",sent.txId);
-    $("txResult").scrollIntoView({behavior:"smooth",block:"start"});
+    $("createState").textContent=creationOutcome;
     // Start read-only tracking after the signing action releases its busy guard.
     Promise.resolve().then(()=>track());
   }catch(error){creationOutcome=String(error?.message||error);}
@@ -523,7 +562,8 @@ function refreshExtras() {
     example.addEventListener("click",()=>{
       $("artifactUrl").value="https://raw.githubusercontent.com/bearbaba/PROOFLY/fa4d29b0e6f8efb50e2472530aff1d0ab7aca77e/fixtures/evidence/pass.txt";
       verifiedArtifact=null;
-      $("artifactStatus").textContent="Example loaded. Click Verify deliverable automatically.";
+      $("artifactStatus").textContent="Checking the example deliverable…";
+      verify.click();
     });
     const status=elem("p","Verification pending. PROOFLY calculates the content hash for you.","hint");
     status.id="artifactStatus";
@@ -531,6 +571,9 @@ function refreshExtras() {
     $("artifactUrl").addEventListener("input",()=>{
       verifiedArtifact=null;
       status.textContent="Link changed. Verify again before signing.";
+    });
+    $("artifactUrl").addEventListener("change",()=>{
+      if(isPinnedUrl($("artifactUrl").value.trim()))verify.click();
     });
     verify.addEventListener("click",async()=>{
       if(busy)return;
@@ -562,7 +605,56 @@ function refreshExtras() {
   root.addEventListener("input", refreshAction, {once:true});
   refreshAction();
 }
+function updateNextStep() {
+  const role=roleFor(currentOrder,wallet);
+  const status=String(currentOrder?.status||"");
+  const id=currentOrder?.id;
+  let label="GET STARTED",title="Connect your wallet",
+    detail="Your assigned jobs will appear automatically. You can browse public work without connecting.",
+    progress=0;
+  if(wallet && !currentOrder){
+    label="CHOOSE A JOB";title="Select a work order";
+    detail="Pick an assigned job from Your work orders below, or create a new job.";
+  }else if(currentOrder){
+    const suffix=" · Work order #"+id;
+    if(status==="PROPOSED"){
+      progress=1;
+      if(role==="contributor"){
+        label="ACTION REQUIRED"+suffix;title="Accept this work";
+        detail="Review the three agreed requirements, then approve acceptance in MetaMask.";
+      } else {
+        label="AWAITING ACCEPTANCE"+suffix;title="Waiting for contributor";
+        detail="Your job is created. Share its link; the assigned contributor must accept before submitting.";
+      }
+    }else if(status==="ACTIVE"||status==="REVIEWED"){
+      progress=2;
+      if(role==="contributor"){
+        label="ACTION REQUIRED"+suffix;title="Submit your finished work";
+        detail="Add a public, commit-pinned deliverable link. PROOFLY checks its content before your signature.";
+      }else {
+        label="IN PROGRESS"+suffix;title="Waiting for evidence";
+        detail="The contributor is working. The next step is their evidence submission.";
+      }
+    }else if(status==="SUBMITTED"){
+      progress=3;label="READY TO VERIFY"+suffix;title="Verify the submitted work";
+      detail="Run GenLayer verification and review the cost in MetaMask. The result will appear automatically.";
+    }else if(status==="COMPLETED"){
+      progress=4;label="VERIFIED"+suffix;title="Verification complete";
+      detail="The outcome and requirement-level Proof Receipt are shown in Work details.";
+    }else {
+      label=status+suffix;title="Review this work order";
+      detail="Check the latest on-chain status and any available verification result.";
+    }
+    if(!wallet){label="PUBLIC VIEW"+suffix;detail+=" Connect the assigned wallet to take action.";}
+  }
+  $("nextStepState").textContent=label;
+  $("nextStepTitle").textContent=title;
+  $("nextStepDescription").textContent=detail;
+  const steps=$("nextStepPanel").querySelectorAll(".workflow-mini span");
+  steps.forEach((el,i)=>el.classList.toggle("is-active",progress>0 && i<progress));
+}
 function refreshAction() {
+  updateNextStep();
   const op = $("operation").value;
   const role = roleFor(currentOrder,wallet);
   let explanation = "";
@@ -596,8 +688,13 @@ function refreshAction() {
     cancel_order:"Cancel work order →",
     close_expired:"Close expired order →"
   };
-  $("writeAction").textContent=names[op]||"Review cost & sign →";
-  $("writeAction").disabled = busy || !wallet || !needed || !correctRole || !validState;
+  const waitingForCounterparty=!!currentOrder && (
+    (role==="owner" && ["PROPOSED","ACTIVE","REVIEWED"].includes(currentOrder.status)) ||
+    currentOrder.status==="COMPLETED");
+  $("writeAction").textContent=waitingForCounterparty ?
+    (currentOrder.status==="COMPLETED" ? "Verified — see result below ✓" : "Waiting for contributor") :
+    names[op]||"Review cost & sign →";
+  $("writeAction").disabled = busy || !wallet || !needed || !correctRole || !validState || waitingForCounterparty;
 }
 function parameters() {
   const op = $("operation").value;
@@ -647,6 +744,7 @@ async function submit() {
         "\n\nContinue to MetaMask cost review and signing? No automatic retries.");
     });
     showTx(r.status,r.txId);
+    $("actionInfo").textContent="Transaction sent. Checking the GenLayer result automatically; please do not sign the same action again.";
     trackedHash=r.txId;
   } catch(error) {showError(error);}
   finally {
@@ -763,6 +861,9 @@ $("fillDemoContributor").addEventListener("click",()=>{
   $("jobContributor").focus();
 });
 $("verifyReference").addEventListener("click",verifyReference);
+$("jobReference").addEventListener("change",()=>{
+  if(isPinnedUrl($("jobReference").value.trim()))void verifyReference();
+});
 $("createNow").addEventListener("click",createNewOrder);
 $("createForm").addEventListener("submit",event=>event.preventDefault());
 $("createForm").addEventListener("input",event=>{
@@ -793,8 +894,14 @@ $("copyOrderLink").addEventListener("click",async()=>{
   }
 });
 $("orderId").addEventListener("input",refreshAction);
-$("receiptResult").textContent="Read an order first, then select a receipt version.";
-$("txResult").textContent="Only real hashes from signed wallet transactions appear here.";
+$("receiptResult").textContent="Select a work order to see the verification result.";
+$("txResult").textContent="Real signed transactions are tracked automatically.";
+const transactionNotice=elem("div",undefined,"txn-notice");
+transactionNotice.id="transactionNotice";
+transactionNotice.hidden=true;
+transactionNotice.setAttribute("role","status");
+transactionNotice.setAttribute("aria-live","polite");
+$("writeAction").insertAdjacentElement("afterend",transactionNotice);
 refreshCreateForm();
 // Public deep links and last verified order load without MetaMask prompts.
 const requested=queryOrder(window.location.search);
@@ -833,7 +940,25 @@ if(window.ethereum?.on) {
 }
 refreshExtras();
 void syncAuthorizedWallet();
+// Selected order is cheap to refresh; the 25-order board is refreshed less often.
+// Never poll or trigger signatures in a background/invisible tab.
+async function refreshSelectedOrder() {
+  if(!currentOrderId||busy||selectedSyncBusy)return;
+  selectedSyncBusy=true;
+  const id=String(currentOrderId);
+  try{
+    const latest=await readFinal("get_order",[id]);
+    if(!latest || id!==String(currentOrderId))return;
+    if(currentOrder?.status!==latest.status)openVerifiedOrder(id,latest);
+  }catch{ /* Testnet reads may be intermittent. Keep the last verified state. */ }
+  finally{selectedSyncBusy=false;}
+}
 window.setInterval(()=>{
-  if(document.visibilityState!=="visible" || busy || boardBusy)return;
-  if(wallet)void refreshMyWork({autoOpen:false});
-},45000);
+  if(document.visibilityState!=="visible"||busy)return;
+  void refreshSelectedOrder();
+  if(wallet && !boardBusy && Date.now()-lastWorkboardRefresh>120000)
+    void refreshMyWork({autoOpen:false});
+},30000);
+window.addEventListener("focus",()=>{
+  if(!busy){void syncAuthorizedWallet();void refreshSelectedOrder();}
+});

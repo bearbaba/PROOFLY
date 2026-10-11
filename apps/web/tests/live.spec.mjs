@@ -24,7 +24,7 @@ test("customer creation is a normal form, not a required JSON upload",async({pag
   await page.locator("#loadDemo").click();
   await expect(page.locator("#jobTitle")).toHaveValue(/PROOFLY Demo/);
   await expect(page.locator("#jobReference")).toHaveValue(/raw.githubusercontent.com/);
-  await expect(page.locator("#jobContributor")).toHaveValue("");
+  await expect(page.locator("#jobContributor")).toHaveValue("0xd6b8a3a5eb329410d9504784812b8569afa8c2af");
   await expect(page.locator("#createNow")).toBeDisabled();
 });
 test("untrusted reference URL fails closed before hashing or wallet write",async({page})=>{
@@ -140,4 +140,36 @@ test("MetaMask accountChanged switches Owner to Contributor without another conn
   expect(calls).not.toContain("eth_requestAccounts");
   expect(calls).not.toContain("eth_sendTransaction");
   expect(calls).not.toContain("wallet_requestSnaps");
+});
+
+test("normal-user workspace puts wallet and next-step first and hides technical console",async({page})=>{
+  await page.goto("/",{waitUntil:"domcontentloaded"});
+  await expect(page.locator("main.app-shell > #walletActionsCard")).toBeVisible();
+  await expect(page.locator("#nextStepTitle")).toContainText("Connect your wallet");
+  await expect(page.locator("#myWorkCard")).toBeVisible();
+  await expect(page.locator("#currentOrderCard")).toBeVisible();
+  await expect(page.locator("#createCard")).toBeVisible();
+  await expect(page.locator("#technicalTransaction")).toBeHidden();
+  await page.locator("#advancedTools > summary").click();
+  await expect(page.locator("#technicalTransaction")).toBeVisible();
+  await expect(page.locator("#writeAction")).toBeDisabled();
+});
+test("manual order lookup is optional and collapsed by default",async({page})=>{
+  await page.goto("/",{waitUntil:"domcontentloaded"});
+  await expect(page.locator("#orderId")).toBeHidden();
+  await page.locator(".manual-lookup > summary").click();
+  await expect(page.locator("#orderId")).toBeVisible();
+});
+test("paste of a pinned document auto-verifies when field loses focus",async({page})=>{
+  await page.route("**/fixtures/evidence/reference.txt",r=>r.fulfill({
+    status:200,contentType:"text/plain",
+    headers:{"access-control-allow-origin":"*"},
+    body:"A public trial environment guide. No real money is accepted."
+  }));
+  await page.goto("/",{waitUntil:"domcontentloaded"});
+  await page.locator("#jobReference").fill(
+    "https://raw.githubusercontent.com/bearbaba/PROOFLY/fa4d29b0e6f8efb50e2472530aff1d0ab7aca77e/fixtures/evidence/reference.txt");
+  await page.locator("#jobReference").press("Tab");
+  await expect(page.locator("#referenceStatus")).toContainText("Reference verified", {timeout:12000});
+  await expect(page.locator("#createNow")).toBeDisabled(); // wallet signature is still required
 });
