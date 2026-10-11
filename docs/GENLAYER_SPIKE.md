@@ -107,3 +107,26 @@ have actually completed.
 Where general LLM examples only validate schema, this spike follows the more
 specific independent-verification requirement in the Equivalence Principle
 documentation instead. Consensus on formatting alone is insufficient.
+
+
+## Offline preflight and continuous verification
+
+Before calling the pinned fixture generation script, run the local preflight:
+
+```bash
+python -m packages.preflight --requirements fixtures/evidence/requirements.json --artifact fixtures/evidence/pass.txt --reference fixtures/evidence/reference.txt
+```
+
+This deterministic tool checks criterion shape and local bytes, and produces
+SHA-256 hashes plus warnings for vague acceptance criteria or obvious
+instruction-like evidence. It does **not** run an AI evaluator or contact
+GenLayer, and does not prove the remote pinned URLs serve those bytes.
+
+Run all offline regressions with:
+
+```bash
+python -m unittest discover -s tests -p "test_*.py" -v
+```
+
+GitHub Actions now runs these checks and stores the sample preflight report.
+For the live Studio validation gates, see docs/PHASE1_RELEASE_GATES.md.
