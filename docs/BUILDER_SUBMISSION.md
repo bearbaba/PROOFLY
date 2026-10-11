@@ -12,8 +12,12 @@ readback showing `COMPLETED` and submission `ACCEPTED`. The owner has since conf
 `3 / 3 SATISFIED`, aggregation `CONSISTENT`, chain ID `61999`,
 and the expected evaluated time `2026-10-11 16:54:56` local UTC+7
 (`evaluated_at=1791712496` from the archived Studio receipt).
-A fresh signed write through the hosted website has NOT yet been
-demonstrated, so full hosted E2E write capability remains unverified.
+One real website-originated Owner `create_order` transaction has now
+been signed in MetaMask on the Vercel Preview and confirmed as FINALIZED,
+consensus Accepted and GenVM SUCCESS in Explorer:
+https://explorer-studio.genlayer.com/tx/0x38807bdccf485b5da0a0bb4f640db619d1e3c74a317c95be43bb822ee3a9c59b.
+The new order's on-chain ID, the Contributor accept/submit steps and
+the complete website two-wallet E2E flow remain unverified.
 
 This is an honest, reviewer-ready description of the **manual Studionet
 demo** and the reproducible public source. The submitter must select a
@@ -162,11 +166,12 @@ owner's successful manual production deployment.
 
 ## Deployment status of simplified end-user UI (2026-10-11)
 
-The main branch now includes a normal Create Work Order form and automatic public-reference SHA-256 hashing, plus simplified evidence submission. The revision is covered by unit and browser tests, but **was not yet deployed to the production URL** as of the last Vercel check (production still `f14305f1`). A later user screenshot also showed `No work order found at this finalized state` for order #1; the cause is not yet established. Do not present the new UX or stable RPC reads as fully verified on production until both issues are resolved. The browser's signed transaction flow has still not been tested end-to-end.
+The main branch now includes a normal Create Work Order form and automatic public-reference SHA-256 hashing, plus simplified evidence submission. The revision is covered by unit and browser tests, but **was not yet deployed to the production URL** as of the last Vercel check (production still `f14305f1`). A later user screenshot also showed `No work order found at this finalized state` for order #1; the cause is not yet established. Do not present the new UX or stable RPC reads as fully verified on production until both issues are resolved. An Owner `create_order` signed from the browser has been confirmed in Explorer; the remainder of the two-wallet E2E flow remains untested.
 
 ## Reviewer evidence still to collect
 
-- [ ] Full deployment transaction hash and Explorer URL.
+- [ ] Full contract deployment transaction hash and Explorer URL.
+- [x] Website-signed Owner `create_order` FINALIZED, consensus Accepted, GenVM SUCCESS: https://explorer-studio.genlayer.com/tx/0x38807bdccf485b5da0a0bb4f640db619d1e3c74a317c95be43bb822ee3a9c59b
 - [ ] Full `create_order`, `accept_order`, `submit_evidence`
       and `evaluate_submission` tx hashes, each with FINALIZED
       and GenVM SUCCESS checks.
@@ -178,7 +183,8 @@ The main branch now includes a normal Create Work Order form and automatic publi
       Proof Receipt, linked here after recording.
 - [x] Verify public deployed homepage and finalized RPC read in a real browser (owner-provided transcript, 2026-10-11).
 - [x] Verify website's `get_receipt("1",1)` summary matches the archived receipt (owner-provided browser readback, 2026-10-11).
-- [ ] Verify an actual EIP-1193 injected-wallet signature, fee confirmation and tx receipt.
+- [x] Verify one real EIP-1193 Owner signed `create_order` and original Explorer tx status (Preview).
+- [ ] Verify the revised on-site Track finality UI and the new Work Order ID/status.
 - [ ] Actual portal submission confirmation/link.
 
 ## Suggested category / status
@@ -199,4 +205,4 @@ hackathon or claim that this is deployed on Bradbury.
    grounded artifact/reference quotes and ACCEPTED outcome.
 5. Show the raw commit-pinned documents and receipt archive in
    GitHub; explain independent validation and no-money scope.
-6. Close with current limits and next step (verified signed-wallet transaction, full tx hash and adversarial cases).
+6. Include the Explorer-confirmed website-signed Owner create transaction, then disclose pending Contributor/AI live tests and adversarial cases.

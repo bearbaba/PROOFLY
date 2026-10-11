@@ -4,8 +4,10 @@
 reconstructed from the user's pasted Studio readbacks and screenshot. The
 repository preserves the exact reported Proof Receipt JSON in
 [`docs/evidence/studionet-order-1-receipt.json`](evidence/studionet-order-1-receipt.json).
-**No Explorer transaction hash, independently authenticated chain read or
-deployed bytecode attestation has been collected yet.**
+**This section concerns the original Studio Order #1, for which no full
+transaction hashes are archived.** A distinct browser-created work order
+now has a documented [Explorer create transaction](../REVIEWER_EVIDENCE.md#website-signed-work-order-creation--explorer-evidence-2026-10-11).
+Deployed bytecode/source attestation remains outstanding.
 
 ## Deployed demo instance reported by the owner
 
@@ -136,3 +138,21 @@ contract RPC read paths**. The site has not yet been proven to send,
 finalize and execute a **new signed write transaction** end-to-end.
 Explorer-authenticated transaction hashes, adversarial case live tests
 and deployed-source attestation remain separately outstanding.
+
+
+## Real browser-signed `create_order` Explorer result (2026-10-11)
+
+For a **new, separate work order**, the owner supplied the official
+Explorer's transaction detail readout for [`0x38807bdccf485b5da0a0bb4f640db619d1e3c74a317c95be43bb822ee3a9c59b`](https://explorer-studio.genlayer.com/tx/0x38807bdccf485b5da0a0bb4f640db619d1e3c74a317c95be43bb822ee3a9c59b).
+It confirms `FINALIZED`, consensus `Accepted`, and GenVM execution
+`SUCCESS / Return` for `create_order` sent by the Owner to the
+same Studionet contract. The return value `null` is expected for a
+void write method. The transaction carries `0 GEN` of value.
+
+The earlier website's `FINALIZED / EXECUTION FAILED` display was
+misleading: the pinned SDK's simplified transaction receipt changes
+field naming or omits execution details. [PR #6](https://github.com/bearbaba/PROOFLY/pull/6)
+corrected classification into success, confirmed failure, or unverified,
+with full-result fallback and anti-resubmission guard. **New order ID,
+state, and later Contributor actions remain to be independently read
+and verified; this is not yet a complete website two-wallet E2E test.**

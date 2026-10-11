@@ -23,7 +23,7 @@ adjudication produces a **per-criterion on-chain Proof Receipt**.
 - Reported deployed contract: `0xEbb6E4D791299E79317DE796232029194e0F0aCb`
 - Studio import:
   https://studio.genlayer.com/?import-contract=0xEbb6E4D791299E79317DE796232029194e0F0aCb
-- Explorer entry to independently inspect (transaction IDs still needed):
+- Explorer contract entry:
   https://explorer-studio.genlayer.com/address/0xEbb6E4D791299E79317DE796232029194e0F0aCb
 - Deep-dive and archived readbacks: [Live Studio demo](docs/LIVE_STUDIO_DEMO.md)
 - [Builder contribution draft](docs/BUILDER_SUBMISSION.md)
@@ -89,17 +89,60 @@ by the owner to connect an EIP-1193 wallet on Studionet 61999 and read:
   `CONSISTENT`, chain `61999`, timestamp `2026-10-11 16:54:56`
   (the displayed locale time).
 
-**Important deployment distinction (checked 2026-10-11):**
-main commit `1caf425e` introduces a simplified `Create a work order`
-form and automatic SHA-256 hashing, but **the Vercel production alias
-was still serving `f14305f1`** when last checked. A previous attempt
-to deploy the new code through the Vercel API was rate-limited.
-Do not claim that the updated customer form is live until the
-production deployment SHA is checked again.
+**Deployment update:** The owner successfully used the direct human-facing
+form on Vercel Preview to sign `create_order`; its transaction finalized
+successfully according to the Explorer. GenLayerJS transaction-result
+normalization was then merged, and Vercel production was confirmed READY
+on commit `c3290e0`. The creation step worked on Preview; a separate
+complete two-wallet production flow is not yet confirmed.
 
 A later browser screenshot displayed an empty finalized read for
 order #1. Whether that was transient network state, RPC behavior or
 another issue remains **unresolved**; keep this visible as a gate.
+
+## Website-signed Work Order creation — Explorer evidence (2026-10-11)
+
+The owner supplied the actual GenLayer Explorer transaction details for
+a new **browser-originated, MetaMask-signed** transaction. This is the
+first linked transaction-level proof of a website write, separate from
+the prior manual Studio Order #1 demonstration:
+
+- [View Explorer transaction](https://explorer-studio.genlayer.com/tx/0x38807bdccf485b5da0a0bb4f640db619d1e3c74a317c95be43bb822ee3a9c59b)
+- Hash: `0x38807bdccf485b5da0a0bb4f640db619d1e3c74a317c95be43bb822ee3a9c59b`
+- Chain: GenLayer Studionet `61999`
+- Sender: `0x4c7cb73ac8f8999af21cfc9ff4cf2333a9508dcb` (Owner)
+- Recipient: `0xEbb6E4D791299E79317DE796232029194e0F0aCb`
+- Method: `create_order` with all seven decoded arguments
+- Contributor: `0xd6b8a3a5eb329410d9504784812b8569afa8c2af`
+- Title: `PROOFLY Demo - User Guide Verification`
+- Reference: pinned [reference text](fixtures/evidence/reference.txt);
+  SHA-256 `9edf98b490eeb1b64f5e3f0b71a368ce38e9ba0e79070818eae3b2c70bb48527`
+- Deadlines submitted: `1791901511` and `1792333511`
+- Value: `0 GEN` (not a fee statement)
+- Explorer status **FINALIZED**, consensus result **Accepted**,
+  GenVM execution result **SUCCESS**, result code **Return**,
+  return value `null` (expected for `create_order(...)->None`)
+
+**Observed issue and response:** the original website's tracking panel
+incorrectly displayed `FINALIZED / EXECUTION FAILED` while missing
+the actual SDK execution fields. Root cause identified in the
+`genlayer-js@1.1.8` simplified receipt: the SDK can rename
+`statusName` to `status_name` and omit execution details. A
+[normalization regression](apps/web/tx-verdict.test.mjs) and
+[full transaction lookup fallback](apps/web/live-app.mjs) were merged
+in [PR #6](https://github.com/bearbaba/PROOFLY/pull/6), release
+`c3290e0`. Vercel confirmed a READY production deployment of this
+commit. This fix is covered by CI, but the owner has not yet
+reported a successful repeat of the website's **Track finality** view
+for the specific hash.
+
+**Scope:** Explorer confirms a successful `create_order` write; the
+new **order number and its `PROPOSED` state are not yet confirmed by
+a subsequent `get_order` read**. No Contributor acceptance, evidence
+submission or GenLayer AI evaluation has yet been reported for this
+new website-originated work order. No second transaction should be
+sent until its state is read and confirmed. The previous Studio demo
+Order #1 remains a separate completed workflow.
 
 ## Repository tests and security boundaries
 
@@ -118,8 +161,8 @@ another issue remains **unresolved**; keep this visible as a gate.
 - [UI source](apps/web/live-app.mjs) uses DOM `textContent` for
   untrusted contract text, not dynamic `innerHTML`.
 
-Most recent main commit prior to this evidence-only document:
-`1caf425ef76afa1ab159231c2e16cb341de89edc`.
+Earlier UI foundation: `1caf425ef76afa1ab159231c2e16cb341de89edc`.
+Transaction-status decoding fix merged at `c3290e0`.
 
 - [Python CI PASS](https://github.com/bearbaba/PROOFLY/actions/runs/38141230278)
 - [Web and Playwright CI PASS](https://github.com/bearbaba/PROOFLY/actions/runs/38141230138)
@@ -155,13 +198,16 @@ third-party Explorer checks or a live validator-consensus transcript.
 
 ## Release gates before claiming a production-ready app
 
-- [ ] Deploy and independently check the **new** human-readable
-      `Create a work order` UI from main (commit `1caf425e` or later).
+- [x] Deploy the human-readable `Create a work order` UI
+      (production READY on `c3290e0`), and record one
+      successful website-originated `create_order` in Explorer.
 - [ ] Diagnose and fix the intermittent `No work order found`
       website read before presenting the demo.
-- [ ] Complete a *new* website-originated Owner signed create,
-      Contributor signed accept and submit, finalized AI evaluation,
-      and recorded Proof Receipt. Save full hashes / finality / execution.
+- [x] Owner signed `create_order` from web Preview; full hash,
+      FINALIZED/Accepted and GenVM SUCCESS documented above.
+- [ ] Read back the created order's actual ID and `PROPOSED` state.
+- [ ] Contributor signed accept and submit, finalized AI evaluation,
+      and recorded Proof Receipt for this new order. Save full hashes.
 - [ ] Test negative (`CHANGES_REQUIRED`), unverifiable
       (`EVIDENCE_REQUIRED`) and injection fixtures **live** on Studionet.
 - [ ] Independently verify deployed source and transaction evidence

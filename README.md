@@ -10,7 +10,13 @@ Project owners and contributors agree on clear requirements before work begins. 
 
 [**Open PROOFLY live on Studionet**](https://proofly-lovat.vercel.app/) · [Builder submission](docs/BUILDER_SUBMISSION.md).
 
-**Production caveat (2026-10-11):** latest main includes a direct Create Work Order form, but production was still at an earlier build when last verified. Confirm the deployment commit before claiming this UI is live. See [reviewer gates](REVIEWER_EVIDENCE.md).
+**Production update (2026-10-11):** Vercel confirmed READY on commit
+`c3290e0`, including the direct Create Work Order form and corrected SDK
+transaction-verdict handling. A real browser-originated Owner
+`create_order` transaction succeeded on Studionet according to the
+[Explorer details](https://explorer-studio.genlayer.com/tx/0x38807bdccf485b5da0a0bb4f640db619d1e3c74a317c95be43bb822ee3a9c59b).
+Further signed Contributor/AI operations and the new order readback
+remain to be verified. See [reviewer evidence](REVIEWER_EVIDENCE.md).
 
 ## Core workflow
 
@@ -221,10 +227,9 @@ offline Receipt Inspector are preserved as separate tools.
 
 \`npm --prefix apps/web install && npm --prefix apps/web run bundle\`
 generates the static live client. GitHub Actions checks syntax, bundle,
-offline tests and browser rendering. End-to-end signed wallet / RPC
-compatibility is pending user-authenticated testing after deployment.
-Do not confuse this new wallet-enabled integration with an already
-verified hosted production app.
+offline tests and browser rendering. Owner wallet signing and an actual browser-originated `create_order` are now
+confirmed against Explorer, but the full two-wallet E2E workflow remains
+pending. Do not confuse successful Owner creation with the complete app flow.
 
 
 ### Browser RPC acceptance check (2026-10-11)
@@ -236,5 +241,7 @@ Studionet Owner MetaMask account, reads order #1 as
 The receipt timestamp matches the archived Studio result.
 See [manual evidence](docs/LIVE_STUDIO_DEMO.md) and
 [Builder handoff](docs/BUILDER_SUBMISSION.md).
-A fresh real wallet-signed write on the deployed website, third-party
-Explorer attestation and negative-case live evaluation remain unverified.
+An Owner `create_order` was signed via the Vercel Preview and confirmed
+as GenVM SUCCESS in [Explorer](https://explorer-studio.genlayer.com/tx/0x38807bdccf485b5da0a0bb4f640db619d1e3c74a317c95be43bb822ee3a9c59b). No full
+new two-wallet workflow, negative-case live evaluation or deployed-bytecode
+attestation is yet verified.
