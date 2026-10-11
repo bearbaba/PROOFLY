@@ -5,7 +5,7 @@
  */
 import { createClient } from "genlayer-js";
 import { studionet } from "genlayer-js/chains";
-import { TransactionHashVariant } from "genlayer-js/types";
+import { TransactionHashVariant, TransactionStatus } from "genlayer-js/types";
 import { createWorkflowGateway, makeRead } from "./sdk-workflow.mjs";
 import { isPinnedUrl } from "./model.mjs";
 import { CONTRACT, CHAIN_ID, EXPLORER, parseStudioPlan, decodeRead,
@@ -13,7 +13,6 @@ import { CONTRACT, CHAIN_ID, EXPLORER, parseStudioPlan, decodeRead,
 
 const $ = id => document.getElementById(id);
 const readClient = createClient({ chain: studionet });
-let writeClient = null;
 let gateway = null;
 let wallet = null;
 let currentOrder = null;
@@ -158,7 +157,6 @@ async function loadReceipt() {
 }
 function walletChanged(message) {
   wallet = null;
-  writeClient = null;
   gateway = null;
   $("walletState").textContent = message;
   $("connectWallet").textContent = "Connect wallet ↗";
@@ -187,7 +185,6 @@ async function connectWallet() {
       finalVariant:TransactionHashVariant.LATEST_FINAL,isSuccessful
     });
     wallet = account.toLowerCase();
-    writeClient = client;
     gateway = bound;
     $("walletState").textContent = "Connected / " + wallet + " / Studionet " + CHAIN_ID;
     $("connectWallet").textContent = "Reconnect / switch account";
@@ -283,10 +280,15 @@ async function submit() {
       try {localStorage.setItem(STORAGE_KEY,hash);} catch {}
       showTx("SUBMITTED — NOT YET FINAL",hash);
     },estimate=>{
-      const units = typeof estimate.feeValue === "bigint" ? estimate.feeValue.toString() : String(estimate.feeValue);
+      const feeMessage = estimate ?
+        "Estimated protocol feeValue (raw GEN units): " +
+          String(estimate.feeValue) :
+        "GENLAYER SDK 1.1.8 DOES NOT PROVIDE AN UPFRONT PROTOCOL FEE ESTIMATE. " +
+          "No value is transferred to the contract. Examine network fees " +
+          "in MetaMask before approving its signature. Reject if unexpected.";
       return window.confirm("REAL STUDIONET TRANSACTION\n\nMethod: "+op+"\nWallet: "+wallet+
-        "\nContract: "+CONTRACT+"\nEstimated feeValue (raw network units): "+units+
-        "\n\nContinue to wallet signing? No funds or verdicts are simulated.");
+        "\nContract: "+CONTRACT+"\n"+feeMessage+
+        "\n\nContinue to MetaMask cost review and signing? No automatic retries.");
     });
     showTx(r.status,r.txId);
   } catch(error) {showError(error);}
@@ -299,7 +301,11 @@ async function track() {
     const hash=$("txHash").value.trim();
     if (!HEX.test(hash)) throw new Error("Enter a complete 0x-prefixed 32-byte transaction hash.");
     showTx("WAITING FOR FINALIZATION — do not resend",hash);
-    const tx = await readClient.waitForFinalization({hash});
+    const tx = typeof readClient.waitForFinalization === "function" ?
+      await readClient.waitForFinalization({hash}) :
+      await readClient.waitForTransactionReceipt({
+        hash, status: TransactionStatus.FINALIZED, fullTransaction: false
+      });
     const ok = isSuccessful(tx);
     showTx(ok ? "FINALIZED / EXECUTION SUCCESS" : "FINALIZED / EXECUTION FAILED",hash);
     textPair($("txResult"),"CONSENSUS",String(tx?.statusName || "Inspect transaction record"));

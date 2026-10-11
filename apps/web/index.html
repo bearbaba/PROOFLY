@@ -40,7 +40,7 @@
 <aside class="stack">
 <article class="panel dark">
 <div class="heading"><div><div class="kicker">02 / SIGNED OPERATIONS</div><h2>Wallet & actions</h2></div></div>
-<p class="soft">Reading is public. Writes require your own EIP-1193 wallet on GenLayer Studionet and explicit confirmation of the estimated fees.</p>
+<p class="soft">Reading is public. Writes require your own EIP-1193 wallet on GenLayer Studionet and explicit confirmation of wallet-displayed network costs.</p>
 <button id="connectWallet" class="wallet">Connect wallet ↗</button>
 <div id="walletState" class="wallet-state">No wallet connected · Read-only mode</div>
 <div class="separator"></div>
@@ -55,8 +55,8 @@
 </select></div>
 <div id="actionExtra" class="action-extra"></div>
 <div id="actionInfo" class="action-info">Load an order to review its exact requirements before signing.</div>
-<button id="writeAction" class="sign" disabled>Review fee & sign →</button>
-<p class="hint light">We never request a secret key. Each click estimates network fees and requests a wallet signature only after your confirmation. Live writes may cost testnet GEN.</p>
+<button id="writeAction" class="sign" disabled>Review cost & sign →</button>
+<p class="hint light">We never request a secret key. SDK 1.1.8 cannot estimate protocol fees here. You must explicitly review network costs in MetaMask before signing. No automatic retries; testnet GEN may be needed.</p>
 </article>
 <article class="panel side-note">
 <div class="kicker">REVIEWER / DEMO</div><h3>First verified sample</h3>

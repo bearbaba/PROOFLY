@@ -125,3 +125,20 @@ The UI has not yet undergone a signed browser-wallet end-to-end test;
 transaction and finalized read have been verified on the deployment**.
 
 \`npm run bundle\` requires network access to install npm dependencies.
+
+
+### Live MetaMask SDK compatibility fix (2026-10-11)
+
+This site pins `genlayer-js@1.1.8`. That release supports
+`waitForTransactionReceipt({hash,status:"FINALIZED"})`, **not** the
+future `waitForFinalization` helper, and does **not** export
+`estimateTransactionFeesForWrite` or `isSuccessful`. The adapter
+accepts legacy clients, requires explicit user consent before attempting
+any write, and then lets MetaMask review the actual wallet fee. It
+**never invents a numeric protocol fee estimate**. Writes carry
+`value:0n`; PROOFLY does not transfer escrow funds. Once a transaction
+hash exists, the app waits for a FINALIZED receipt and checks the
+`txExecutionResultName` independently.
+
+Wallet smoke tests still require a human signature; CI now verifies the
+adapter against a **real** pinned SDK client, not only mocked clients.

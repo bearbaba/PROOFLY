@@ -1,7 +1,8 @@
 /**
  * Minimal GenLayer SDK adapter for PROOFLY's work-order candidate.
  *
- * SDK is deliberately supplied by the host (no network import or bundled wallet).
+ * SDK client is supplied by the host. Legacy 1.1.8 compatibility is
+ * explicit: no invented fee quote, user reviews wallet fee before signing.
  * Confirm actual deployed ABI/network/fee policy before enabling any write UI.
  * Never auto-resend after writeContract returns a transaction hash.
  */
@@ -68,11 +69,14 @@ export function makeWrite(name, args = []) {
 
 export function createWorkflowGateway({ client, contractAddress, finalVariant, isSuccessful }) {
   const address = validContract(contractAddress);
+  // genlayer-js@1.1.8 supports waitForTransactionReceipt but does NOT ship
+  // estimateTransactionFeesForWrite or waitForFinalization. Never gate its
+  // legitimate signed client on newer SDK APIs.
   requireCondition(client && typeof client.readContract === "function" &&
     typeof client.writeContract === "function" &&
-    typeof client.estimateTransactionFeesForWrite === "function" &&
-    typeof client.waitForFinalization === "function",
-    "A compatible initialized GenLayer SDK client is required", "SDK_NOT_READY");
+    (typeof client.waitForTransactionReceipt === "function" ||
+     typeof client.waitForFinalization === "function"),
+    "The installed GenLayer SDK client does not support contract reads, writes and transaction receipts", "SDK_NOT_READY");
   requireCondition(finalVariant !== undefined && finalVariant !== null,
     "Set TransactionHashVariant.LATEST_FINAL from the installed SDK", "MISSING_FINAL_VARIANT");
   requireCondition(typeof isSuccessful === "function",
@@ -102,17 +106,29 @@ export function createWorkflowGateway({ client, contractAddress, finalVariant, i
       const call = { address, ...makeWrite(name, args) };
       // Estimation can fail or cost too much: do not submit unless the caller
       // explicitly invoked this method and fee policy was returned.
-      const estimate = await client.estimateTransactionFeesForWrite(call);
-      requireCondition(estimate && estimate.distribution != null && estimate.feeValue != null,
-        "SDK did not return a usable fee estimate", "FEE_ESTIMATE_MISSING");
-      // The UI can review fees and cancel *before* any wallet signature.
+      const modernFees = typeof client.estimateTransactionFeesForWrite === "function";
+      let estimate = null;
+      if (modernFees) {
+        estimate = await client.estimateTransactionFeesForWrite(call);
+        requireCondition(estimate && estimate.distribution != null && estimate.feeValue != null,
+          "SDK did not return a usable fee estimate", "FEE_ESTIMATE_MISSING");
+      } else {
+        // Legacy 1.1.8 cannot quote consensus fees here. Never fake a fee
+        // estimate; require an explicit acknowledgment of this limitation,
+        // followed by the MetaMask cost/signature confirmation.
+        requireCondition(typeof approveFees === "function",
+          "Explicit wallet cost review is required for this SDK version", "FEE_REVIEW_REQUIRED");
+      }
       if (typeof approveFees === "function") {
         const approved = await approveFees(estimate);
         requireCondition(approved === true, "Wallet submission cancelled before signing", "USER_CANCELLED");
       }
       const txId = await client.writeContract({
         ...call,
-        fees: { distribution: estimate.distribution, feeValue: estimate.feeValue }
+        value: 0n, // PROOFLY never transfers funds to a work order.
+        ...(modernFees ? {fees: {
+          distribution: estimate.distribution, feeValue: estimate.feeValue
+        }} : {})
       });
       requireCondition(typeof txId === "string" && SHA.test(txId),
         "SDK returned an unexpected transaction identifier; inspect wallet activity before retrying",
@@ -130,8 +146,13 @@ export function createWorkflowGateway({ client, contractAddress, finalVariant, i
       requireCondition(typeof txId === "string" && SHA.test(txId),
         "A valid saved transaction hash is required", "INVALID_TX_ID");
       let tx;
-      try { tx = await client.waitForFinalization({ hash: txId }); }
-      catch (error) {
+      try {
+        tx = typeof client.waitForFinalization === "function" ?
+          await client.waitForFinalization({hash: txId}) :
+          await client.waitForTransactionReceipt({
+            hash: txId, status: "FINALIZED", fullTransaction: false
+          });
+      } catch (error) {
         return { txId, status: "TRACKING_UNRESOLVED", final: false,
           note: "Network wait failed or timed out. Resume this transaction ID, never blindly resend.",
           error: String(error?.message || error) };
