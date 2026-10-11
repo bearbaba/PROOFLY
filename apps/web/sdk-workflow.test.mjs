@@ -1,6 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createWorkflowGateway, makeRead, makeWrite, IntegrationError } from "./sdk-workflow.mjs";
+import { createClient } from "genlayer-js";
+import { studionet } from "genlayer-js/chains";
 const CONTRACT = "0x" + "1".repeat(40);
 const TXID = "0x" + "a".repeat(64);
 const DIGEST = "f".repeat(64);
@@ -124,4 +126,44 @@ test("fee review approval submits exactly once",async()=>{
   const r=await gateway.submit("evaluate_submission",["2"],null,()=>true);
   assert.equal(r.status,"SUBMITTED_NOT_FINAL");
   assert.deepEqual(calls.map(x=>x[0]),["estimate","write"]);
+});
+
+test("real pinned genlayer-js 1.1.8 client is compatible without newer fee/finality APIs",()=>{
+  const client=createClient({chain:studionet,account:"0x"+"a".repeat(40)});
+  assert.equal(typeof client.readContract,"function");
+  assert.equal(typeof client.writeContract,"function");
+  assert.equal(typeof client.waitForTransactionReceipt,"function");
+  assert.equal(typeof client.estimateTransactionFeesForWrite,"undefined");
+  assert.equal(typeof client.waitForFinalization,"undefined");
+  assert.doesNotThrow(()=>createWorkflowGateway({
+    client,contractAddress:CONTRACT,finalVariant:"latest-final",
+    isSuccessful:tx=>tx.txExecutionResultName==="FINISHED_WITH_RETURN"
+  }));
+});
+test("legacy 1.1.8 requires explicit cost warning before any signed write",async()=>{
+  const calls=[];
+  const client={
+    readContract:async()=>"",
+    writeContract:async args=>{calls.push(["write",args]);return TXID},
+    waitForTransactionReceipt:async args=>{
+      calls.push(["wait",args]);
+      return {statusName:"FINALIZED",txExecutionResultName:"FINISHED_WITH_RETURN"}
+    }
+  };
+  const gateway=createWorkflowGateway({client,contractAddress:CONTRACT,
+    finalVariant:"latest-final",isSuccessful:tx=>tx.statusName==="FINALIZED"&&
+      tx.txExecutionResultName==="FINISHED_WITH_RETURN"});
+  await assert.rejects(()=>gateway.submit("evaluate_submission",["2"]),/Explicit wallet cost review/);
+  await assert.rejects(()=>gateway.submit("evaluate_submission",["2"],null,()=>false),/cancelled/);
+  assert.equal(calls.length,0);
+  const submitted=await gateway.submit("evaluate_submission",["2"],null,estimate=>{
+    assert.equal(estimate,null);return true;
+  });
+  assert.equal(submitted.txId,TXID);
+  assert.equal(calls.length,1);
+  assert.equal(calls[0][1].value,0n);
+  assert.equal("fees" in calls[0][1],false);
+  const final=await gateway.resumeFinalization(TXID);
+  assert.equal(final.status,"FINALIZED_SUCCESS");
+  assert.deepEqual(calls[1][1],{hash:TXID,status:"FINALIZED",fullTransaction:false});
 });
