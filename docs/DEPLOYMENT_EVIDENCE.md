@@ -116,10 +116,33 @@ Reported readback progression:
    `submissions[0].version=1`, `submitted_at=1791712317`,
    the pinned pass fixture URL+SHA-256, and `outcome=null`.
 
-**Latest reported state:** SUBMITTED. `evaluate_submission("1")` and
-`get_receipt("1", 1)` are the **next steps**; no AI/validator verdict has
-been provided yet. Collect the evaluate transaction hash, FINALIZED and
-GenVM SUCCESS status, receipt JSON and finalized readback before claiming
-on-chain evaluation. The earlier `0x6F773E2e...` contract remains a failed
+**Latest JSON readback:** SUBMITTED. A subsequent Studio screenshot shows an
+`evaluate_submission` transaction FINALIZED with consensus ACCEPTED, but
+**no Proof Receipt or GenVM execution success has yet been verified.**
+See the screenshot-based observation below. The earlier `0x6F773E2e...` contract remains a failed
 pre-patch candidate.
 
+
+## Studio screenshot: first AI evaluation transaction — 2026-10-11
+
+The project owner supplied a screenshot of the **patched** Studio import
+(`0xEbb6E4D791299E79317DE796232029194e0F0aCb`) showing:
+
+- A transaction labelled `evaluate_submission` with a green **FINALIZED**
+  label in the Studio history (displayed tx hash prefix: `0xe49c...`).
+- Studio consensus logs displaying **ACCEPTED** and **Reached consensus**,
+  together with GenVM execution-finished log entries.
+- Previous `submit_evidence` and a later `accept_order` transaction
+  also showing green **FINALIZED**; one older `accept_order` attempt was
+  marked red **FINALIZED** (do not conceal this failed attempt).
+
+**Interpretation:** the screenshot supports that the evaluation transaction
+reached GenLayer consensus finality. The word ACCEPTED in **consensus logs is
+NOT proof** that the business-level PROOFLY verdict is `ACCEPTED`.
+It also does not disclose the GenVM execution result in detail.
+
+**Next evidence required:**
+`get_receipt("1", 1)` must return a nonempty verified receipt JSON containing
+criterion-level statuses and `outcome`, and `get_order("1")` must show the
+finalized resulting state. Record the complete transaction hash / link
+and confirm execution SUCCESS before claiming a valid evaluation.
