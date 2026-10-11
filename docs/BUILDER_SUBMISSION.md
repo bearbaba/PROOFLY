@@ -1,9 +1,13 @@
 # PROOFLY — GenLayer Builder contribution submission
 
-**Submission status: HOLD — web wallet connection fix has passed CI on main,
-but the Vercel production domain is still serving an older commit because
-the deployment API reached the account's daily 100-deployment limit (402).
-Portal submission NOT YET CONFIRMED.**
+**Submission status: REVIEWER-READY STUDIO PROTOTYPE; PORTAL NOT SUBMITTED.**
+The Vercel production domain has been confirmed READY at commit
+`f14305f1`, containing the MetaMask SDK compatibility fix. The project
+owner reported a real browser-wallet connection on GenLayer Studionet
+(chain ID 61999) and a successful live finalized `get_order("1")`
+readback showing `COMPLETED` and submission `ACCEPTED`. The website's
+`get_receipt("1",1)` button and a fresh signed transaction have not
+yet been demonstrated, so full hosted E2E write capability remains unverified.
 
 This is an honest, reviewer-ready description of the **manual Studionet
 demo** and the reproducible public source. The submitter must select a
@@ -125,13 +129,22 @@ The root cause was the website requiring newer SDK methods that do not
 exist in pinned `genlayer-js@1.1.8`. The fix was merged on main
 (`2e804b02`) and passed Python + Node/browser GitHub Actions.
 
-**The Vercel domain still serves commit `f3f7329`**, without the fix.
-A deploy attempt returned HTTP 402, resource
-`api-deployments-free-per-day`, retry-after 86400 seconds. Do not
-claim that signed browser writes work on the hosted site until Vercel
-deploys `2e804b02` (or later) and an actual browser-wallet smoke test
-succeeds. No payment token, private key or wallet seed should be
-provided for this fix.
+**Resolved:** the owner manually deployed commit `f14305f1`
+to production, which Vercel confirmed as READY and attached to
+`proofly-lovat.vercel.app`. A subsequent owner-provided browser
+transcript shows connected account
+`0x4c7cb73ac8f8999af21cfc9ff4cf2333a9508dcb`,
+Studionet 61999, role `owner`, and an actual
+`get_order("1")` RPC read showing `COMPLETED`, one submission, and
+`outcome=ACCEPTED`. The browser UI correctly blocks owner access to
+the Contributor-only `accept_order` action.
+
+**Still outstanding:** independently validate the on-website
+`get_receipt("1",1)` response and conduct a new explicitly authorized
+wallet-signed write, fee review and finalized execution check.
+The previous Vercel API daily-deployment limit was an intermittent
+deployment blocker, not an application defect; it was bypassed by the
+owner's successful manual production deployment.
 
 ## Reviewer evidence still to collect
 
@@ -145,7 +158,8 @@ provided for this fix.
       prompt-injection defense cases.
 - [ ] Optional screen recording of two-wallet flow and stored
       Proof Receipt, linked here after recording.
-- [ ] Verify public deployed homepage and finalized RPC read in a real browser.
+- [x] Verify public deployed homepage and finalized RPC read in a real browser (owner-provided transcript, 2026-10-11).
+- [ ] Verify website's `get_receipt("1",1)` read against the archived receipt.
 - [ ] Verify an actual EIP-1193 injected-wallet signature, fee confirmation and tx receipt.
 - [ ] Actual portal submission confirmation/link.
 
@@ -167,4 +181,4 @@ hackathon or claim that this is deployed on Bradbury.
    grounded artifact/reference quotes and ACCEPTED outcome.
 5. Show the raw commit-pinned documents and receipt archive in
    GitHub; explain independent validation and no-money scope.
-6. Close with current limits and next step (a wallet-connected UI).
+6. Close with current limits and next step (verified signed-wallet transaction, full tx hash and adversarial cases).
