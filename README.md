@@ -107,3 +107,23 @@ Read [Phase 2 contract and release gates](docs/WORK_ORDER_CONTRACT.md).
 **Live deployment and real consensus NOT VERIFIED.** GenVM compatibility,
 wallet E2E, validator convergence, fees, network finality and end-user UI are
 still pending. This contract is NOT an audited escrow or payment system.
+
+
+## Browser Spec Builder preview (Phase 3 foundation)
+
+The repository now has an interactive, responsive static application in
+[apps/web](apps/web/README.md). It creates an **unsigned** draft, checks
+criteria, pinned source syntax, source digest format and deadlines, warns
+about vague requirements and exports JSON for review.
+
+Run locally:
+
+    python -m http.server 4173 --directory apps/web
+
+JavaScript unit and syntax checks (Node 22+):
+
+    cd apps/web && npm test && npm run build
+
+It can be deployed to a Vercel static preview using the root vercel.json,
+but **it has no wallet, backend, stored user data, real LLM verdict, or
+GenLayer RPC integration yet**. This UI is not a production verification app.

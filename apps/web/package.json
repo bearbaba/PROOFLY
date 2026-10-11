@@ -1,0 +1,9 @@
+{
+  "name": "proofly-spec-builder",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test model.test.mjs",
+    "build": "node --check app.mjs && node --check model.mjs"
+  }
+}

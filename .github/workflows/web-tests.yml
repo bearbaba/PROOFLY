@@ -1,0 +1,33 @@
+name: Spec Builder web checks
+
+on:
+  pull_request:
+    branches: [develop, main]
+    paths:
+      - "apps/web/**"
+      - ".github/workflows/web-tests.yml"
+  push:
+    branches: [develop, main]
+    paths:
+      - "apps/web/**"
+      - ".github/workflows/web-tests.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Static syntax checks
+        working-directory: apps/web
+        run: npm run build
+      - name: Specification logic regressions
+        working-directory: apps/web
+        run: npm test
