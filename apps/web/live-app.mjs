@@ -32,6 +32,7 @@ const DEMO_REFERENCE = "https://raw.githubusercontent.com/bearbaba/PROOFLY/fa4d2
 let verifiedReference = null;
 let verifiedArtifact = null;
 let candidateOrder = null;
+let creationOutcome = null;
 
 function elem(tag, text, className) {
   const node = document.createElement(tag);
@@ -238,7 +239,7 @@ function refreshCreateForm() {
     }catch(error){message=String(error?.message||error);}
   }
   $("createNow").disabled=busy||!ready;
-  $("createState").textContent=message;
+  $("createState").textContent=creationOutcome || message;
   $("createState").classList.toggle("empty",!ready);
 }
 function loadDemoRequirements(){
@@ -253,6 +254,7 @@ function loadDemoRequirements(){
   $("referenceStatus").textContent="Example loaded. Enter your contributor's wallet and verify the reference below.";
   $("referenceStatus").classList.remove("verified");
   refreshCreateForm();
+  void verifyReference();
 }
 async function hashPublicReference(url){
   if(!isPinnedUrl(url))
@@ -282,6 +284,7 @@ async function verifyReference(){
 }
 async function createNewOrder(){
   if(busy)return;
+  creationOutcome=null;
   setBusy(true);
   try{
     requireWallet();
@@ -312,11 +315,11 @@ async function createNewOrder(){
         "\nContract: "+CONTRACT+"\n"+feeMessage+
         "\nThis is not escrow or a payment.\n\nProceed to wallet approval?");
     });
-    $("createState").textContent="Transaction submitted! Expected work order #"+
+    creationOutcome="Transaction submitted! Expected work order #"+
       planned.id+". Click Track finality to confirm. Do not create again while pending.";
     showTx("CREATION SUBMITTED — TRACK FINALITY",sent.txId);
     $("txResult").scrollIntoView({behavior:"smooth",block:"start"});
-  }catch(error){showError(error,$("createState"));}
+  }catch(error){creationOutcome=String(error?.message||error);}
   finally{setBusy(false);}
 }
 
@@ -486,7 +489,7 @@ async function track() {
           currentOrderId=candidateOrder.id;
           currentOrder=proposed;
           renderOrder();
-          $("createState").textContent="Work order #"+candidateOrder.id+
+          creationOutcome="Work order #"+candidateOrder.id+
             " created and finalized. Share this order number with your contributor.";
           candidateOrder=null;
         }else{
@@ -513,9 +516,11 @@ $("createForm").addEventListener("submit",event=>event.preventDefault());
 $("createForm").addEventListener("input",event=>{
   if(event.target?.id==="jobReference"){
     verifiedReference=null;
+    creationOutcome=null;
     $("referenceStatus").textContent="Reference changed. Verify again before creating.";
     $("referenceStatus").classList.remove("verified");
   }
+  creationOutcome=null;
   refreshCreateForm();
 });
 $("loadReceipt").addEventListener("click",loadReceipt);
