@@ -72,3 +72,38 @@ Documentation: [Preflight](docs/PREFLIGHT.md) ·
 Next: execute the verifier on real GenLayer Studio/Studionet and publish
 observed receipts, fees, validator decisions and finality before describing
 this project as a functional production application.
+
+
+## Phase 2 — Work Order Contract candidate and Proof Receipts
+
+The develop branch now includes a new **candidate** Intelligent Contract:
+[contracts/proofly/work_order.py](contracts/proofly/work_order.py).
+
+It supports owner creation, contributor acceptance of a chain/contract/order-
+bound spec digest, submission, one revision, permissionless GenLayer
+evaluation, public per-version receipts, cancellation and expiry.
+
+Its custom validator independently fetches/hash-checks evidence and
+reference, reclassifies every requirement, and checks whether the
+leader's quotations actually support the proposed conclusions.
+A failed evaluation does not issue a work-failure verdict.
+
+The offline [portable receipt checker](packages/receipt.py) recomputes
+spec commitments, evidence SHA-256 hashes, required quotations and aggregate
+outcome from supplied local documents. **It does not prove chain finality,
+authenticity of supplied chain data, or semantic correctness.**
+
+The full offline unit test command:
+
+    python -m unittest discover -s tests -p "test_*.py" -v
+
+Portable receipt verification of *exported* order/receipt JSON and original
+text bytes:
+
+    python -m packages.receipt --order order.json --receipt receipt.json --artifact artifact.txt --reference reference.txt
+
+Read [Phase 2 contract and release gates](docs/WORK_ORDER_CONTRACT.md).
+
+**Live deployment and real consensus NOT VERIFIED.** GenVM compatibility,
+wallet E2E, validator convergence, fees, network finality and end-user UI are
+still pending. This contract is NOT an audited escrow or payment system.
