@@ -9,7 +9,7 @@ import { TransactionHashVariant, TransactionStatus } from "genlayer-js/types";
 import { createWorkflowGateway, makeRead } from "./sdk-workflow.mjs";
 import { isPinnedUrl } from "./model.mjs";
 import { CONTRACT, CHAIN_ID, EXPLORER, parseStudioPlan, decodeRead,
-         roleFor, preparedAction, describeReceipt } from "./live-model.mjs";
+         roleFor, preparedAction, describeReceipt, prepareUserOrder } from "./live-model.mjs";
 
 const $ = id => document.getElementById(id);
 const readClient = createClient({ chain: studionet });
@@ -28,6 +28,9 @@ function isSuccessful(tx) {
 }
 const HEX = /^0x[0-9a-fA-F]{64}$/;
 const STORAGE_KEY = "proofly.studionet.61999.pending";
+const DEMO_REFERENCE = "https://raw.githubusercontent.com/bearbaba/PROOFLY/fa4d29b0e6f8efb50e2472530aff1d0ab7aca77e/fixtures/evidence/reference.txt";
+let verifiedReference = null;
+let candidateOrder = null;
 
 function elem(tag, text, className) {
   const node = document.createElement(tag);
@@ -56,6 +59,7 @@ function setBusy(value) {
   $("loadReceipt").disabled = value;
   $("trackTx").disabled = value;
   refreshAction();
+  refreshCreateForm();
 }
 function getOrderId() {
   const id = $("orderId").value.trim();
@@ -193,6 +197,122 @@ async function connectWallet() {
   } catch(error) { walletChanged(String(error?.message || error)); showError(error,$("walletState")); }
   finally { setBusy(false); }
 }
+
+/* Human-facing create flow. Public bytes are re-fetched and SHA-256 checked
+   immediately before signing; no local private key, fake verdict or JSON file. */
+function humanFields() {
+  return {
+    title:$("jobTitle").value.trim(),
+    contributor:$("jobContributor").value.trim(),
+    reference_url:$("jobReference").value.trim(),
+    reference_sha256:verifiedReference?.url===$("jobReference").value.trim() ? verifiedReference.hash : "",
+    criterion1:$("jobR1").value.trim(),
+    criterion2:$("jobR2").value.trim(),
+    criterion3:$("jobR3").value.trim(),
+    submit_days:$("submitDays").value,
+    revision_days:$("revisionDays").value
+  };
+}
+function refreshCreateForm() {
+  if(!$("createNow")) return;
+  let message;
+  let ready=false;
+  if(!wallet) message="Connect your wallet first.";
+  else if(!verifiedReference ||
+      verifiedReference.url!==$("jobReference").value.trim())
+    message="Verify the public reference document to calculate its SHA-256.";
+  else {
+    try {
+      const fields=humanFields();
+      prepareUserOrder(fields);
+      if(fields.contributor.toLowerCase()===wallet.toLowerCase())
+        throw new Error("Owner and contributor need different wallet addresses.");
+      message="Ready to create. Review the network cost in MetaMask before signing.";
+      ready=true;
+    }catch(error){message=String(error?.message||error);}
+  }
+  $("createNow").disabled=busy||!ready;
+  $("createState").textContent=message;
+  $("createState").classList.toggle("empty",!ready);
+}
+function loadDemoRequirements(){
+  $("jobTitle").value="PROOFLY Demo - User Guide Verification";
+  $("jobReference").value=DEMO_REFERENCE;
+  $("jobR1").value="The guide explicitly states that this is a trial environment and that it does not accept real money.";
+  $("jobR2").value="The guide gives all three steps for reading a saved draft in the order documented by the reference.";
+  $("jobR3").value="The guide provides two troubleshooting instructions whose claimed remedies are supported by the reference.";
+  $("submitDays").value="2";
+  $("revisionDays").value="7";
+  verifiedReference=null;
+  $("referenceStatus").textContent="Example loaded. Enter your contributor's wallet and verify the reference below.";
+  $("referenceStatus").classList.remove("verified");
+  refreshCreateForm();
+}
+async function hashPublicReference(url){
+  if(!isPinnedUrl(url))
+    throw new Error("Reference must be a public, commit-pinned GitHub raw .txt URL.");
+  const response=await fetch(url,{cache:"no-store"});
+  if(!response.ok) throw new Error("Reference fetch failed (HTTP "+response.status+").");
+  const bytes=await response.arrayBuffer();
+  if(!bytes.byteLength||bytes.byteLength>16000)
+    throw new Error("Reference must contain 1–16,000 bytes.");
+  const hash=await crypto.subtle.digest("SHA-256",bytes);
+  return [...new Uint8Array(hash)].map(x=>x.toString(16).padStart(2,"0")).join("");
+}
+async function verifyReference(){
+  if(busy)return;
+  setBusy(true);
+  try{
+    const url=$("jobReference").value.trim();
+    const hash=await hashPublicReference(url);
+    verifiedReference={url,hash};
+    $("referenceStatus").textContent="Reference verified. SHA-256: "+hash;
+    $("referenceStatus").classList.add("verified");
+  }catch(error){
+    verifiedReference=null;
+    showError(error,$("referenceStatus"));
+    $("referenceStatus").classList.remove("verified");
+  }finally{setBusy(false);}
+}
+async function createNewOrder(){
+  if(busy)return;
+  setBusy(true);
+  try{
+    requireWallet();
+    const fields=humanFields();
+    if(!verifiedReference||verifiedReference.url!==fields.reference_url)
+      throw new Error("Verify the reference before creating an order.");
+    const freshHash=await hashPublicReference(fields.reference_url);
+    if(freshHash!==verifiedReference.hash)
+      throw new Error("Reference bytes changed. Verify the document again before signing.");
+    const args=prepareUserOrder(fields);
+    if(fields.contributor.toLowerCase()===wallet.toLowerCase())
+      throw new Error("Owner and contributor must be different wallets.");
+    const next=await readFinal("next_order",[]);
+    if(!/^[1-9][0-9]*$/.test(String(next)))
+      throw new Error("Next order ID could not be read from finalized chain state.");
+    candidateOrder={id:String(next),title:fields.title,owner:wallet,
+      contributor:fields.contributor.toLowerCase()};
+    const sent=await gateway.submit("create_order",args,hash=>{
+      $("txHash").value=hash;
+      try{localStorage.setItem(STORAGE_KEY,hash);}catch{}
+      showTx("SUBMITTED — CHECK FINALITY",hash);
+    },estimate=>{
+      const feeMessage=estimate ?
+        "Estimated protocol feeValue (raw units): "+String(estimate.feeValue) :
+        "No upfront protocol fee estimate is available from SDK 1.1.8. Review MetaMask's network cost carefully.";
+      return window.confirm("CREATE A REAL STUDIONET WORK ORDER\n\nWallet: "+wallet+
+        "\nContract: "+CONTRACT+"\n"+feeMessage+
+        "\nThis is not escrow or a payment.\n\nProceed to wallet approval?");
+    });
+    $("createState").textContent="Transaction submitted! Expected work order #"+
+      candidateOrder.id+". Click Track finality to confirm. Do not create again while pending.";
+    showTx("CREATION SUBMITTED — TRACK FINALITY",sent.txId);
+    $("txResult").scrollIntoView({behavior:"smooth",block:"start"});
+  }catch(error){showError(error,$("createState"));}
+  finally{setBusy(false);}
+}
+
 function field(label,id,placeholder,type="text") {
   const wrapper = elem("div",undefined,"field");
   const tag = elem("label",label);
@@ -312,7 +432,24 @@ async function track() {
     textPair($("txResult"),"EXECUTION",String(tx?.txExecutionResultName || (ok ? "SUCCESS" : "ERROR")));
     try {localStorage.removeItem(STORAGE_KEY);} catch {}
     // Read the latest finalized state only after checking execution.
-    if (ok && currentOrderId) {
+    if (ok && candidateOrder) {
+      try{
+        const proposed=await readFinal("get_order",[candidateOrder.id]);
+        if(proposed?.owner?.toLowerCase()===candidateOrder.owner &&
+           proposed?.contributor?.toLowerCase()===candidateOrder.contributor &&
+           proposed?.title===candidateOrder.title){
+          $("orderId").value=candidateOrder.id;
+          currentOrderId=candidateOrder.id;
+          currentOrder=proposed;
+          renderOrder();
+          $("createState").textContent="Work order #"+candidateOrder.id+
+            " created and finalized. Share this order number with your contributor.";
+          candidateOrder=null;
+        }else{
+          $("createState").textContent="Transaction finalized, but the proposed order ID could not be confirmed. Check on-chain orders before another write.";
+        }
+      }catch(error){showError(error,$("createState"));}
+    } else if (ok && currentOrderId) {
       try {
         currentOrder = await readFinal("get_order",[currentOrderId]);
         renderOrder();
@@ -325,6 +462,18 @@ async function track() {
   } finally {setBusy(false);}
 }
 $("loadOrder").addEventListener("click",loadOrder);
+$("loadDemo").addEventListener("click",loadDemoRequirements);
+$("verifyReference").addEventListener("click",verifyReference);
+$("createNow").addEventListener("click",createNewOrder);
+$("createForm").addEventListener("submit",event=>event.preventDefault());
+$("createForm").addEventListener("input",event=>{
+  if(event.target?.id==="jobReference"){
+    verifiedReference=null;
+    $("referenceStatus").textContent="Reference changed. Verify again before creating.";
+    $("referenceStatus").classList.remove("verified");
+  }
+  refreshCreateForm();
+});
 $("loadReceipt").addEventListener("click",loadReceipt);
 $("connectWallet").addEventListener("click",connectWallet);
 $("operation").addEventListener("change",refreshExtras);
@@ -333,6 +482,7 @@ $("trackTx").addEventListener("click",track);
 $("orderId").addEventListener("input",refreshAction);
 $("receiptResult").textContent="Read an order first, then select a receipt version.";
 $("txResult").textContent="Only real hashes from signed wallet transactions appear here.";
+refreshCreateForm();
 try { const pending=localStorage.getItem(STORAGE_KEY); if (pending && HEX.test(pending)) $("txHash").value=pending; } catch {}
 if(window.ethereum?.on) {
   window.ethereum.on("accountsChanged",()=>walletChanged("Wallet account changed. Reconnect before signing."));
