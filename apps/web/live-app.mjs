@@ -688,13 +688,13 @@ function refreshAction() {
     cancel_order:"Cancel work order →",
     close_expired:"Close expired order →"
   };
-  const waiting=!!currentOrder && (
+  const waitingForCounterparty=!!currentOrder && (
     (role==="owner" && ["PROPOSED","ACTIVE","REVIEWED"].includes(currentOrder.status)) ||
     currentOrder.status==="COMPLETED");
-  $("writeAction").textContent=waiting ?
+  $("writeAction").textContent=waitingForCounterparty ?
     (currentOrder.status==="COMPLETED" ? "Verified — see result below ✓" : "Waiting for contributor") :
     names[op]||"Review cost & sign →";
-  $("writeAction").disabled = busy || !wallet || !needed || !correctRole || !validState || waiting;
+  $("writeAction").disabled = busy || !wallet || !needed || !correctRole || !validState || waitingForCounterparty;
 }
 function parameters() {
   const op = $("operation").value;
