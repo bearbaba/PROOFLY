@@ -44,9 +44,14 @@ PROOFLY is a **pre-release prototype**. The develop branch includes a pure
 Python domain model, a standalone GenLayer verification spike, offline
 requirements/evidence preflight, deterministic unit tests and CI.
 
-**No contract deployment, live consensus, wallet integration, escrow or
-public app has been verified yet.** The spike is NOT the full owner/contributor
-work-order contract.
+**Manual Studio evidence is now available:** on 2026-10-11, a PROOFLY
+work-order instance on Studionet (chain ID 61999) returned a user-reported
+Proof Receipt with three SATISFIED criteria and ACCEPTED business outcome.
+See [Live Studio demo](docs/LIVE_STUDIO_DEMO.md) and the archived
+[receipt JSON](docs/evidence/studionet-order-1-receipt.json).
+Explorer-independent execution proof, later state readback, hosted wallet
+integration and security audit are still pending. The separate verifier spike
+is NOT the full owner/contributor work-order contract.
 
 ### Run every offline test
 
@@ -69,9 +74,9 @@ Documentation: [Preflight](docs/PREFLIGHT.md) ·
 [GenLayer spike](docs/GENLAYER_SPIKE.md) ·
 [Phase 1 release gates](docs/PHASE1_RELEASE_GATES.md).
 
-Next: execute the verifier on real GenLayer Studio/Studionet and publish
-observed receipts, fees, validator decisions and finality before describing
-this project as a functional production application.
+Next: capture complete transaction hashes, independently validate GenVM
+execution and chain state, test negative/unverifiable cases, then connect the
+wallet-enabled application. Do not describe this as a production release yet.
 
 
 ## Phase 2 — Work Order Contract candidate and Proof Receipts
@@ -104,9 +109,11 @@ text bytes:
 
 Read [Phase 2 contract and release gates](docs/WORK_ORDER_CONTRACT.md).
 
-**Live deployment and real consensus NOT VERIFIED.** GenVM compatibility,
-wallet E2E, validator convergence, fees, network finality and end-user UI are
-still pending. This contract is NOT an audited escrow or payment system.
+**A real Studio manual workflow and receipt have been observed via user-provided
+readbacks and a Studio screenshot.** See [live evidence](docs/LIVE_STUDIO_DEMO.md).
+Independent Explorer verification, full tx hashes, negative verdict runs,
+fees and end-user wallet-connected UI are still pending. This contract is
+NOT an audited escrow or payment system.
 
 
 ## Browser Spec Builder preview (Phase 3 foundation)

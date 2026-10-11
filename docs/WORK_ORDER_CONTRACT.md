@@ -1,9 +1,12 @@
 
 # PROOFLY — Phase 2 Work Order Contract Candidate
 
-**STATUS: UNIT TESTS (FAKE SDK); LIVE GENLAYER VALIDATION PENDING.**
+**STATUS: OFFLINE UNIT TESTS + USER-REPORTED STUDIO SUCCESS CASE (2026-10-11); INDEPENDENT EXPLORER VERIFICATION PENDING.**
 
-This is a GenLayer Studio candidate, not a deployed or audited contract.
+This is a GenLayer Studio candidate with a user-reported Studionet manual
+demo and an ACCEPTED receipt; the deployed source has not been independently
+audited or matched against the GitHub version. Details:
+[LIVE_STUDIO_DEMO.md](LIVE_STUDIO_DEMO.md).
 It does not accept money or perform escrow, payout, refund or transfers.
 Only publicly accessible, commit-pinned GitHub raw TXT documents are supported.
 

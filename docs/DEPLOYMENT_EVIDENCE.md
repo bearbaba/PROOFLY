@@ -1,6 +1,6 @@
 # PROOFLY — Studionet deployment verification
 
-**Status: USER-REPORTED IMPORT ADDRESS / ON-CHAIN VERIFICATION PENDING**
+**Status: LIVE STUDIO RECEIPT REPORTED (3/3 SATISFIED); EXPLORER INDEPENDENT VERIFICATION PENDING**
 
 A PROOFLY Studio import link was provided by the project owner on
 2026-10-11. This is an **unverified lead**, not independently confirmed
@@ -141,8 +141,23 @@ reached GenLayer consensus finality. The word ACCEPTED in **consensus logs is
 NOT proof** that the business-level PROOFLY verdict is `ACCEPTED`.
 It also does not disclose the GenVM execution result in detail.
 
-**Next evidence required:**
-`get_receipt("1", 1)` must return a nonempty verified receipt JSON containing
-criterion-level statuses and `outcome`, and `get_order("1")` must show the
-finalized resulting state. Record the complete transaction hash / link
-and confirm execution SUCCESS before claiming a valid evaluation.
+**Next evidence required:** The user has subsequently provided a nonempty
+`get_receipt("1", 1)` JSON with `outcome=ACCEPTED` and all three criteria
+`SATISFIED`; see [LIVE_STUDIO_DEMO.md](LIVE_STUDIO_DEMO.md).
+`get_order("1")` must still show the finalized resulting state. Record the
+complete transaction hash/link and GenVM SUCCESS result.
+
+
+## Proof Receipt received — 2026-10-11
+
+The owner pasted the complete `get_receipt("1", 1)` response from Studio.
+It reports **ACCEPTED, 3 SATISFIED out of 3** with chain ID 61999 and the
+patched contract address. Both public evidence SHA-256 digests and the
+chain/contract/order-scoped spec commitment match the original repository
+fixtures and earlier user-supplied order readback. All six quotes occur in
+their respective public documents. Full result:
+[LIVE_STUDIO_DEMO.md](LIVE_STUDIO_DEMO.md) and
+[receipt JSON](evidence/studionet-order-1-receipt.json).
+
+**Still pending:** final `get_order("1")` readback, complete tx IDs,
+explorer-authenticated finality/execution checks and adversarial live cases.
