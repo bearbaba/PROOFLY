@@ -5,7 +5,7 @@ No escrow or payments. All verdicts originate in GenLayer consensus, never in
 client-supplied calldata. Evidence is PUBLIC and pinned by URI + SHA-256.
 """
 from genlayer import *
-from datetime import datetime, timezone
+from datetime import datetime
 from hashlib import sha256
 import json
 import re
@@ -43,8 +43,18 @@ def _hash(value):
 
 
 def _address(value):
-    """Normalize SDK Address and runner-decoded strings at the calldata boundary."""
-    addr = Address(value).as_hex.lower()
+    """Normalize a hex string or an already-decoded SDK Address.
+
+    Studio's argument ABI can decode an Address-annotated field as an integer.
+    Do not construct Address(int): GenLayer Address accepts hex/20-byte data
+    and bytes(large_int) raises OverflowError. Use str for UI calldata.
+    """
+    if isinstance(value, Address):
+        addr = value.as_hex.lower()
+    elif type(value) is str:
+        addr = value.lower()
+    else:
+        raise gl.vm.UserError("INVALID_ADDRESS_TYPE")
     _need(bool(re.fullmatch(r"0x[a-f0-9]{40}", addr)) and addr != ZERO, "INVALID_ADDRESS")
     return addr
 
@@ -146,7 +156,9 @@ class ProoflyWorkOrder(gl.Contract):
         self.next_id = u32(1)
 
     def _now(self):
-        return int(datetime.now(timezone.utc).timestamp())
+        # GenVM transaction time is the consensus context, not host wall time.
+        raw = gl.message_raw["datetime"]
+        return int(datetime.fromisoformat(raw.replace("Z", "+00:00")).timestamp())
 
     def _load(self, order_id):
         _need(type(order_id) is str and order_id in self.orders, "UNKNOWN_ORDER")
@@ -156,7 +168,7 @@ class ProoflyWorkOrder(gl.Contract):
         self.orders[rec["id"]] = _json(rec)
 
     @gl.public.write
-    def create_order(self, contributor: Address, title: str, criteria_json: str,
+    def create_order(self, contributor: str, title: str, criteria_json: str,
                      reference_url: str, reference_sha256: str,
                      submit_deadline: int, revision_deadline: int) -> None:
         who = _address(contributor)

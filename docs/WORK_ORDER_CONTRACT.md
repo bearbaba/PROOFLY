@@ -108,3 +108,25 @@ The browser verifies the core digest, quote, status and version invariants
 using browser Web Crypto. For network-authenticated evidence, compare records
 against a trusted finalized GenLayer RPC/explorer result manually until a
 separately tested network adapter is available.
+
+
+## Live Studio address ABI fix — 2026-10-11
+
+The first live `create_order` attempt on an earlier candidate deployed at
+`0x6F773E2e249D08a00509E4EC96d13C71c0e657d7` failed with
+`OverflowError: cannot fit 'int' into an index-sized integer`, originating
+from `Address(value)` while decoding an `Address`-typed contributor argument.
+This is an **observed failure**, not a successful work order.
+
+The revised candidate accepts `contributor: str` (a complete 0x-prefixed
+40-hex-digit address), normalizes it without wrapping already-decoded
+`Address` objects, and uses the GenVM transaction timestamp from
+`gl.message_raw["datetime"]` rather than host wall-clock time. New regression
+tests cover the previous integer failure, both supported address forms and
+transaction time source. **The prior deployed instance is not updated by a
+GitHub commit. Deploy a NEW instance from the patched contract.**
+
+After new deployment, first verify `next_order()`; next call `create_order`
+with a real second wallet address entered as a STRING (no unquoted numeric
+literal), actual SHA-256 and deadlines relative to transaction time. Confirm
+finalized GenVM execution success before recording it as working.

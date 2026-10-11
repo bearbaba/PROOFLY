@@ -164,3 +164,15 @@ tracks finalization separately from contract execution success.
 Read [SDK and Studio integration runbook](docs/SDK_WORKFLOW.md) before any
 attempt to deploy or submit a transaction. Neither the export nor the tests
 establish a live GenLayer deployment, finality, or an accepted work order.
+
+
+### Studio ABI correction (2026-10-11)
+
+The first Studio `create_order` execution exposed an address ABI bug in the
+older deployed contract: `Address(value)` received a large integer and
+raised `OverflowError`. The develop candidate now takes the contributor
+as a **hex string**, recognizes existing SDK `Address` values separately,
+and reads timestamp from GenVM transaction context. Deploy a **new instance**
+from the updated source; the previous deployment is not patched onchain.
+See [Work Order contract notes](docs/WORK_ORDER_CONTRACT.md) and
+[Deployment evidence](docs/DEPLOYMENT_EVIDENCE.md).

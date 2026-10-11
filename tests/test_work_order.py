@@ -113,6 +113,29 @@ class WorkOrderTests(unittest.TestCase):
     def submit(self, artifact=ARTIFACT):
         self.contract.submit_evidence("1", artifact, self.digest(artifact))
 
+    def test_studio_address_calldata_uses_string_and_sdk_addresses_are_not_rewrapped(self):
+        import inspect
+        self.assertEqual(
+            inspect.signature(self.ns["ProoflyWorkOrder"].create_order).parameters["contributor"].annotation,
+            str
+        )
+        self.assertEqual(self.ns["_address"](CONTRIBUTOR), CONTRIBUTOR)
+        self.assertEqual(self.ns["_address"](Address(CONTRIBUTOR)), CONTRIBUTOR)
+        with self.assertRaisesRegex(UserError, "INVALID_ADDRESS_TYPE"):
+            self.ns["_address"](int(CONTRIBUTOR, 16))
+        with self.assertRaisesRegex(UserError, "INVALID_ADDRESS_TYPE"):
+            self.ns["_address"](True)
+        with self.assertRaisesRegex(UserError, "INVALID_ADDRESS"):
+            self.ns["_address"]("0x" + "0" * 40)
+        with self.assertRaisesRegex(UserError, "INVALID_ADDRESS"):
+            self.ns["_address"]("not-an-address")
+
+    def test_contract_time_uses_transaction_context_not_system_clock(self):
+        self.sdk.message_raw["datetime"] = "2026-10-11T08:00:00Z"
+        self.assertEqual(self.ns["ProoflyWorkOrder"]._now(self.contract), 1791705600)
+        self.sdk.message_raw["datetime"] = "2026-10-11T15:00:00+07:00"
+        self.assertEqual(self.ns["ProoflyWorkOrder"]._now(self.contract), 1791705600)
+
     def test_complete_flow_and_receipt(self):
         self.accept()
         self.submit()

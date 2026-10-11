@@ -65,3 +65,21 @@ execution success, contract code, and observable read/write state are collected.
 This deployment note is for auditability and **must not** be interpreted as
 proof that the user-provided import address belongs to the current PROOFLY
 contract or that GenLayer validators have verified any real deliverable.
+
+
+## Live failure observed during manual create_order test — 2026-10-11
+
+The owner provided a GenVM traceback from `create_order`:
+
+```
+OverflowError: cannot fit 'int' into an index-sized integer
+contract.py:162 in create_order -> _address(contributor)
+contract.py:47 in _address -> Address(value).as_hex.lower()
+```
+
+The current Studio-imported instance cannot be counted as a successful
+end-to-end proof. **Do not report create_order as successful.** The source
+fix changes the method's contributor ABI from `Address` to `str`; it
+requires deployment of a fresh instance. The old candidate address remains
+in this document only as historical evidence of the attempted deployment.
+The new address, deployment tx, readback and business flow are PENDING.
