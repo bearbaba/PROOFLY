@@ -275,7 +275,7 @@ async function loadOrder() {
     }
     $("receiptResult").textContent = "Click Read finalized Proof Receipt to inspect results.";
   } catch(error) { showError(error,$("orderResult")); }
-  finally { setBusy(false); if(wallet && !boardBusy) void refreshMyWork({autoOpen:false}); }
+  finally { setBusy(false); if(wallet && !boardBusy) void refreshMyWork({autoOpen:!userPickedOrder}); }
 }
 async function loadReceipt() {
   if (busy) return;
