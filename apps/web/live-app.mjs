@@ -368,7 +368,8 @@ async function bindAuthorizedWallet(accounts,provider=window.ethereum) {
   selectNextOperation();
   refreshCreateForm();
   // Do not await a full dashboard RPC scan before the wallet can sign.
-  if(!busy)void refreshMyWork();
+  if(!busy && (different || Date.now()-lastWorkboardRefresh>120000))
+    void refreshMyWork();
   return true;
 }
 async function connectWallet() {
@@ -688,7 +689,7 @@ function refreshAction() {
     (role==="owner" && ["PROPOSED","ACTIVE","REVIEWED"].includes(currentOrder.status)) ||
     currentOrder.status==="COMPLETED");
   $("writeAction").textContent=waiting ?
-    (currentOrder.status==="COMPLETED" ? "View verification result below ↓" : "Waiting for contributor") :
+    (currentOrder.status==="COMPLETED" ? "Verified — see result below ✓" : "Waiting for contributor") :
     names[op]||"Review cost & sign →";
   $("writeAction").disabled = busy || !wallet || !needed || !correctRole || !validState || waiting;
 }
