@@ -123,3 +123,80 @@ column-gap:32px;row-gap:13px;grid-template-areas:
 .txn-notice span{font:inherit;font-size:11px;line-height:1.5;overflow-wrap:anywhere}
 .txn-notice strong{flex-shrink:0}
 @media(max-width:650px){.txn-notice{display:flex;align-items:stretch;flex-direction:column;gap:4px}.txn-notice a{margin-left:0}}
+
+/* PROOFLY / Quiet Workspace — visual refinement, no behavioral changes. */
+:root{--bg:#f7f9fb;--ink:#182d39;--muted:#637b86;--line:#e1e9ed;--teal:#087f86;--darker:#102f3d}
+body{background:radial-gradient(ellipse 75% 24% at 92% 4%,#e4f4f1 0%,transparent 80%),var(--bg);color:var(--ink);font-size:14px}
+.wrap{max-width:1216px;padding-left:28px;padding-right:28px}
+.top{padding:19px 0;gap:14px;border-color:#e3ecef}
+.mark{font-size:22px;letter-spacing:-.055em;gap:11px}
+.monogram{width:38px;height:38px;border-radius:12px;background:#0a8284;box-shadow:0 5px 18px #0a82842a;font-size:20px}
+.top-links{gap:26px;color:#445e6b}
+.top-links>a{transition:color .18s ease}
+.top-links>a:hover{color:#0d8587}
+.hero{padding:36px 3px 25px}
+.hero .kicker{color:#388786}
+.hero h1{font-size:clamp(35px,4.5vw,56px);line-height:1.14;letter-spacing:-.06em;margin:11px 0 15px}
+.hero h1 em{color:#0b8b89}
+.hero p{font-size:15px;line-height:1.8}
+.strip{padding:12px 18px;font-size:11px;background:#eff8f7;border-color:#cde6e3;color:#3a6970}
+.app-shell{padding-top:19px;gap:20px}
+.workspace-grid,.stack{gap:18px}
+.panel{border-radius:20px;padding:25px;border-color:#e3ebee;box-shadow:0 10px 40px rgba(25,57,70,.035)}
+.heading{margin-bottom:15px}
+.heading h2{font-size:21px;letter-spacing:-.04em}
+.kicker{letter-spacing:.13em;font-size:10px}
+.dark.workspace-wallet{background:linear-gradient(123deg,#102e3b 0%,#0a3441 70%,#0f4150 100%);border:1px solid #264b56;box-shadow:0 18px 44px rgba(13,51,61,.14);padding:30px;row-gap:14px}
+.workspace-wallet .soft{color:#b3d0d3}
+.workspace-wallet .heading h2{font-size:24px}
+.workspace-wallet .next-step{background:rgba(255,255,255,.065);border:1px solid rgba(173,219,221,.20);padding:21px}
+.next-step h3{font-size:clamp(19px,2vw,24px)}
+.workflow-mini{gap:5px}
+.workflow-mini span{font-size:10px;padding:5px 11px;border-color:#476c73;color:#d0e3e2}
+.workflow-mini span.is-active{background:#e8fbf4;color:#105f5d}
+.wallet{background:#e5faf3;color:#115e59;box-shadow:0 3px 13px #041b271a;transition:transform .16s ease,background .16s}
+.wallet:hover{background:#d6f5e9;transform:translateY(-1px)}
+.wallet-state{border:1px solid #3e6270;background:#123847;font-size:11px;overflow-wrap:anywhere}
+.action-info{background:#143947;border:1px solid #38606a;border-radius:12px;line-height:1.65}
+.sign{background:#0d9295;font-size:15px;border-radius:13px;min-height:54px;box-shadow:0 6px 18px #001e242e}
+.sign:hover{background:#0a787b}
+.sign:disabled{opacity:.65}
+#actionExtra .field label{font-size:11px}
+#actionExtra input{min-height:48px}
+#actionExtra button{margin-top:4px}
+#myWorkCard .guide-text,#createCard .guide-text{color:#718692;font-size:12px}
+#myWorkCard .my-work-list{gap:9px}
+.my-work-row{border-radius:14px;border-color:#e2eaee;padding:15px 17px;min-height:68px;transition:background .16s,border-color .16s,transform .16s}
+.my-work-row:hover{background:#f0f8f7;border-color:#93d0c9;transform:translateY(-1px)}
+.my-work-name{font-size:13px;font-weight:800;color:#244451}
+.my-work-meta{font-size:11px;margin-top:5px}
+.my-work-state{color:#087c80;font-size:11px}
+.my-work-footer{margin-top:10px;color:#8a9ea6}
+.my-work-footer .secondary{padding:8px 12px}
+#currentOrderCard #orderResult{background:#f9fbfb;border-color:#e7eff0}
+#currentOrderCard .result h3{font-size:17px}
+.criterion{border-left-color:#25a69c;background:#f0faf7;padding:14px 16px;margin:12px 0}
+.criterion strong{color:#176b67}
+.kv{padding:10px 0;grid-template-columns:100px minmax(0,1fr)}
+.kv .key{color:#869ca3}
+.receipt-heading{margin-top:21px}
+.contract-info,.receipt-controls{border:0;margin:10px 0}
+.contract-info summary,.receipt-controls summary{color:#728b96;font-size:11px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;padding:8px 0}
+.contract-info .factgrid{margin:10px 0}
+.receipt-controls .inline{margin-top:8px;align-items:center}
+.order-handoff{background:#eef8f4;border-color:#c5e3d7}
+#currentOrderCard>.heading .pill{background:#e8f6f2}
+#createCard #loadDemo{width:100%;margin:3px 0 10px;border:1px solid #cce6e2;background:#f2faf8;color:#106d6a}
+#createCard #loadDemo:hover{background:#e2f4ef}
+#createCard .field{margin:13px 0}
+input,textarea,select{transition:border-color .18s,box-shadow .18s;border-color:#d5e0e5}
+input:focus,textarea:focus,select:focus{box-shadow:0 0 0 3px #16a3a51a}
+#createCard textarea{min-height:68px}
+#createCard #createNow{min-height:51px;border-radius:12px}
+.technical-drawer{background:#f8fbfc;border:1px solid #e2e9ec}
+.technical-drawer>summary{color:#667d89}
+.technical-drawer .drawer-sub{color:#94a7af}
+#advancedTools:not([open]){box-shadow:none}
+button:disabled{cursor:not-allowed}
+@media(max-width:900px){.wrap{padding:0 20px}.workspace-grid{grid-template-columns:1fr}.dark.workspace-wallet{padding:24px}}
+@media(max-width:640px){.top-links{gap:13px}.top-links .testnet{order:3}.top-links .nav-source{display:none}.hero{padding:23px 0 19px}.hero h1{font-size:36px}.hero p{font-size:13px}.dark.workspace-wallet{padding:22px}.panel{padding:20px;border-radius:17px}.workspace-wallet .heading h2{font-size:23px}.next-step{padding:18px}.my-work-row{padding:13px}.strip{padding:12px}.app-shell{padding:16px 0 30px}}
