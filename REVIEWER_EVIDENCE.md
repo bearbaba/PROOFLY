@@ -1,5 +1,8 @@
 # PROOFLY — Reviewer Evidence
 
+> **Latest evidence — 2026-10-12:** [Hosted Order #2 verification and exact limitations](docs/ORDER_2_PRODUCTION_EVIDENCE.md). The user-provided live production readback shows `COMPLETED / ACCEPTED`, Proof Receipt v1, and `3/3 SATISFIED`; the verified Vercel production SHA is `8d11604`. Historical sections below are retained as a dated audit trail, not the current feature/deployment status. The verification transaction's GenVM execution is still independently unconfirmed.
+
+
 **Submission state: NOT YET SUBMITTED / NOT YET ACCEPTED.**
 
 This reviewer handoff maps the project's GenLayer-specific value, working
