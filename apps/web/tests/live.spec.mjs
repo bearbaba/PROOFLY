@@ -18,6 +18,7 @@ test("live UI fits narrow mobile viewport",async({page})=>{
 
 test("customer creation is a normal form, not a required JSON upload",async({page})=>{
   await page.goto("/",{waitUntil:"domcontentloaded"});
+  await page.locator("#createDisclosure > summary").click();
   await expect(page.locator("#createCard")).toBeVisible();
   await expect(page.locator("#createNow")).toBeDisabled();
   await expect(page.locator("#planJson")).toHaveCount(0);
@@ -29,6 +30,7 @@ test("customer creation is a normal form, not a required JSON upload",async({pag
 });
 test("untrusted reference URL fails closed before hashing or wallet write",async({page})=>{
   await page.goto("/",{waitUntil:"domcontentloaded"});
+  await page.locator("#createDisclosure > summary").click();
   await page.locator("#jobReference").fill("https://evil.example/reference.txt");
   await page.locator("#verifyReference").click();
   await expect(page.locator("#referenceStatus")).toContainText("commit-pinned GitHub");
@@ -37,6 +39,7 @@ test("untrusted reference URL fails closed before hashing or wallet write",async
 
 test("sample contributor button is clearly labeled and fills known demo wallet",async({page})=>{
   await page.goto("/",{waitUntil:"domcontentloaded"});
+  await page.locator("#createDisclosure > summary").click();
   await expect(page.locator("#fillDemoContributor")).toBeVisible();
   await page.locator("#fillDemoContributor").click();
   await expect(page.locator("#jobContributor")).toHaveValue("0xd6b8a3a5eb329410d9504784812b8569afa8c2af");
@@ -156,6 +159,7 @@ test("normal-user workspace puts wallet and next-step first and hides technical 
 });
 test("manual order lookup is optional and collapsed by default",async({page})=>{
   await page.goto("/",{waitUntil:"domcontentloaded"});
+  await page.locator("#jobDetailsDisclosure > summary").click();
   await expect(page.locator("#orderId")).toBeHidden();
   await page.locator(".manual-lookup > summary").click();
   await expect(page.locator("#orderId")).toBeVisible();
@@ -167,6 +171,7 @@ test("paste of a pinned document auto-verifies when field loses focus",async({pa
     body:"A public trial environment guide. No real money is accepted."
   }));
   await page.goto("/",{waitUntil:"domcontentloaded"});
+  await page.locator("#createDisclosure > summary").click();
   await page.locator("#jobReference").fill(
     "https://raw.githubusercontent.com/bearbaba/PROOFLY/fa4d29b0e6f8efb50e2472530aff1d0ab7aca77e/fixtures/evidence/reference.txt");
   await page.locator("#jobReference").press("Tab");
