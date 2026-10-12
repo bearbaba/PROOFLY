@@ -114,3 +114,12 @@ column-gap:32px;row-gap:13px;grid-template-areas:
 .txn-notice span{font-family:monospace;font-size:11px}
 .txn-notice a{font-weight:800;color:#087e89;text-decoration:underline;margin-left:auto}
 #technicalTransaction .result{font-size:12px}
+
+/* An incomplete SDK execution receipt must not be styled as confirmed success. */
+.txn-notice.is-partial{background:#f2f6f8;color:#355362;border-color:#cddde4}
+.txn-notice.is-pending{background:#e9f3f7;color:#28596b;border-color:#b4d5e0}
+.txn-notice.is-error{background:#fff1ee;color:#903b36;border-color:#e6bbb4}
+.txn-notice.is-success,.txn-notice.is-onchain{background:#e6f8f0;color:#145e54;border-color:#9dd3c2}
+.txn-notice span{font:inherit;font-size:11px;line-height:1.5;overflow-wrap:anywhere}
+.txn-notice strong{flex-shrink:0}
+@media(max-width:650px){.txn-notice{display:flex;align-items:stretch;flex-direction:column;gap:4px}.txn-notice a{margin-left:0}}

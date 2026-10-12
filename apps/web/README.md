@@ -258,3 +258,21 @@ Before treating this UX as production-ready, the review must confirm:
 - Production deploy commit exactly matches the reviewed GitHub main SHA.
 
 These are verification gates, not a claim that signing has already passed.
+
+
+### State vs. receipt clarity (2026-10-12)
+
+When the pinned GenLayer SDK returns a finalized receipt without usable
+GenVM execution fields, the transaction remains **not independently
+verified**. The user's workflow now shows the **separately verified on-chain
+Work Order status** where available instead of presenting a cryptic
+"execution not verified" banner as though the order were stuck.
+
+This does **not** attribute the confirmed contract state to a particular
+transaction, invent a GenVM success, hide an explicit execution failure,
+or automatically retry a wallet write. The original receipt information
+and full Explorer link remain available in Advanced.
+
+The Contributor's **Submit evidence & sign** action is now disabled until
+the public deliverable URL is successfully checked and hashed. Editing
+the URL invalidates the previous hash and disables signing again.
