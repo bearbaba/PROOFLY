@@ -77,7 +77,7 @@ test("Contributor account connects without installing a MetaMask Snap",async({pa
   });
   await page.goto("/",{waitUntil:"domcontentloaded"});
   await page.locator("#connectWallet").click();
-  await expect(page.locator("#walletState")).toContainText("Connected / 0xd6b8a3a5eb329410d9504784812b8569afa8c2af / Studionet 61999");
+  await expect(page.locator("#walletState")).toContainText("Connected · 0xd6b8…c2af · Studionet 61999");
   const calls=await page.evaluate(()=>window.__walletCalls);
   expect(calls).toContain("eth_requestAccounts");
   expect(calls).toContain("eth_chainId");
@@ -136,9 +136,9 @@ test("MetaMask accountChanged switches Owner to Contributor without another conn
     };
   });
   await page.goto("/",{waitUntil:"domcontentloaded"});
-  await expect(page.locator("#walletState")).toContainText("0x4c7cb73ac8f8999af21cfc9ff4cf2333a9508dcb");
+  await expect(page.locator("#walletState")).toContainText("0x4c7c…8dcb");
   await page.evaluate(()=>window.__switchToContributor());
-  await expect(page.locator("#walletState")).toContainText("0xd6b8a3a5eb329410d9504784812b8569afa8c2af");
+  await expect(page.locator("#walletState")).toContainText("0xd6b8…c2af");
   const calls=await page.evaluate(()=>window.__walletCalls);
   expect(calls).not.toContain("eth_requestAccounts");
   expect(calls).not.toContain("eth_sendTransaction");
@@ -196,4 +196,12 @@ test("simple workspace keeps creation and advanced work details collapsed until 
  await expect(page.locator("#createForm")).toBeVisible();
  await page.locator("#jobDetailsDisclosure > summary").click();
  await expect(page.locator("#orderResult")).toBeVisible();
+});
+
+test("finished job has a prominent proof action but no stale transaction banner",async({page})=>{
+  await page.goto("/",{waitUntil:"domcontentloaded"});
+  // No fake completed receipt is invented in unauthenticated public reads.
+  await expect(page.locator("#transactionNotice")).toBeHidden();
+  await expect(page.locator("#jobDetailsDisclosure")).not.toHaveAttribute("open",/.+/);
+  await expect(page.locator("#writeAction")).toBeDisabled();
 });

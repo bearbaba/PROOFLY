@@ -247,6 +247,9 @@ async function autoLoadReceipt(id,order) {
     if(String(currentOrderId)!==String(id))return;
     currentReceipt=receipt;
     renderReceipt();
+    // Avoid opening technical fields automatically; the user's primary CTA
+    // opens this pane only when requested.
+    $("writeAction").textContent="View proof receipt →";
   }catch(error){
     if(String(currentOrderId)===String(id))
       $("receiptResult").textContent="Result read unavailable. Use Refresh result to try again.";
@@ -279,6 +282,12 @@ function refreshTransactionNotice() {
   const quick=$("transactionNotice");
   if(!quick||!latestTransactionLabel)return;
   const state=transactionBanner(latestTransactionLabel,currentOrder);
+  // Finished work is a separately verified on-chain state. Keep old tx
+  // diagnostics in Advanced, not as an intrusive banner on the main card.
+  if(currentOrder?.status==="COMPLETED"){
+    quick.hidden=true;
+    return;
+  }
   quick.hidden=false;
   quick.className="txn-notice is-"+state.tone;
   quick.replaceChildren(elem("strong",state.title));
@@ -340,6 +349,7 @@ function walletChanged(message) {
   gateway=null;
   $("walletState").textContent=message;
   $("connectWallet").textContent="Connect wallet ↗";
+  $("walletState").removeAttribute("title");
   clearMyWork("Connect your wallet to see your recent work orders.");
   if(currentOrder)renderOrder();
   refreshAction();
@@ -371,8 +381,9 @@ async function bindAuthorizedWallet(accounts,provider=window.ethereum) {
   if(different)clearMyWork("Loading the selected wallet's work orders…");
   wallet=account.toLowerCase();
   gateway=bound;
-  $("walletState").textContent="Connected / "+wallet+" / Studionet "+CHAIN_ID;
-  $("connectWallet").textContent="Wallet connected · change in MetaMask";
+  $("walletState").textContent="Connected · "+wallet.slice(0,6)+"…"+wallet.slice(-4)+" · Studionet "+CHAIN_ID;
+  $("walletState").title="Connected wallet: "+wallet+" · Studionet "+CHAIN_ID;
+  $("connectWallet").textContent="Change wallet ↗";
   if(different)userPickedOrder=false; // prioritize tasks relevant to new account
   if(currentOrder)renderOrder();
   selectNextOperation();
@@ -900,6 +911,8 @@ $("writeAction").addEventListener("click",()=>{
   if(currentOrder?.status==="COMPLETED"){
     $("jobDetailsDisclosure").open=true;
     $("receiptResult").scrollIntoView({behavior:"smooth",block:"center"});
+    // Refresh the finalized receipt if the first read was unavailable.
+    if(!currentReceipt)void autoLoadReceipt(String(currentOrderId),currentOrder);
     return;
   }
   void submit();

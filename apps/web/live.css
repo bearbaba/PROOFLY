@@ -235,3 +235,11 @@ button:disabled{cursor:not-allowed}
 .workspace-wallet .advanced-actions{margin-top:3px}
 @media(max-width:900px){.workspace-grid{grid-template-columns:1fr}.workspace-wallet{grid-template-columns:1fr 1.1fr}}
 @media(max-width:650px){.workspace-wallet{display:flex;padding:18px!important}.workspace-wallet .next-step{padding:5px 0}.workspace-wallet #walletState{order:3}.workspace-wallet #connectWallet{order:4}.workspace-wallet #actionExtra{order:5}.workspace-wallet #writeAction{order:6}.workspace-wallet #transactionNotice{order:7}.workspace-wallet .advanced-actions{order:8}.workspace-wallet .hint.light{order:9}.hero h1{font-size:30px}.panel{border-radius:15px}#myWorkCard,#createCard,#currentOrderCard{padding:18px}}
+
+/* Compact wallet identity; keep the primary action visually dominant. */
+.workspace-wallet #walletState{font-size:12px;line-height:1.4;padding:10px 12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.workspace-wallet #connectWallet{background:transparent;border:1px solid #63828b;color:#cce4e3;padding:9px 12px;box-shadow:none;max-width:170px;width:max-content;min-height:38px}
+.workspace-wallet #connectWallet:hover{background:#1e4854;color:#fff;transform:none}
+.workspace-wallet .next-step{align-self:center}
+.workspace-wallet #transactionNotice[hidden]{display:none!important}
+@media(max-width:650px){.workspace-wallet #connectWallet{max-width:100%}.workspace-wallet #walletState{white-space:normal}}
