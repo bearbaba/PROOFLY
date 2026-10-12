@@ -7,6 +7,7 @@ import { createClient } from "genlayer-js";
 import { studionet } from "genlayer-js/chains";
 import { TransactionHashVariant, TransactionStatus } from "genlayer-js/types";
 import {inspectTransaction} from "./tx-verdict.mjs";
+import {transactionBanner} from "./tx-progress.mjs";
 import {listRecentWork,recommendedOperation} from "./workboard.mjs";
 import {candidateFromArgs,restoreCandidate,discoverCreatedOrder,orderLink,queryOrder} from "./order-handoff.mjs";
 import { createWorkflowGateway, makeRead } from "./sdk-workflow.mjs";
@@ -44,6 +45,7 @@ let lastBoardWallet = null;
 let boardItems = [];
 let lastWorkboardRefresh = 0;
 let selectedSyncBusy = false;
+let latestTransactionLabel = null;
 let userPickedOrder = Boolean(queryOrder(window.location.search));
 
 
@@ -112,6 +114,8 @@ function openVerifiedOrder(id,order) {
   renderOrder();
   renderReceipt();
   selectNextOperation();
+  // On-chain order status is separate from transaction execution receipt.
+  refreshTransactionNotice();
   if(order.status==="COMPLETED")void autoLoadReceipt(id,order);
   try{localStorage.setItem(LAST_ORDER_KEY,String(id));}catch{}
   window.history.replaceState(null,"",orderLink(window.location.origin+window.location.pathname,String(id)));
@@ -271,17 +275,23 @@ function renderReceipt() {
     root.append(note);
   } catch (error) { showError(error,root); }
 }
-function showTx(label, hash = "") {
+function refreshTransactionNotice() {
   const quick=$("transactionNotice");
-  if(quick){
-    quick.hidden=false;
-    quick.replaceChildren(elem("strong",label),
-      elem("span"," · "+(hash ? hash.slice(0,12)+"…"+hash.slice(-8) : "See status below.")));
-    const link=elem("a","View transaction details ↗");
-    link.href="#advancedTools";
-    link.addEventListener("click",()=>{$("advancedTools").open=true;});
-    quick.append(link);
-  }
+  if(!quick||!latestTransactionLabel)return;
+  const state=transactionBanner(latestTransactionLabel,currentOrder);
+  quick.hidden=false;
+  quick.className="txn-notice is-"+state.tone;
+  quick.replaceChildren(elem("strong",state.title));
+  if(state.detail)quick.append(elem("span",state.detail));
+  const link=elem("a","Transaction details ↗");
+  link.href="#advancedTools";
+  link.addEventListener("click",()=>{$("advancedTools").open=true;});
+  quick.append(link);
+  // Original receipt status/hash remains in Advanced. No fabricated success.
+}
+function showTx(label, hash = "") {
+  latestTransactionLabel=label;
+  refreshTransactionNotice();
   const root = $("txResult");
   root.replaceChildren();
   root.classList.remove("empty");
@@ -571,6 +581,7 @@ function refreshExtras() {
     $("artifactUrl").addEventListener("input",()=>{
       verifiedArtifact=null;
       status.textContent="Link changed. Verify again before signing.";
+      refreshAction();
     });
     $("artifactUrl").addEventListener("change",()=>{
       if(isPinnedUrl($("artifactUrl").value.trim()))verify.click();
@@ -586,7 +597,7 @@ function refreshExtras() {
       }catch(error){
         verifiedArtifact=null;
         status.textContent=String(error?.message||error);
-      }finally{setBusy(false);}
+      }finally{setBusy(false);refreshAction();}
     });
   }
   if (op === "create_order") {
@@ -694,7 +705,12 @@ function refreshAction() {
   $("writeAction").textContent=waitingForCounterparty ?
     (currentOrder.status==="COMPLETED" ? "Verified — see result below ✓" : "Waiting for contributor") :
     names[op]||"Review cost & sign →";
-  $("writeAction").disabled = busy || !wallet || !needed || !correctRole || !validState || waitingForCounterparty;
+  const artifactReady=op!=="submit_evidence" ||
+    (!!verifiedArtifact && verifiedArtifact.url===$("artifactUrl")?.value.trim());
+  $("writeAction").disabled = busy || !wallet || !needed || !correctRole ||
+    !validState || waitingForCounterparty || !artifactReady;
+  if(op==="submit_evidence" && !artifactReady && correctRole && validState)
+    $("actionInfo").textContent="Choose a deliverable and verify its public document hash first. Then review and sign in MetaMask.";
 }
 function parameters() {
   const op = $("operation").value;

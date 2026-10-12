@@ -173,3 +173,10 @@ test("paste of a pinned document auto-verifies when field loses focus",async({pa
   await expect(page.locator("#referenceStatus")).toContainText("Reference verified", {timeout:12000});
   await expect(page.locator("#createNow")).toBeDisabled(); // wallet signature is still required
 });
+
+test("normal wallet screen avoids scary default transaction status before any wallet write",async({page})=>{
+  await page.goto("/",{waitUntil:"domcontentloaded"});
+  await expect(page.locator("#transactionNotice")).toBeHidden();
+  await expect(page.locator("#technicalTransaction")).toBeHidden();
+  await expect(page.locator("#writeAction")).toBeDisabled();
+});
