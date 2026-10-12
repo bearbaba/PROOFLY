@@ -1,5 +1,8 @@
 # PROOFLY
 
+**2026-10-12 production evidence update:** The hosted Contributor workflow for Work Order #2 now displays `COMPLETED`, `ACCEPTED`, and a version-1 Proof Receipt with `3 / 3 SATISFIED` according to the user's live website readback. Vercel confirmed Production READY at `8d11604`. See [Order #2 production reviewer evidence](docs/ORDER_2_PRODUCTION_EVIDENCE.md). The historical status sections below describe earlier stages and are not the current deployment status. Independent Explorer GenVM execution confirmation and full transaction provenance remain outstanding.
+
+
 **Agree on the work. Verify the evidence.**
 
 PROOFLY is an evidence-based work verification application built for GenLayer.

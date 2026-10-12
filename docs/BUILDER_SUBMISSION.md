@@ -1,5 +1,8 @@
 # PROOFLY — GenLayer Builder contribution submission
 
+> **CURRENT SUBMISSION UPDATE — 2026-10-12:** Hosted Work Order #2 has a user-reported finalized-state `COMPLETED / ACCEPTED` read and Proof Receipt v1 with `3/3 SATISFIED` criteria. Production alias was independently checked as Vercel READY at commit `8d11604`. See [Order #2 reviewer evidence](ORDER_2_PRODUCTION_EVIDENCE.md) for reproducible details, transaction hash, and explicit limits. Earlier below sections about unverified hosted two-wallet workflow and old deployment SHA are **historical**, not current; GenVM transaction-level execution and deployed-source attestation still need independent verification. Portal submission has **not** been confirmed.
+
+
 **Start here:** [Reviewer Evidence & reproduction checklist](../REVIEWER_EVIDENCE.md).
 
 **Submission status: Studio MVP demonstrated; production integration and evidence gates remain; PORTAL NOT SUBMITTED.**
