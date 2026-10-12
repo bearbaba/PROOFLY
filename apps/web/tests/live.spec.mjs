@@ -180,3 +180,15 @@ test("normal wallet screen avoids scary default transaction status before any wa
   await expect(page.locator("#technicalTransaction")).toBeHidden();
   await expect(page.locator("#writeAction")).toBeDisabled();
 });
+
+test("simple workspace keeps creation and advanced work details collapsed until requested",async({page})=>{
+ await page.goto("/",{waitUntil:"domcontentloaded"});
+ await expect(page.locator("#createForm")).toBeHidden();
+ await expect(page.locator("#orderResult")).toBeHidden();
+ await expect(page.locator("#technicalTransaction")).toBeHidden();
+ await expect(page.locator("#myWorkCard")).toBeVisible();
+ await page.locator("#createDisclosure > summary").click();
+ await expect(page.locator("#createForm")).toBeVisible();
+ await page.locator("#jobDetailsDisclosure > summary").click();
+ await expect(page.locator("#orderResult")).toBeVisible();
+});

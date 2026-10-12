@@ -13,23 +13,19 @@
 <nav class="top"><a class="mark" href="./"><span class="monogram">P</span>PROOFLY</a>
 <div class="top-links"><span class="testnet"><i></i> GENLAYER STUDIONET · 61999</span>
 <a href="#myWorkCard">My work</a><a href="#createCard">New job</a><a class="nav-source" href="https://github.com/bearbaba/PROOFLY" target="_blank" rel="noopener noreferrer">GitHub ↗</a></div></nav>
-<header class="hero"><div class="kicker">WORK MADE VERIFIABLE</div>
-<h1>Good work deserves<br><em>clear proof.</em></h1>
-<p>Create a job. Deliver the work. Verify the result on-chain.</p>
-</header>
+<header class="hero"><h1>Work. Verified.</h1><p>Agree. Deliver. Verify on GenLayer.</p></header>
 <div class="strip"><span><strong>REAL TESTNET</strong> · Experimental network. No payments or escrow. Never share recovery phrases.</span>
 <a id="studio" target="_blank" rel="noopener noreferrer" href="https://studio.genlayer.com/?import-contract=0xEbb6E4D791299E79317DE796232029194e0F0aCb">Open in Studio ↗</a></div>
 <main class="app-shell">
 <article class="panel dark workspace-wallet" id="walletActionsCard">
-<div class="heading"><div><div class="kicker">YOUR NEXT STEP</div><h2>Pick up where you left off</h2></div></div>
-<p class="soft">Your wallet finds your work automatically.</p>
+<div class="heading"><div><div class="kicker">CURRENT WORK</div><h2>Your next step</h2></div></div>
 <button id="connectWallet" class="wallet">Connect wallet ↗</button>
 <div id="walletState" class="wallet-state">No wallet connected · Read-only mode</div>
 <div class="next-step" id="nextStepPanel" aria-live="polite">
 <div class="next-step-eyebrow" id="nextStepState">GET STARTED</div>
 <h3 id="nextStepTitle">Connect your wallet</h3>
 <p id="nextStepDescription">You can also read and share work orders without connecting.</p>
-<div class="workflow-mini" aria-hidden="true"><span>Create</span><span>Accept</span><span>Deliver</span><span>Verify</span></div>
+
 </div>
 <div id="actionInfo" class="action-info">Your next step appears here.</div>
 <div id="actionExtra" class="action-extra"></div>
@@ -45,19 +41,19 @@
 <option value="close_expired">Close expired order</option>
 </select></div>
 </details>
-<p class="hint light">All on-chain actions require your approval in MetaMask. No automatic retries.</p>
+<p class="hint light">Every transaction requires your MetaMask approval.</p>
 </article>
 <div class="workspace-grid">
 <section class="stack">
 <article class="panel" id="myWorkCard">
-<div class="heading"><div><div class="kicker">YOUR WORK</div><h2>My work</h2></div><span class="pill">FINALIZED STATE</span></div>
-<p class="guide-text">Your jobs, automatically synced.</p>
+<div class="heading"><div><h2>My work</h2></div></div>
 <div id="myWorkStatus" class="hint" role="status" aria-live="polite">Connect your wallet to see your recent work orders.</div>
 <div id="myWorkList" class="my-work-list" aria-label="Recent work orders associated with your wallet"></div>
 <div class="my-work-footer"><span>Showing recent jobs</span><button id="refreshMyWork" type="button" class="secondary">Refresh ↻</button></div>
 </article>
 <article class="panel" id="currentOrderCard">
-<div class="heading"><div><div class="kicker">CURRENT JOB</div><h2>Job details</h2></div><span class="pill">LIVE</span></div>
+<details class="job-details-disclosure" id="jobDetailsDisclosure"><summary>View requirements and proof</summary>
+<div class="heading"><div><h2>Job details</h2></div></div>
 <details class="manual-lookup"><summary>Open a work order by number (optional)</summary>
 <div class="field"><label for="orderId">WORK ORDER NUMBER</label><div class="inline"><input type="text" id="orderId" inputmode="numeric" value="1" pattern="[1-9][0-9]*" aria-label="Order ID">
 <button id="loadOrder" class="secondary">Open work →</button></div></div></details>
@@ -72,13 +68,14 @@
 </div>
 <div class="receipt-heading"><h3>Proof result</h3><p>Available once the verification is complete.</p></div><details class="receipt-controls"><summary>Refresh or view another receipt</summary><div class="inline"><label for="receiptVersion" style="align-self:center;font-size:11px;font-weight:700">VERSION</label><input type="number" id="receiptVersion" value="1" min="1" max="2" style="max-width:70px"><button id="loadReceipt" class="secondary">Refresh result ↻</button></div></details>
 <div id="receiptResult" class="receipt empty" aria-live="polite">A Proof Receipt appears after a finalized successful evaluation.</div>
+</details>
 </article>
 </section>
 <aside class="stack">
 <article class="panel" id="createCard">
-<div class="heading"><div><div class="kicker">HAVE SOMETHING NEW?</div><h2>Create a job</h2></div></div>
-<p class="guide-text">Agree on the work, assign a contributor and set three clear checks.</p>
-
+<div class="heading"><div><h2>New job</h2></div></div>
+<p class="guide-text">Create a new work agreement only when you need one.</p>
+<details id="createDisclosure" class="create-disclosure"><summary>+ Create a job</summary>
 <button id="loadDemo" type="button" class="secondary">Use demo example</button>
 <form id="createForm" novalidate autocomplete="off">
 <div class="field"><label for="jobTitle">WORK ORDER TITLE</label><input id="jobTitle" maxlength="120" required placeholder="e.g. Write a simple user guide"></div>
@@ -98,7 +95,8 @@
 <button id="createNow" type="button" class="primary full-button" disabled>Create job & review in MetaMask →</button>
 </form>
 <p class="hint">MetaMask will ask you to review and approve this testnet transaction.</p>
-<details class="advanced-info"><summary>Developer tools (advanced)</summary><p>Need to inspect raw contract parameters? Use the <a href="./builder.html">offline Spec Builder</a>. Most users do not need this.</p></details>
+<details class="advanced-info"><summary>Developer tools</summary><p><a href="./builder.html">Spec Builder</a></p></details>
+</details>
 </article>
 </aside>
 </div>

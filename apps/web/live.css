@@ -200,3 +200,38 @@ input:focus,textarea:focus,select:focus{box-shadow:0 0 0 3px #16a3a51a}
 button:disabled{cursor:not-allowed}
 @media(max-width:900px){.wrap{padding:0 20px}.workspace-grid{grid-template-columns:1fr}.dark.workspace-wallet{padding:24px}}
 @media(max-width:640px){.top-links{gap:13px}.top-links .testnet{order:3}.top-links .nav-source{display:none}.hero{padding:23px 0 19px}.hero h1{font-size:36px}.hero p{font-size:13px}.dark.workspace-wallet{padding:22px}.panel{padding:20px;border-radius:17px}.workspace-wallet .heading h2{font-size:23px}.next-step{padding:18px}.my-work-row{padding:13px}.strip{padding:12px}.app-shell{padding:16px 0 30px}}
+
+/* Focus-first workspace: one prominent next step, everything else on demand. */
+.hero{padding:19px 0 14px}.hero h1{font-size:clamp(27px,3.6vw,40px);margin:0 0 3px;letter-spacing:-.045em}.hero p{font-size:13px;margin:0}.strip{margin-top:9px}
+.app-shell{gap:15px;padding-top:15px}
+.workspace-grid{grid-template-columns:minmax(0,1fr) minmax(250px,.58fr);gap:15px}
+.stack{gap:15px}
+.workspace-wallet{grid-template-columns:minmax(235px,.8fr) minmax(0,1.2fr);grid-template-areas:"heading heading" "state next" "connect next" "extra extra" "sign sign" "notice notice" "advanced advanced" "foot foot";row-gap:10px;padding:24px!important}
+.workspace-wallet .heading{margin-bottom:0}.workspace-wallet .heading h2{font-size:19px;margin-top:2px}
+.workspace-wallet .next-step{padding:17px;min-height:110px;background:transparent;border:0}
+.workspace-wallet .next-step h3{font-size:clamp(19px,2vw,24px)}
+.workspace-wallet #walletState{grid-area:state;margin:0;align-self:end;font-size:11px;padding:9px 11px;color:#a7ced1}
+.workspace-wallet #connectWallet{grid-area:connect;padding:10px 14px;font-size:12px}
+.workspace-wallet #actionInfo{display:none}
+.workspace-wallet #writeAction{min-height:48px;margin-top:3px}
+.workspace-wallet #transactionNotice{font-size:11px}
+.workspace-wallet .hint.light{font-size:10px;margin:0}
+#myWorkCard,#createCard,#currentOrderCard{padding:19px 21px}
+#myWorkCard .heading,#createCard .heading,#currentOrderCard .heading{margin-bottom:8px}
+#myWorkCard .heading h2,#createCard .heading h2,#currentOrderCard .heading h2{font-size:19px}
+#myWorkStatus{font-size:11px}
+#myWorkCard .my-work-row{padding:11px 13px;min-height:56px}
+.my-work-footer{font-size:10px}
+.create-disclosure{border:0}
+.create-disclosure>summary{list-style:none;cursor:pointer;background:#087f86;color:#fff;border-radius:11px;padding:13px 16px;font-weight:800;text-align:center}
+.create-disclosure>summary::-webkit-details-marker{display:none}
+.create-disclosure[open]>summary{background:#eaf5f4;color:#086e72;margin-bottom:12px}
+.create-disclosure form{margin-top:10px}
+.job-details-disclosure>summary{cursor:pointer;list-style:none;color:#0d6e73;background:#edf8f6;padding:12px 14px;border-radius:11px;font-size:12px;font-weight:800}
+.job-details-disclosure>summary::-webkit-details-marker{display:none}
+.job-details-disclosure[open]>summary{margin-bottom:12px}
+#currentOrderCard .manual-lookup{margin-top:8px}
+#currentOrderCard .order-handoff{margin:12px 0}
+.workspace-wallet .advanced-actions{margin-top:3px}
+@media(max-width:900px){.workspace-grid{grid-template-columns:1fr}.workspace-wallet{grid-template-columns:1fr 1.1fr}}
+@media(max-width:650px){.workspace-wallet{display:flex;padding:18px!important}.workspace-wallet .next-step{padding:5px 0}.workspace-wallet #walletState{order:3}.workspace-wallet #connectWallet{order:4}.workspace-wallet #actionExtra{order:5}.workspace-wallet #writeAction{order:6}.workspace-wallet #transactionNotice{order:7}.workspace-wallet .advanced-actions{order:8}.workspace-wallet .hint.light{order:9}.hero h1{font-size:30px}.panel{border-radius:15px}#myWorkCard,#createCard,#currentOrderCard{padding:18px}}

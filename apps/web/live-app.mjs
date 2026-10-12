@@ -703,12 +703,13 @@ function refreshAction() {
     (role==="owner" && ["PROPOSED","ACTIVE","REVIEWED"].includes(currentOrder.status)) ||
     currentOrder.status==="COMPLETED");
   $("writeAction").textContent=waitingForCounterparty ?
-    (currentOrder.status==="COMPLETED" ? "Verified — see result below ✓" : "Waiting for contributor") :
+    (currentOrder.status==="COMPLETED" ? "View proof receipt →" : "Waiting for contributor") :
     names[op]||"Review cost & sign →";
   const artifactReady=op!=="submit_evidence" ||
     (!!verifiedArtifact && verifiedArtifact.url===$("artifactUrl")?.value.trim());
-  $("writeAction").disabled = busy || !wallet || !needed || !correctRole ||
-    !validState || waitingForCounterparty || !artifactReady;
+  const viewProof=currentOrder?.status==="COMPLETED";
+  $("writeAction").disabled = !viewProof && (busy || !wallet || !needed || !correctRole ||
+    !validState || waitingForCounterparty || !artifactReady);
   if(op==="submit_evidence" && !artifactReady && correctRole && validState)
     $("actionInfo").textContent="Choose a deliverable and verify its public document hash first. Then review and sign in MetaMask.";
 }
@@ -895,7 +896,14 @@ $("createForm").addEventListener("input",event=>{
 $("loadReceipt").addEventListener("click",loadReceipt);
 $("connectWallet").addEventListener("click",connectWallet);
 $("operation").addEventListener("change",refreshExtras);
-$("writeAction").addEventListener("click",submit);
+$("writeAction").addEventListener("click",()=>{
+  if(currentOrder?.status==="COMPLETED"){
+    $("jobDetailsDisclosure").open=true;
+    $("receiptResult").scrollIntoView({behavior:"smooth",block:"center"});
+    return;
+  }
+  void submit();
+});
 $("trackTx").addEventListener("click",track);
 $("copyOrderLink").addEventListener("click",async()=>{
   const link=$("shareOrderUrl").value;
