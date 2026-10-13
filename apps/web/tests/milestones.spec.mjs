@@ -71,6 +71,8 @@ test("Preview homepage is V2 and never renders legacy contract",async({page})=>{
 test("V2 shows discoverable milestone list with safe read-only refresh",async({page})=>{
  await page.goto("/",{waitUntil:"domcontentloaded"});
  await expect(page.getByText("Recent milestones",{exact:true})).toBeVisible();
+ await expect(page.getByRole("button",{name:/Refresh list/})).not.toBeVisible();
+ await page.locator("#v2MyWorkDrawer summary").click();
  await expect(page.getByRole("button",{name:/Refresh list/})).toBeVisible();
  await expect(page.locator("#v2RecentOrders")).toBeAttached();
  await expect(page.locator("#milestoneId")).toHaveValue("1");
@@ -88,4 +90,19 @@ test("V2 historical discovery exposes pagination and wallet scan controls",async
  await expect(page.locator("#v2LoadOlder")).toBeAttached();
  await expect(page.locator("#v2FindMyWork")).toBeAttached();
  await expect(page.locator("#v2DiscoveryTitle")).toBeVisible();
+});
+
+test("My Work stays collapsed until opened and is bounded for large lists",async({page})=>{
+ await page.goto("/milestones.html");
+ const drawer=page.locator("#v2MyWorkDrawer");
+ await expect(drawer).not.toHaveAttribute("open","");
+ await expect(drawer.locator("summary")).toBeVisible();
+ await expect(page.locator("#v2RecentOrders")).not.toBeVisible();
+ await drawer.locator("summary").click();
+ await expect(drawer).toHaveAttribute("open","");
+ await expect(page.locator("#v2RecentOrders")).toBeVisible();
+ const maxHeight=await page.locator("#v2RecentOrders").evaluate(node=>getComputedStyle(node).maxHeight);
+ expect(maxHeight).toBe("300px");
+ await drawer.locator("summary").click();
+ await expect(page.locator("#v2RecentOrders")).not.toBeVisible();
 });
