@@ -49,9 +49,9 @@ The state transition and receipt demonstrate **documentation conformance to a bo
 - [x] Quote-backed receipt with three satisfied criteria
 - [x] Direct Studionet negative test: Owner (non-Contributor) claiming release — FINALIZED / GenVM ERROR / Rollback / ONLY_CONTRIBUTOR
 - [x] Direct Studionet negative test: duplicate release claim — FINALIZED / GenVM ERROR / Rollback / RELEASE_ALREADY_CLAIMED
-- [ ] Direct Studionet negative test: rejected/insufficient evidence cannot claim — prepared [negative-case runbook](V2_NEGATIVE_MILESTONE_TEST.md) and immutable incomplete artifact; no live result yet
-- [ ] Independently capture full write hashes and verify GenVM execution status in Explorer
-- [ ] Verify new v2 website with wallet signing and finalized RPC reads, in browser — user-observed successful Preview create_order write; new-order ID/readback and further writes pending
+- [x] Direct Studionet negative test: deficient evidence results in CHANGES_REQUIRED, release claim rolled back with MILESTONE_NOT_ACCEPTED (Work Order #2; links below)
+- [x] Capture complete Explorer hashes and GenVM execution results for Work Order #2 create, accept, submit, evaluate, and denied claim
+- [x] User-observed website wallet signing for create_order, accept_order and submit_evidence, with subsequent finalized-state readbacks; older transaction tracking was unreliable and a separate recovery fix has passed CI
 - [ ] Perform adversarial security review and launch checklist
 
 **Do not** treat a green GitHub CI or Vercel READY deployment as proof of live signing behavior or completion of the negative Studionet tests.
@@ -97,9 +97,9 @@ User-provided GenLayer Explorer transaction: https://explorer-studio.genlayer.co
 - Reference digest: `0b39481c3ca9bff673adb40d08eb2d0b04cb27ab4510255d3b699778826f1aec`
 - Deadline timestamps: submission `1792035036`, revision `1792467036`
 - Transaction `FINALIZED`, consensus `Accepted`, **GenVM execution `SUCCESS`, result code `Return`**, return `null`.
-- MetaMask and preview signing was user-observed. **New Work Order ID is not verified by transaction return**; next step is `next_order` and `get_order` finalized reads. No subsequent acceptance, submission, judgment, or release-denial result yet.
+- MetaMask and preview signing was user-observed. **Work Order #2 was verified** by `next_order` and `get_order(2)` finalized-state reads. Acceptance, submission, evaluation, and release denial were subsequently verified; see below.
 
-This demonstrates a real website-originated write path but does not itself prove the whole negative milestone workflow.
+This demonstrates a real website-originated write path. The separate negative milestone workflow was later verified with on-chain execution and finalized-state readbacks below.
 
 ## Work Order #2: real negative artifact submission
 
@@ -108,3 +108,29 @@ Tester-provided [Explorer transaction](https://explorer-studio.genlayer.com/tx/0
 Transaction **FINALIZED**, consensus **Accepted**, GenVM execution **SUCCESS / Return**. This proves the intended incomplete artifact was submitted successfully; **it does not yet establish** that the finalized order shows `SUBMITTED`, what AI consensus outcome is, or that a release attempt was denied. Read `get_order("2")` next, then evaluate the submission exactly once.
 
 The old frontend showed `FINALIZED_VERDICT_UNKNOWN` even though Explorer proved successful execution. Never re-submit the same evidence due to a frontend timeout.
+
+## Complete negative acceptance workflow — Work Order #2 (13 October 2026)
+
+The following are **tester-provided Explorer transaction details and accepted-state Studio readbacks**. The claims are limited to this contract, these addresses, and this tested workflow. Studio's empty result display for the release read should be interpreted alongside, not in place of, the explicit claim rollback.
+
+| Step | Explorer | Observed execution and finalized state |
+| --- | --- | --- |
+| Owner creates order #2 | [create_order](https://explorer-studio.genlayer.com/tx/0xa7c782f969c88e726b13b527ba0299d7bf92af9c6f758376736797c0fd1ec012) | FINALIZED, GenVM SUCCESS; `get_order(2)` PROPOSED |
+| Contributor accepts spec | [accept_order](https://explorer-studio.genlayer.com/tx/0x1984f4b9545f6685fb699fc572668f696fc84295089cc227533e7f6622fc62e4) | FINALIZED, GenVM SUCCESS; `get_order(2)` ACTIVE |
+| Contributor submits incomplete handoff | [submit_evidence](https://explorer-studio.genlayer.com/tx/0x281a2d0e2924231e5d9717c1f5b8222d151507e5b9e9cdcf50313b7aff5c0602) | FINALIZED, GenVM SUCCESS; `get_order(2)` SUBMITTED, version 1 |
+| GenLayer evaluates evidence | [evaluate_submission](https://explorer-studio.genlayer.com/tx/0x2f17900df6961efa6a81eca16f449d2a0b6aa99027d15c834c2d1f4b2775dbbb) | FINALIZED, GenVM SUCCESS; equivalence output R1 SATISFIED, R2 SATISFIED, R3 **UNSATISFIED** / REQUIREMENT_NOT_MET |
+| Contributor attempts release | [claim_milestone_release](https://explorer-studio.genlayer.com/tx/0xca2a98c928199f1b35f38c3e478cd74aae9dd58df546814a217636c21671ca6f) | FINALIZED, consensus Accepted, but **GenVM ERROR / Rollback: MILESTONE_NOT_ACCEPTED** |
+
+Final `get_order("2")` read: **REVIEWED**; `submissions[0].outcome = "CHANGES_REQUIRED"`; artifact SHA-256 `72a9056d2846be017eceb017746860e31c82abe8f9f131a866c02823f71bd5a6`; spec SHA-256 `da625e875772ac92517adb1c1e33d3807e77318a68f8d8f03b53c18472a842ee`. The tester reported `get_milestone_release("2")` showed no authorization; Studio's empty output alone is not sufficient to establish a typed null.
+
+For the **evaluated artifact**, R3 intentionally omits practical recovery instructions: `AUTH_401` credential refresh/retry, `RATE_429` Retry-After, and shutdown/log preservation. The equivalence output cites the omission, while R1 and R2 were supported by matching quotations. This demonstrates a grounded **negative acceptance** result; it does not establish correctness on arbitrary unseen documents.
+
+**Finality warning:** `FINALIZED` and `Consensus Result: Accepted` are transaction-level states. A denied contract call can have both while GenVM reports an execution rollback. The on-chain claim did not succeed.
+
+## Frontend limitation and remediation
+
+The original Preview wallet transactions succeeded on-chain but sometimes left the browser at `TRACKING_UNRESOLVED`, due to incomplete local transaction context, receipt variability, and a busy-state refresh bug. The subsequent v2 frontend change records method/account/order/evidence metadata, reconciles exact finalized-state effects, and has CI tests for mismatched hashes, users, submissions, and versions. **CI and deployment status do not substitute for fresh real-browser recovery verification**. Earlier browser localStorage entries containing only a hash are deliberately not auto-cleared.
+
+## Reviewer-safe claim
+
+"PROOFLY v2 is an experimental GenLayer Studionet milestone acceptance gate. In the observed positive workflow, a quote-backed ACCEPTED document verdict allowed a contributor-bound, one-time on-chain authorization. In the observed negative workflow, AI identified an unsatisfied agreed criterion, stored CHANGES_REQUIRED, and the contract rolled back an attempted release. Duplicate and unauthorized claims also rolled back. This is not escrow, a token payout, or a security audit."
