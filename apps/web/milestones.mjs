@@ -14,6 +14,35 @@ let order=null, receipt=null, grant=null, account="", gateway=null, busy=false, 
 try{unresolved=Boolean(localStorage.getItem(PENDING_KEY));}catch{unresolved=true;}
 
 const provider=()=>window.ethereum;
+const PENDING_META_KEY=PENDING_KEY+".meta";
+function getPending(){
+ try{const hash=localStorage.getItem(PENDING_KEY);if(!hash)return null;
+ const m=JSON.parse(localStorage.getItem(PENDING_META_KEY)||"null");
+ return {hash,...(m&&typeof m==="object"?m:{})};}catch{return null;}
+}
+function savePending(hash,method,context={}){
+ unresolved=true;
+ try{localStorage.setItem(PENDING_KEY,hash);localStorage.setItem(PENDING_META_KEY,JSON.stringify({method,account,orderId:context.orderId||order?.id||null,submittedAt:Date.now(),...context}));}catch{}
+}
+function clearPending(){unresolved=false;try{localStorage.removeItem(PENDING_KEY);localStorage.removeItem(PENDING_META_KEY);localStorage.removeItem(PENDING_KEY+".method");}catch{}}
+function pendingConfirmedByState(record,state,activeAccount){
+ if(!record||!state||record.orderId!==state.id||record.account?.toLowerCase()!==activeAccount?.toLowerCase())return false;
+ if(record.method==="accept_order")return state.status!=="PROPOSED"&&state.accepted_at>0&&state.contributor.toLowerCase()===activeAccount.toLowerCase()&&record.specSha===state.spec_sha256;
+ if(record.method==="submit_evidence")return state.submissions.some(s=>s.artifact_sha256===record.artifactHash&&s.artifact_url===record.artifactUrl&&s.version===record.expectedVersion);
+ if(record.method==="evaluate_submission")return state.submissions.some(s=>s.version===record.expectedVersion&&s.outcome!==null&&s.outcome!==undefined);
+ if(record.method==="claim_milestone_release")return grant?.recipient?.toLowerCase()===activeAccount.toLowerCase()&&grant?.order_id===state.id;
+ return false;
+}
+function reconcilePending(){
+ const pending=getPending();
+ if(!pending||!order||!account)return;
+ if(pendingConfirmedByState(pending,order,account)){
+  clearPending();
+  showProgress("On-chain state confirmed","The saved transaction effect is present in the finalized order. Pending tracking cleared without another signature.",pending.hash);
+  $("milestoneTx").textContent="Saved "+pending.method+" effect verified from finalized contract state. No resubmission.";
+ }
+}
+
 function showProgress(title,details,hash="",attention=false){
  const box=$("v2LiveStatus");box.hidden=false;box.dataset.state=attention?"attention":"success";
  $("v2LiveTitle").textContent=title;$("v2LiveBody").textContent=details;
@@ -55,14 +84,14 @@ function renderActions(){const box=$("milestoneActions");box.replaceChildren();i
  const suggestion=nextMilestoneAction(order,account,Boolean(grant));
  if(!account){box.append(node("p","Connect the assigned MetaMask account to prepare a write. Anyone can inspect finalized state.","milestone-note"));return;}
  if(unresolved){
- const pending=(()=>{try{return localStorage.getItem(PENDING_KEY);}catch{return null;}})();
+ const saved=getPending();const pending=saved?.hash;
  box.append(node("p","An earlier write may still be pending or its execution is unresolved. "+(pending?"TX: "+pending+". ":"")+"Track it in Studio; do not resend.","milestone-note milestone-error"));
  if(pending&&gateway&&!busy){const check=node("button","Check saved transaction again","secondary");check.type="button";check.addEventListener("click",()=>void resumePending(pending));box.append(check);}
  if(pending&&/^0x[a-fA-F0-9]{64}$/.test(pending)){
   const link=node("a","Inspect saved transaction in Explorer ↗","milestone-link");
   link.href="https://explorer-studio.genlayer.com/tx/"+pending;link.target="_blank";link.rel="noopener noreferrer";box.append(link);
   const notice=node("p","This transaction has a different hash from previously verified actions. Confirm its exact method and GenVM result in Explorer before continuing. Never use an earlier accept_order result to clear a newer transaction.","milestone-note milestone-error");
-  box.append(notice);
+  box.append(notice);if(saved?.method)box.append(node("p","Saved method: "+saved.method+" · Order: "+(saved.orderId||"unknown")+". Refresh finalized state to automatically reconcile matching on-chain effects.","milestone-note"));
  }
  return;}
  if(!suggestion){box.append(node("p",grant?"Release authorization already recorded. No further claim is allowed.":"No action is available for this account and order state.","milestone-note"));return;}
@@ -92,7 +121,7 @@ async function load(){if(busy)return;const id=$("milestoneId").value.trim();if(!
  if(rec)validateMilestoneSnapshot(next,id,rec);
  if(release)validateRelease(next,rec,release);
  order=next;receipt=rec;grant=release;
- renderOrder();renderReceipt();renderGrant();const url=new URL(location.href);url.searchParams.set("order",id);history.replaceState(null,"",url);message("Finalized-state snapshot received from GenLayer. Transaction execution history is not independently authenticated by this read.");}
+ reconcilePending();renderOrder();renderReceipt();renderGrant();const url=new URL(location.href);url.searchParams.set("order",id);history.replaceState(null,"",url);message("Finalized-state snapshot received from GenLayer. Transaction execution history is not independently authenticated by this read.");}
  catch(e){order=null;receipt=null;grant=null;renderOrder();renderReceipt();renderGrant();message("Unable to verify this snapshot: "+String(e.message||e),true);}
  finally{busy=false;$("milestoneLoad").disabled=false;renderActions();}
 }
@@ -102,7 +131,7 @@ async function resumePending(hash){
   const verdict=await gateway.resumeFinalization(hash);
   $("milestoneTx").textContent="Saved transaction "+hash+" · "+verdict.status+".";
   if(verdict.status==="FINALIZED_SUCCESS"){
-   unresolved=false;try{localStorage.removeItem(PENDING_KEY);}catch{}
+   clearPending();
    busy=false;await load();
   }
  }catch(e){$("milestoneTx").textContent="Tracking unresolved: "+String(e.message||e);}
@@ -153,7 +182,7 @@ async function submit(method,artifactUrl,artifactHash){if(busy||unresolved||!gat
  $("milestoneTx").textContent="Transaction "+result.txId+" · "+verdict.status+". "+(verdict.note||"")+" Refresh from chain before further actions.";
  // Only a successful explicit execution result allows a new action.
  if(verdict.status==="FINALIZED_SUCCESS"){
-  unresolved=false;try{localStorage.removeItem(PENDING_KEY);}catch{}
+  clearPending();
   // The newly finalized contract state, not a guessed local transition, decides the next action.
   await load();
  }
@@ -236,10 +265,10 @@ $("v2CreateForm").addEventListener("submit",async e=>{
  let submittedHash="";
  try{
   const tx=await gateway.submit("create_order",args,hash=>{
-   submittedHash=hash;unresolved=true;try{localStorage.setItem(PENDING_KEY,hash);localStorage.setItem(PENDING_KEY+".method","create_order");}catch{}
+   submittedHash=hash;savePending(hash,"create_order",{orderId:null,title});
    showProgress("Milestone transaction submitted","Waiting for finalized GenVM execution. Do not sign again.",hash,true);
   },async()=>true);
-  submittedHash=tx.txId;unresolved=true;try{localStorage.setItem(PENDING_KEY,tx.txId);localStorage.setItem(PENDING_KEY+".method","create_order");}catch{}
+  submittedHash=tx.txId;savePending(tx.txId,"create_order",{orderId:null,title});
   showProgress("Milestone creation pending","Transaction submitted. Checking finality and execution.",tx.txId,true);
   const status=await gateway.resumeFinalization(tx.txId);
   if(status.status==="FINALIZED_SUCCESS"){
