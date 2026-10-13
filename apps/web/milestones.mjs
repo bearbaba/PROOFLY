@@ -175,17 +175,22 @@ async function submit(method,artifactUrl,artifactHash){if(busy||unresolved||!gat
  const ok=window.confirm("PROOFLY V2 · "+method+"\nContract: "+V2_CONTRACT+"\nAccount: "+account+"\nOrder: "+order.id+"\nNo token transfer. This GenLayer SDK cannot quote consensus fees; inspect all costs in MetaMask before signing. Continue?");
  if(!ok)return;
  busy=true;renderActions();$("milestoneTx").textContent="Awaiting wallet approval. Do not submit again.";
- try{const result=await gateway.submit(method,args,hash=>{$("milestoneTx").textContent="Submitted: "+hash+" · Finality/execution unknown. Track before any other write.";},async()=>true);
- unresolved=true;try{localStorage.setItem(PENDING_KEY,result.txId);localStorage.setItem(PENDING_KEY+".method",method);}catch{}
- $("milestoneTx").textContent="Transaction "+result.txId+" submitted. Await finality; never retry based on timeout.";
+ try{const context={orderId:order.id,specSha:order.spec_sha256,artifactUrl,artifactHash,expectedVersion:order.submissions.length+(method==="submit_evidence"?1:0)};
+ const result=await gateway.submit(method,args,hash=>{
+  savePending(hash,method,context);
+  showProgress("Transaction submitted","Waiting for GenVM finality. Do not resubmit.",hash,true);
+  $("milestoneTx").textContent="Submitted: "+hash+" · Finality/execution unknown.";
+ },async()=>true);
+ savePending(result.txId,method,context);
+ $("milestoneTx").textContent="Transaction "+result.txId+" submitted. Checking finalized state and execution.";
  const verdict=await gateway.resumeFinalization(result.txId);
- $("milestoneTx").textContent="Transaction "+result.txId+" · "+verdict.status+". "+(verdict.note||"")+" Refresh from chain before further actions.";
- // Only a successful explicit execution result allows a new action.
- if(verdict.status==="FINALIZED_SUCCESS"){
-  clearPending();
-  // The newly finalized contract state, not a guessed local transition, decides the next action.
-  await load();
- }
+ $("milestoneTx").textContent="Transaction "+result.txId+" · "+verdict.status+".";
+ if(verdict.status==="FINALIZED_SUCCESS")clearPending();
+ if(verdict.status!=="FINALIZED_EXECUTION_FAILED"){
+  busy=false;await load();
+  if(!unresolved)showProgress("On-chain progress verified","Transaction complete or its exact effect verified in finalized state.",result.txId);
+  else showProgress("Transaction still requires verification","The SDK could not establish execution or a matching finalized state. Never resend blindly.",result.txId,true);
+ }else showProgress("Contract execution failed","GenVM execution did not succeed. Inspect the transaction error before further writes.",result.txId,true);
  }catch(e){
   const knownNoSubmission=["USER_CANCELLED","BAD_ARGUMENTS","FEE_ESTIMATE_MISSING","FEE_REVIEW_REQUIRED","INVALID_ID"].includes(e?.code);
   if(!knownNoSubmission)unresolved=true;
