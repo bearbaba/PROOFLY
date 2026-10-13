@@ -71,6 +71,8 @@ test("Preview homepage is V2 and never renders legacy contract",async({page})=>{
 test("V2 shows discoverable milestone list with safe read-only refresh",async({page})=>{
  await page.goto("/",{waitUntil:"domcontentloaded"});
  await expect(page.getByText("Recent milestones",{exact:true})).toBeVisible();
+ await expect(page.getByRole("button",{name:/Refresh list/})).not.toBeVisible();
+ await page.locator("#v2MyWorkDrawer summary").click();
  await expect(page.getByRole("button",{name:/Refresh list/})).toBeVisible();
  await expect(page.locator("#v2RecentOrders")).toBeAttached();
  await expect(page.locator("#milestoneId")).toHaveValue("1");
