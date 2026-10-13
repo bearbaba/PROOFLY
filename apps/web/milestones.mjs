@@ -146,6 +146,21 @@ async function fetchAndHashReference(url){
  const hash=Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256",bytes)),n=>n.toString(16).padStart(2,"0")).join("");
  return hash;
 }
+$("v2NegativeExample").addEventListener("click",()=>{
+ const values={
+  v2Title:"Sandbox Integration Negative Acceptance Test",
+  v2Contributor:"0xd6b8a3a5eb329410d9504784812b8569afa8c2af",
+  v2Reference:"https://raw.githubusercontent.com/bearbaba/PROOFLY/4671020f77d3193f9ceacc635b1fa0dd352c6598/fixtures/evidence/milestone-v2-acceptance-reference.txt",
+  v2R1:"The handoff explicitly states sandbox only, no real money, demo credentials, and that secrets must never be committed to source control.",
+  v2R2:"The handoff describes in order: configure the sandbox endpoint and demo credentials; send a test request with a unique request ID; inspect the response and save the request ID.",
+  v2R3:"The handoff instructs users to refresh demo credentials and retry once for AUTH_401, wait for Retry-After on RATE_429, and disable the sandbox integration while preserving logs if errors continue.",
+  v2SubmitDays:"2",v2RevisionDays:"7"
+ };
+ for(const [key,value] of Object.entries(values))$(key).value=value;
+ checkedReference=null;
+ $("v2ReferenceStatus").textContent="Template loaded. Click Fetch & hash reference document before signing.";
+ $("milestoneTx").textContent="Negative-test agreement fields prepared without submitting anything. The incomplete evidence is submitted separately after acceptance.";
+});
 $("v2CheckReference").addEventListener("click",async()=>{
  const url=$("v2Reference").value.trim();
  checkedReference=null;$("v2ReferenceStatus").textContent="Checking immutable reference…";
