@@ -69,6 +69,32 @@ class MilestoneGateV2Tests(legacy.WorkOrderTests):
         with self.assertRaisesRegex(legacy.UserError, "INVALID_RELEASE_EVIDENCE"):
             self.contract.claim_milestone_release("1")
 
+    def test_release_rejects_receipt_provenance_mismatch(self):
+        for field, wrong in (
+            ("schema", "proofly.work-order.v1"),
+            ("order_id", "999"),
+            ("version", 2),
+            ("chain_id", 999),
+            ("contract", legacy.OTHER),
+        ):
+            with self.subTest(field=field):
+                self.setUp()
+                self.complete()
+                record = json.loads(self.contract.receipts["1:1"])
+                record[field] = wrong
+                self.contract.receipts["1:1"] = json.dumps(record)
+                with self.assertRaisesRegex(legacy.UserError, "INVALID_RELEASE_EVIDENCE"):
+                    self.contract.claim_milestone_release("1")
+                self.assertEqual(self.contract.get_milestone_release("1"), "")
+
+    def test_release_rejects_changed_source_policy(self):
+        self.complete()
+        order = json.loads(self.contract.orders["1"])
+        order["spec"]["source_policy"] = "UNRESTRICTED"
+        self.contract.orders["1"] = json.dumps(order)
+        with self.assertRaisesRegex(legacy.UserError, "INVALID_RELEASE_EVIDENCE"):
+            self.contract.claim_milestone_release("1")
+
     def test_acceptance_commits_to_source_policy(self):
         order = self.create()
         self.assertEqual(order["spec"]["source_policy"], "AGREED_SPEC_ONLY_V1")
