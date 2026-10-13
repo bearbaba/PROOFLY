@@ -14,6 +14,22 @@ let order=null, receipt=null, grant=null, account="", gateway=null, busy=false, 
 try{unresolved=Boolean(localStorage.getItem(PENDING_KEY));}catch{unresolved=true;}
 
 const provider=()=>window.ethereum;
+function showProgress(title,details,hash="",attention=false){
+ const box=$("v2LiveStatus");box.hidden=false;box.dataset.state=attention?"attention":"success";
+ $("v2LiveTitle").textContent=title;$("v2LiveBody").textContent=details;
+ const links=$("v2LiveLinks");links.replaceChildren();
+ if(/^0x[a-fA-F0-9]{64}$/.test(hash)){const a=node("a","View transaction in Explorer ↗");a.href="https://explorer-studio.genlayer.com/tx/"+hash;a.target="_blank";a.rel="noopener noreferrer";links.append(a);}
+}
+async function findCreatedOrder(title,owner){
+ try{
+  const val=await readClient.readContract({address:V2_CONTRACT,functionName:"next_order",args:[],transactionHashVariant:final});
+  const n=BigInt(String(val));if(n<=1n)return null;
+  const id=String(n-1n),rec=await read("get_order",[id]);
+  if(!rec||rec.title!==title||rec.owner.toLowerCase()!==owner.toLowerCase())return null;
+  validateMilestoneSnapshot(rec,id);
+  $("milestoneId").value=id;await load();return id;
+ }catch{return null;}
+}
 const node=(tag,value,className)=>{const n=document.createElement(tag); if(value!==undefined)n.textContent=String(value); if(className)n.className=className;return n;};
 function message(msg,error=false){$("milestoneMessage").textContent=msg;$("milestoneMessage").className=error?"milestone-note milestone-error":"milestone-note";}
 function line(parent,name,value){const row=node("dl",undefined,"milestone-kv");row.append(node("dt",name),node("dd",value??"—"));parent.append(row);}
@@ -35,7 +51,7 @@ function renderGrant(){const box=$("milestoneRelease");box.replaceChildren();if(
  box.append(node("p","Not a payment, token transfer, or an off-chain unlock.","milestone-small"));
 }
 function field(box,title,id,placeholder){const w=node("label",undefined,"field");w.append(node("span",title));const input=node("input");input.id=id;input.placeholder=placeholder;input.autocomplete="off";w.append(input);box.append(w);return input;}
-function renderActions(){const box=$("milestoneActions");box.replaceChildren();if(!order){box.append(node("p","Load a work order to see eligible actions.","milestone-note"));return;}
+function renderActions(){const box=$("milestoneActions");box.replaceChildren();if(!order){box.append(node("p",unresolved?"Previous write unresolved. Check the transaction status at the top.":"Load a work order to see eligible actions.","milestone-note"));return;}
  const suggestion=nextMilestoneAction(order,account,Boolean(grant));
  if(!account){box.append(node("p","Connect the assigned MetaMask account to prepare a write. Anyone can inspect finalized state.","milestone-note"));return;}
  if(unresolved){
@@ -93,8 +109,8 @@ async function connect(){if(!provider()){ $("milestoneWallet").textContent="Meta
  if(!/^0x[0-9a-f]{40}$/.test(account))throw Error("No usable wallet account.");
  const client=createClient({chain:studionet,account,provider:provider()});
  gateway=createWorkflowGateway({client,contractAddress:V2_CONTRACT,finalVariant:final,isSuccessful:tx=>inspectTransaction(tx).kind==="success"});
- $("milestoneWallet").textContent="Connected: "+account+" · Studionet 61999";
- }catch(e){account="";gateway=null;$("milestoneWallet").textContent=String(e.message||e);}
+ $("milestoneWallet").textContent="● Connected · "+account.slice(0,8)+"…"+account.slice(-6)+" · Studionet 61999";$("milestoneWallet").title=account;$("milestoneConnect").textContent="✓ Wallet connected · Switch account";$("milestoneConnect").classList.add("v2-wallet-connected");
+ }catch(e){account="";gateway=null;$("milestoneConnect").textContent="Connect MetaMask";$("milestoneConnect").classList.remove("v2-wallet-connected");$("milestoneWallet").textContent=String(e.message||e);}
  renderActions();
 }
 async function verifyPublicArtifact(url,digest){
@@ -144,8 +160,8 @@ async function submit(method,artifactUrl,artifactHash){if(busy||unresolved||!gat
 }
 $("milestoneLookup").addEventListener("submit",e=>{e.preventDefault();void load();});
 $("milestoneConnect").addEventListener("click",()=>void connect());
-provider()?.on?.("accountsChanged",()=>{account="";gateway=null;renderActions();$("milestoneWallet").textContent="Account changed. Reconnect to continue.";});
-provider()?.on?.("chainChanged",()=>{account="";gateway=null;renderActions();$("milestoneWallet").textContent="Network changed. Reconnect to continue.";});
+provider()?.on?.("accountsChanged",()=>{account="";gateway=null;$("milestoneConnect").textContent="Connect MetaMask";$("milestoneConnect").classList.remove("v2-wallet-connected");renderActions();$("milestoneWallet").textContent="Account changed. Reconnect to continue.";});
+provider()?.on?.("chainChanged",()=>{account="";gateway=null;$("milestoneConnect").textContent="Connect MetaMask";$("milestoneConnect").classList.remove("v2-wallet-connected");renderActions();$("milestoneWallet").textContent="Network changed. Reconnect to continue.";});
 let checkedReference=null;
 const pinned=/^https:\/\/raw\.githubusercontent\.com\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+\/[a-f0-9]{40}\/[A-Za-z0-9_./-]+\.txt$/;
 async function fetchAndHashReference(url){
@@ -208,20 +224,36 @@ $("v2CreateForm").addEventListener("submit",async e=>{
  const now=Math.floor(Date.now()/1000);
  const args=[addr,title,JSON.stringify(rows),url,digest,now+submitDays*86400,now+revisionDays*86400];
  if(!window.confirm("PROOFLY V2 CREATE ORDER\\nContract: "+V2_CONTRACT+"\\nOwner: "+account+"\\nContributor: "+addr+"\\nReference SHA-256: "+digest+"\\nNo escrow/payment. Confirm fees in MetaMask before signing."))return;
- busy=true;$("v2CreateButton").disabled=true;$("milestoneTx").textContent="Awaiting wallet signature for create_order.";
+ busy=true;$("v2CreateButton").disabled=true;
+ showProgress("Approve agreement in MetaMask","Review the wallet, contract and fee. Do not submit another request.", "",true);
+ $("milestoneTx").textContent="Awaiting wallet signature for create_order.";
+ let submittedHash="";
  try{
-  const tx=await gateway.submit("create_order",args,hash=>{$("milestoneTx").textContent="Create submitted: "+hash+"; awaiting finality.";},async()=>true);
-  unresolved=true;try{localStorage.setItem(PENDING_KEY,tx.txId);}catch{}
-  $("milestoneTx").textContent="Create TX "+tx.txId+" submitted. Check execution before creating again.";
+  const tx=await gateway.submit("create_order",args,hash=>{
+   submittedHash=hash;unresolved=true;try{localStorage.setItem(PENDING_KEY,hash);}catch{}
+   showProgress("Milestone transaction submitted","Waiting for finalized GenVM execution. Do not sign again.",hash,true);
+  },async()=>true);
+  submittedHash=tx.txId;unresolved=true;try{localStorage.setItem(PENDING_KEY,tx.txId);}catch{}
+  showProgress("Milestone creation pending","Transaction submitted. Checking finality and execution.",tx.txId,true);
   const status=await gateway.resumeFinalization(tx.txId);
-  $("milestoneTx").textContent="Create TX "+tx.txId+" · "+status.status+". Read next_order or open Studio to discover the order ID.";
-  if(status.status==="FINALIZED_SUCCESS"){unresolved=false;try{localStorage.removeItem(PENDING_KEY);}catch{}}
+  if(status.status==="FINALIZED_SUCCESS"){
+   unresolved=false;try{localStorage.removeItem(PENDING_KEY);}catch{}
+   showProgress("Agreement created","GenVM execution succeeded. Finding the new Work Order.",tx.txId);
+   busy=false;
+   const id=await findCreatedOrder(title,account);
+   showProgress("Agreement created",id?"Work Order #"+id+" loaded. Contributor can now accept the agreement.":"Contract execution succeeded; Work Order number could not be matched automatically. Inspect next_order in Studio.",tx.txId);
+   $("milestoneTx").textContent=id?"Work Order #"+id+" created and loaded.":"Created successfully; use Studio to identify Work Order.";
+  }else{
+   showProgress("Execution not confirmed","Status: "+status.status+". Inspect GenVM execution in Explorer before further writes.",tx.txId,true);
+   $("milestoneTx").textContent="Create TX "+tx.txId+" · "+status.status+". Do not resubmit.";
+  }
  }catch(err){
-  const safeAbort=["USER_CANCELLED","BAD_ARGUMENTS","FEE_ESTIMATE_MISSING","FEE_REVIEW_REQUIRED"].includes(err?.code);
-  if(!safeAbort)unresolved=true;
-  $("milestoneTx").textContent=safeAbort?"No transaction submitted: "+String(err.message||err):"Signature or submission result uncertain: "+String(err.message||err)+". Inspect wallet/Studio before retrying.";
- }
- finally{busy=false;$("v2CreateButton").disabled=false;renderActions();}
+  const aborted=["USER_CANCELLED","BAD_ARGUMENTS","FEE_ESTIMATE_MISSING","FEE_REVIEW_REQUIRED"].includes(err?.code);
+  if(!aborted)unresolved=true;
+  showProgress(aborted?"No transaction submitted":"Transaction requires review",aborted?String(err.message||err):"A write may have been broadcast. Inspect MetaMask activity and Studio before retrying.",submittedHash,true);
+  $("milestoneTx").textContent=aborted?"No transaction submitted: "+String(err.message||err):"Submission uncertain: "+String(err.message||err)+". Do not resubmit.";
+ }finally{busy=false;$("v2CreateButton").disabled=false;renderActions();}
 });
 
+if(unresolved){let saved="";try{saved=localStorage.getItem(PENDING_KEY)||"";}catch{}showProgress("Previous transaction needs review","A previous write may still be pending. Verify the GenVM result before signing again.",saved,true);}
 const requested=new URLSearchParams(location.search).get("order");if(requested&&/^[1-9][0-9]*$/.test(requested)){$("milestoneId").value=requested;void load();}
