@@ -48,10 +48,25 @@ The state transition and receipt demonstrate **documentation conformance to a bo
 - [x] Scoped immutable reference and submission digests observed on-chain
 - [x] Quote-backed receipt with three satisfied criteria
 - [ ] Direct Studionet negative test: unrelated signer claiming release
-- [ ] Direct Studionet negative test: duplicate release claim
+- [x] Direct Studionet negative test: duplicate release claim — FINALIZED / GenVM ERROR / Rollback / RELEASE_ALREADY_CLAIMED
 - [ ] Direct Studionet negative test: rejected/insufficient evidence cannot claim
 - [ ] Independently capture full write hashes and verify GenVM execution status in Explorer
 - [ ] Verify new v2 website with wallet signing and finalized RPC reads, in browser
 - [ ] Perform adversarial security review and launch checklist
 
 **Do not** treat a green GitHub CI or Vercel READY deployment as proof of live signing behavior or completion of the negative Studionet tests.
+
+## Live adversarial test: duplicate milestone release blocked
+
+Source: [GenLayer Explorer transaction](https://explorer-studio.genlayer.com/tx/0x0e435e25a54b86048644394051d061f76c710e07dcdef93975409f23edd8a7e3), transcribed from the Explorer page supplied by the tester, October 13, 2026 at 09:45:58 local time.
+
+- Transaction: `0x0e435e25a54b86048644394051d061f76c710e07dcdef93975409f23edd8a7e3`
+- From: `0xd6b8a3a5eb329410d9504784812b8569afa8c2af` (assigned contributor)
+- To: `0xD67245387dF5448671235CE00c8969664b5aF8bd`
+- Method: `claim_milestone_release`, parameter `order_id=1`
+- Value: `0 GEN`; Execution mode: `Normal`; validators: 5
+- Transaction status: `FINALIZED`; consensus result: `Accepted`
+- **GenVM execution result: `ERROR`**, result code **`Rollback`**
+- **Contract error message: `RELEASE_ALREADY_CLAIMED`**
+
+**Interpretation:** Consensus accepted/finalized the transaction, but the contract **rejected its execution and rolled back**. This is a successful *negative test*, not a successful second claim. The previously observed release grant had already been recorded; the duplicate attempt did not issue another authorization. A separate post-attempt finalized-state read may additionally confirm that the grant remains unchanged.
