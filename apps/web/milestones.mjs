@@ -9,7 +9,10 @@ import {validateMilestoneSnapshot, validateRelease, nextMilestoneAction, V2_CONT
 const $=id=>document.getElementById(id);
 const readClient=createClient({chain:studionet});
 const final=TransactionHashVariant.LATEST_FINAL;
+const PENDING_KEY="proofly.v2.61999.pending-write";
 let order=null, receipt=null, grant=null, account="", gateway=null, busy=false, unresolved=false;
+try{unresolved=Boolean(localStorage.getItem(PENDING_KEY));}catch{unresolved=true;}
+
 const provider=()=>window.ethereum;
 const node=(tag,value,className)=>{const n=document.createElement(tag); if(value!==undefined)n.textContent=String(value); if(className)n.className=className;return n;};
 function message(msg,error=false){$("milestoneMessage").textContent=msg;$("milestoneMessage").className=error?"milestone-note milestone-error":"milestone-note";}
@@ -35,7 +38,11 @@ function field(box,title,id,placeholder){const w=node("label",undefined,"field")
 function renderActions(){const box=$("milestoneActions");box.replaceChildren();if(!order){box.append(node("p","Load a work order to see eligible actions.","milestone-note"));return;}
  const suggestion=nextMilestoneAction(order,account,Boolean(grant));
  if(!account){box.append(node("p","Connect the assigned MetaMask account to prepare a write. Anyone can inspect finalized state.","milestone-note"));return;}
- if(unresolved){box.append(node("p","An earlier write may still be pending or its execution is unresolved. Track it in Studio; do not resend.","milestone-note milestone-error"));return;}
+ if(unresolved){
+ const pending=(()=>{try{return localStorage.getItem(PENDING_KEY);}catch{return null;}})();
+ box.append(node("p","An earlier write may still be pending or its execution is unresolved. "+(pending?"TX: "+pending+". ":"")+"Track it in Studio; do not resend.","milestone-note milestone-error"));
+ if(pending&&gateway&&!busy){const check=node("button","Check saved transaction again","secondary");check.type="button";check.addEventListener("click",()=>void resumePending(pending));box.append(check);}
+ return;}
  if(!suggestion){box.append(node("p",grant?"Release authorization already recorded. No further claim is allowed.":"No action is available for this account and order state.","milestone-note"));return;}
  const b=node("button",suggestion.label,"primary");b.type="button";b.disabled=busy;
  let url,sha;
@@ -54,6 +61,18 @@ async function load(){if(busy)return;const id=$("milestoneId").value.trim();if(!
  catch(e){order=null;receipt=null;grant=null;renderOrder();renderReceipt();renderGrant();message("Unable to verify this snapshot: "+String(e.message||e),true);}
  finally{busy=false;$("milestoneLoad").disabled=false;renderActions();}
 }
+async function resumePending(hash){
+ if(!gateway||busy)return;busy=true;renderActions();
+ try{
+  const verdict=await gateway.resumeFinalization(hash);
+  $("milestoneTx").textContent="Saved transaction "+hash+" · "+verdict.status+".";
+  if(verdict.status==="FINALIZED_SUCCESS"){
+   unresolved=false;try{localStorage.removeItem(PENDING_KEY);}catch{}
+   await load();
+  }
+ }catch(e){$("milestoneTx").textContent="Tracking unresolved: "+String(e.message||e);}
+ finally{busy=false;renderActions();}
+}
 async function connect(){if(!provider()){ $("milestoneWallet").textContent="MetaMask was not found. Install or unlock a trusted wallet.";return;}
  try{const accounts=await provider().request({method:"eth_requestAccounts"});const chain=await provider().request({method:"eth_chainId"});
  if(Number(BigInt(chain))!==61999)throw Error("Switch MetaMask to GenLayer Studionet (chain 61999) before signing.");
@@ -65,6 +84,17 @@ async function connect(){if(!provider()){ $("milestoneWallet").textContent="Meta
  }catch(e){account="";gateway=null;$("milestoneWallet").textContent=String(e.message||e);}
  renderActions();
 }
+async function verifyPublicArtifact(url,digest){
+ const response=await fetch(url,{cache:"no-store",redirect:"error"});
+ if(!response.ok)throw Error("Evidence URL did not return HTTP 200.");
+ const raw=new Uint8Array(await response.arrayBuffer());
+ if(raw.length===0||raw.length>16000)throw Error("Evidence must contain 1–16000 bytes.");
+ const text=new TextDecoder("utf-8",{fatal:true}).decode(raw);
+ if(text.length>10000||text.includes("\\0"))throw Error("Evidence text exceeds policy constraints.");
+ const bytes=await crypto.subtle.digest("SHA-256",raw);
+ const actual=Array.from(new Uint8Array(bytes),n=>n.toString(16).padStart(2,"0")).join("");
+ if(actual!==digest)throw Error("Evidence SHA-256 differs from the fetched public document.");
+}
 async function submit(method,artifactUrl,artifactHash){if(busy||unresolved||!gateway||!order)return;
  const chain=await provider().request({method:"eth_chainId"});const accounts=await provider().request({method:"eth_accounts"});
  if(Number(BigInt(chain))!==61999||String(accounts[0]||"").toLowerCase()!==account){$("milestoneTx").textContent="Wallet or chain changed. Reconnect and inspect again.";account="";gateway=null;renderActions();return;}
@@ -74,15 +104,24 @@ async function submit(method,artifactUrl,artifactHash){if(busy||unresolved||!gat
  if(method==="submit_evidence")args=[order.id,artifactUrl,artifactHash];
  if(method==="submit_evidence"&&!/^https:\/\/raw\.githubusercontent\.com\/[\w.-]+\/[\w.-]+\/[a-f0-9]{40}\/[\w./-]+\.txt$/.test(artifactUrl||"")){ $("milestoneTx").textContent="Use a commit-pinned public raw GitHub .txt URL.";return;}
  if(method==="submit_evidence"&&!/^[a-f0-9]{64}$/.test(artifactHash||"")){$("milestoneTx").textContent="Invalid artifact SHA-256.";return;}
+ if(method==="submit_evidence"){
+  try{await verifyPublicArtifact(artifactUrl,artifactHash);}
+  catch(e){$("milestoneTx").textContent="Evidence validation failed; no transaction sent: "+String(e.message||e);return;}
+ }
  const ok=window.confirm("PROOFLY V2 · "+method+"\nContract: "+V2_CONTRACT+"\nAccount: "+account+"\nOrder: "+order.id+"\nNo token transfer. This GenLayer SDK cannot quote consensus fees; inspect all costs in MetaMask before signing. Continue?");
  if(!ok)return;
  busy=true;renderActions();$("milestoneTx").textContent="Awaiting wallet approval. Do not submit again.";
  try{const result=await gateway.submit(method,args,hash=>{$("milestoneTx").textContent="Submitted: "+hash+" · Finality/execution unknown. Track before any other write.";},async()=>true);
- unresolved=true;$("milestoneTx").textContent="Transaction "+result.txId+" submitted. Await finality; never retry based on timeout.";
+ unresolved=true;try{localStorage.setItem(PENDING_KEY,result.txId);}catch{}
+ $("milestoneTx").textContent="Transaction "+result.txId+" submitted. Await finality; never retry based on timeout.";
  const verdict=await gateway.resumeFinalization(result.txId);
  $("milestoneTx").textContent="Transaction "+result.txId+" · "+verdict.status+". "+(verdict.note||"")+" Refresh from chain before further actions.";
  // Only a successful explicit execution result allows a new action.
- if(verdict.status==="FINALIZED_SUCCESS")unresolved=false;
+ if(verdict.status==="FINALIZED_SUCCESS"){
+  unresolved=false;try{localStorage.removeItem(PENDING_KEY);}catch{}
+  // The newly finalized contract state, not a guessed local transition, decides the next action.
+  await load();
+ }
  }catch(e){unresolved=true;$("milestoneTx").textContent="Submission may be pending: "+String(e.message||e)+". Check wallet/Studio before any retry.";}
  finally{busy=false;renderActions();}
 }
