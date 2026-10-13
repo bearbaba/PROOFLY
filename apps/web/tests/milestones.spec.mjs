@@ -4,7 +4,7 @@ test("V2 workspace is explicit about contract and no payments",async({page})=>{
  await page.goto("/milestones.html");
  await expect(page).toHaveTitle(/Milestone Gate V2/);
  await expect(page.getByRole("heading",{name:"Verified work. Provable release."})).toBeVisible();
- await expect(page.getByText("0xD67245387dF5448671235CE00c8969664b5aF8bd")).toBeVisible();
+ await expect(page.getByText("0xb8305F15336a79761157b86e214d3d3DeaDFc1ce")).toBeVisible();
  await expect(page.getByText(/NOT a token transfer, escrow, payment/)).toBeVisible();
  await expect(page.getByText(/No wallet connected/)).toBeVisible();
  await expect(page.getByRole("heading",{name:"Proof receipt"})).toBeVisible();
