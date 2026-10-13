@@ -35,7 +35,7 @@ test("Negative template prefills rubric but does not sign or bypass reference ve
  await page.getByRole("button",{name:/Fill negative-test milestone template/}).click();
  await expect(page.locator("#v2Title")).toHaveValue("Sandbox Integration Negative Acceptance Test");
  await expect(page.locator("#v2Contributor")).toHaveValue("0xd6b8a3a5eb329410d9504784812b8569afa8c2af");
- await expect(page.locator("#v2R3")).toContainText("AUTH_401");
+ await expect(page.locator("#v2R3")).toHaveValue(/AUTH_401/);
  await expect(page.locator("#v2ReferenceStatus")).toContainText("Click Fetch & hash");
  await expect(page.locator("#milestoneTx")).toContainText("without submitting anything");
 });
