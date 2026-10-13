@@ -12,6 +12,8 @@ from pathlib import Path
 from typing import Any
 
 POLICY = "proofly.work-order.v1"
+V2_POLICY = "proofly.milestone-acceptance.v2"
+V2_SOURCE_POLICY = "AGREED_SPEC_ONLY_V1"
 REASONS = {"SATISFIED": "EVIDENCE_SUPPORTS", "UNSATISFIED": "REQUIREMENT_NOT_MET",
            "UNVERIFIABLE": "INSUFFICIENT_EVIDENCE"}
 MAX_BYTES = 16000
@@ -45,7 +47,8 @@ def _validate_core(order: Any, receipt: Any, artifact: bytes, reference: bytes) 
     if type(order) is not dict or type(receipt) is not dict:
         return _report(["INVALID_JSON_OBJECT"])
 
-    check(receipt.get("schema") == POLICY, "UNKNOWN_RECEIPT_SCHEMA")
+    schema = receipt.get("schema")
+    check(schema in (POLICY, V2_POLICY), "UNKNOWN_RECEIPT_SCHEMA")
     check(type(receipt.get("chain_id")) is int and receipt.get("chain_id", 0) > 0,
           "INVALID_CHAIN_ID")
     check(type(receipt.get("contract")) is str and
@@ -59,6 +62,13 @@ def _validate_core(order: Any, receipt: Any, artifact: bytes, reference: bytes) 
     spec = order.get("spec")
     if type(spec) is not dict:
         return _report(errors + ["INVALID_SPEC"])
+    if schema == V2_POLICY:
+        check(spec.get("policy") == V2_POLICY and
+              spec.get("source_policy") == V2_SOURCE_POLICY,
+              "INVALID_V2_SOURCE_POLICY")
+    else:
+        check(spec.get("policy") == POLICY and "source_policy" not in spec,
+              "INVALID_V1_SOURCE_POLICY")
     criteria = spec.get("criteria")
     if type(criteria) is not list or not 3 <= len(criteria) <= 5 or any(
         type(row) is not dict or set(row) != {"id", "text"} for row in criteria
@@ -68,7 +78,7 @@ def _validate_core(order: Any, receipt: Any, artifact: bytes, reference: bytes) 
     check(all(type(x) is str for x in ids) and (len(set(ids)) == len(ids)
           if all(type(x) is str for x in ids) else False), "DUPLICATE_CRITERIA")
 
-    envelope = {"policy": POLICY, "chain_id": receipt.get("chain_id"),
+    envelope = {"policy": schema, "chain_id": receipt.get("chain_id"),
                 "contract": receipt.get("contract"), "order_id": order.get("id"),
                 "owner": order.get("owner"), "contributor": order.get("contributor"),
                 "title": order.get("title"), "spec": spec}
