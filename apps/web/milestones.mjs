@@ -46,7 +46,20 @@ function renderActions(){const box=$("milestoneActions");box.replaceChildren();i
  if(!suggestion){box.append(node("p",grant?"Release authorization already recorded. No further claim is allowed.":"No action is available for this account and order state.","milestone-note"));return;}
  const b=node("button",suggestion.label,"primary");b.type="button";b.disabled=busy;
  let url,sha;
- if(suggestion.method==="submit_evidence"){url=field(box,"Commit-pinned public artifact URL","v2ArtifactUrl","https://raw.githubusercontent.com/.../40-hex-commit/...txt");sha=field(box,"Artifact SHA-256 (64 lowercase hex)","v2ArtifactHash","64 hex characters");}
+ if(suggestion.method==="submit_evidence"){
+  url=field(box,"Commit-pinned public artifact URL","v2ArtifactUrl","https://raw.githubusercontent.com/.../40-hex-commit/...txt");
+  sha=field(box,"Artifact SHA-256 (64 lowercase hex)","v2ArtifactHash","64 hex characters");
+  if(order.title==="Sandbox Integration Negative Acceptance Test"){
+   const demo=node("button","Fill incomplete evidence (negative test only) ↘","secondary");
+   demo.type="button";
+   demo.addEventListener("click",()=>{
+    url.value="https://raw.githubusercontent.com/bearbaba/PROOFLY/5a98c6be3d74b110ca711e46a30349cb8914e6e1/fixtures/evidence/milestone-v2-incomplete-handoff.txt";
+    sha.value="72a9056d2846be017eceb017746860e31c82abe8f9f131a866c02823f71bd5a6";
+    $("milestoneTx").textContent="Incomplete artifact filled, NOT submitted. Inspect URL/hash and confirm wallet before signing.";
+   });
+   box.append(demo);
+  }
+ }
  const guidance=node("p","Confirm wallet, contract, and fees before approving. The app never auto-retries.","hint");box.append(guidance,b);
  b.addEventListener("click",()=>void submit(suggestion.method,url?.value?.trim(),sha?.value?.trim()));
 }
