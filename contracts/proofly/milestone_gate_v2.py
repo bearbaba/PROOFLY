@@ -336,9 +336,16 @@ class ProoflyWorkOrder(gl.Contract):
         receipt_key = order_id + ":" + str(version)
         _need(receipt_key in self.receipts, "RECEIPT_REQUIRED")
         receipt = json.loads(self.receipts[receipt_key])
-        _need(receipt["outcome"] == "ACCEPTED" and
-              receipt["spec_sha256"] == rec["spec_sha256"] and
-              receipt["artifact_sha256"] == rec["submissions"][-1]["artifact_sha256"],
+        _need(rec["spec"].get("policy") == POLICY and
+              rec["spec"].get("source_policy") == SOURCE_POLICY and
+              receipt.get("schema") == POLICY and
+              receipt.get("order_id") == order_id and
+              receipt.get("version") == version and
+              receipt.get("contract") == _address(gl.message.contract_address) and
+              receipt.get("chain_id") == int(gl.message.chain_id) and
+              receipt.get("outcome") == "ACCEPTED" and
+              receipt.get("spec_sha256") == rec["spec_sha256"] and
+              receipt.get("artifact_sha256") == rec["submissions"][-1]["artifact_sha256"],
               "INVALID_RELEASE_EVIDENCE")
         _need(order_id not in self.release_grants, "RELEASE_ALREADY_CLAIMED")
         self.release_grants[order_id] = _json({
