@@ -93,6 +93,16 @@ function renderActions(){const box=$("milestoneActions");box.replaceChildren();i
  if(suggestion.method==="submit_evidence"){
   url=field(box,"Commit-pinned public artifact URL","v2ArtifactUrl","https://raw.githubusercontent.com/.../40-hex-commit/...txt");
   sha=field(box,"Artifact SHA-256 (64 lowercase hex)","v2ArtifactHash","64 hex characters");
+  if(order.title==="Sandbox API Integration Handoff — Live Demonstration"){
+   const example=node("button","Fill complete evidence (positive demo) ↘","secondary");
+   example.type="button";
+   example.addEventListener("click",()=>{
+    url.value="https://raw.githubusercontent.com/bearbaba/PROOFLY/b5c70fbb95bd03f9e65d630292c9ac0af2f38eb0/fixtures/evidence/milestone-v2-sandbox-handoff.txt";
+    sha.value="397cd4f89a3fb861f52b804b4ebeafe29f91382e8aee226e0cf4abb8d8925894";
+    $("milestoneTx").textContent="Complete pinned artifact filled, NOT submitted. Verify bytes and wallet before signing.";
+   });
+   box.append(example);
+  }
   if(order.title==="Sandbox Integration Negative Acceptance Test"){
    const demo=node("button","Fill incomplete evidence (negative test only) ↘","secondary");
    demo.type="button";
@@ -209,6 +219,22 @@ async function fetchAndHashReference(url){
  const hash=Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256",bytes)),n=>n.toString(16).padStart(2,"0")).join("");
  return hash;
 }
+$("v2PositiveExample").addEventListener("click",()=>{
+ const values={
+  v2Title:"Sandbox API Integration Handoff — Live Demonstration",
+  v2Contributor:"0xd6b8a3a5eb329410d9504784812b8569afa8c2af",
+  v2Reference:"https://raw.githubusercontent.com/bearbaba/PROOFLY/4671020f77d3193f9ceacc635b1fa0dd352c6598/fixtures/evidence/milestone-v2-acceptance-reference.txt",
+  v2R1:"The handoff explicitly states sandbox only, no real money, demo credentials, and that secrets must never be committed to source control.",
+  v2R2:"The handoff describes in order: configure the sandbox endpoint and demo credentials; send a test request with a unique request ID; inspect the response and save the request ID.",
+  v2R3:"The handoff instructs users to refresh demo credentials and retry once for AUTH_401, wait for Retry-After on RATE_429, and disable the sandbox integration while preserving logs if errors continue.",
+  v2SubmitDays:"2",v2RevisionDays:"7"
+ };
+ for(const [key,value] of Object.entries(values))$(key).value=value;
+ checkedReference=null;
+ $("v2ReferenceStatus").textContent="Template prepared. Fetch & hash the agreed reference before Owner signs.";
+ $("milestoneTx").textContent="Positive demo inputs ready. This is only a local draft; no wallet request or on-chain write occurred.";
+});
+document.querySelector(".milestone-start")?.addEventListener("click",()=>{$("v2CreateDetails").open=true;});
 $("v2NegativeExample").addEventListener("click",()=>{
  const values={
   v2Title:"Sandbox Integration Negative Acceptance Test",
