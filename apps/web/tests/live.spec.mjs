@@ -1,7 +1,7 @@
 import { test,expect } from "@playwright/test";
 test("live UI labels real Studionet and blocks unsigned writes", async ({page})=>{
   await page.route(/https:\/\/fonts\.(googleapis|gstatic)\.com\//,r=>r.abort());
-  await page.goto("/",{waitUntil:"domcontentloaded"});
+  await page.goto("/legacy.html",{waitUntil:"domcontentloaded"});
   await expect(page.getByText("GENLAYER STUDIONET · 61999")).toBeVisible();
   await expect(page.locator("#writeAction")).toBeDisabled();
   await expect(page.locator("#walletState")).toContainText("No wallet connected");
@@ -9,7 +9,7 @@ test("live UI labels real Studionet and blocks unsigned writes", async ({page})=
   await expect(page.locator("#receiptVersion")).toHaveValue("1");
 });
 test("live UI fits narrow mobile viewport",async({page})=>{
-  await page.goto("/",{waitUntil:"domcontentloaded"});
+  await page.goto("/legacy.html",{waitUntil:"domcontentloaded"});
   await page.setViewportSize({width:375,height:812});
   await expect(page.locator("#connectWallet")).toBeVisible();
   const sizes=await page.evaluate(()=>({inner:window.innerWidth,scroll:document.documentElement.scrollWidth}));
@@ -17,7 +17,7 @@ test("live UI fits narrow mobile viewport",async({page})=>{
 });
 
 test("customer creation is a normal form, not a required JSON upload",async({page})=>{
-  await page.goto("/",{waitUntil:"domcontentloaded"});
+  await page.goto("/legacy.html",{waitUntil:"domcontentloaded"});
   await page.locator("#createDisclosure > summary").click();
   await expect(page.locator("#createCard")).toBeVisible();
   await expect(page.locator("#createNow")).toBeDisabled();
@@ -29,7 +29,7 @@ test("customer creation is a normal form, not a required JSON upload",async({pag
   await expect(page.locator("#createNow")).toBeDisabled();
 });
 test("untrusted reference URL fails closed before hashing or wallet write",async({page})=>{
-  await page.goto("/",{waitUntil:"domcontentloaded"});
+  await page.goto("/legacy.html",{waitUntil:"domcontentloaded"});
   await page.locator("#createDisclosure > summary").click();
   await page.locator("#jobReference").fill("https://evil.example/reference.txt");
   await page.locator("#verifyReference").click();
@@ -38,7 +38,7 @@ test("untrusted reference URL fails closed before hashing or wallet write",async
 });
 
 test("sample contributor button is clearly labeled and fills known demo wallet",async({page})=>{
-  await page.goto("/",{waitUntil:"domcontentloaded"});
+  await page.goto("/legacy.html",{waitUntil:"domcontentloaded"});
   await page.locator("#createDisclosure > summary").click();
   await expect(page.locator("#fillDemoContributor")).toBeVisible();
   await page.locator("#fillDemoContributor").click();
@@ -47,13 +47,13 @@ test("sample contributor button is clearly labeled and fills known demo wallet",
 });
 
 test("share URL panel is hidden before a contract read confirms a work order",async({page})=>{
-  await page.goto("/",{waitUntil:"domcontentloaded"});
+  await page.goto("/legacy.html",{waitUntil:"domcontentloaded"});
   await expect(page.locator("#orderHandoff")).toBeHidden();
   await expect(page.locator("#shareOrderUrl")).toBeAttached();
   await expect(page.locator("#copyOrderLink")).toBeAttached();
 });
 test("Contributor share link loads order ID automatically, without connecting wallet",async({page})=>{
-  await page.goto("/?order=2",{waitUntil:"domcontentloaded"});
+  await page.goto("/legacy.html?order=2",{waitUntil:"domcontentloaded"});
   await expect(page.locator("#orderId")).toHaveValue("2");
   await expect(page.locator("#createNow")).toBeDisabled();
 });
@@ -75,7 +75,7 @@ test("Contributor account connects without installing a MetaMask Snap",async({pa
       }
     };
   });
-  await page.goto("/",{waitUntil:"domcontentloaded"});
+  await page.goto("/legacy.html",{waitUntil:"domcontentloaded"});
   await page.locator("#connectWallet").click();
   await expect(page.locator("#walletState")).toContainText("Connected · 0xd6b8…c2af · Studionet 61999");
   const calls=await page.evaluate(()=>window.__walletCalls);
@@ -96,7 +96,7 @@ test("wrong-chain account fails before SDK and never triggers Snap prompts",asyn
       }
     };
   });
-  await page.goto("/",{waitUntil:"domcontentloaded"});
+  await page.goto("/legacy.html",{waitUntil:"domcontentloaded"});
   await page.locator("#connectWallet").click();
   await expect(page.locator("#walletState")).toContainText("Wrong network");
   await expect(page.locator("#walletState")).toContainText("GenLayer Studionet");
@@ -106,7 +106,7 @@ test("wrong-chain account fails before SDK and never triggers Snap prompts",asyn
 });
 
 test("My Work section is visible but requires connected wallet, no fabricated jobs",async({page})=>{
-  await page.goto("/",{waitUntil:"domcontentloaded"});
+  await page.goto("/legacy.html",{waitUntil:"domcontentloaded"});
   await expect(page.locator("#myWorkCard")).toBeVisible();
   await expect(page.locator("#myWorkStatus")).toContainText("Connect your wallet");
   await expect(page.locator("#myWorkList .my-work-row")).toHaveCount(0);
@@ -135,7 +135,7 @@ test("MetaMask accountChanged switches Owner to Contributor without another conn
       window.__listeners.accountsChanged?.([contributor]);
     };
   });
-  await page.goto("/",{waitUntil:"domcontentloaded"});
+  await page.goto("/legacy.html",{waitUntil:"domcontentloaded"});
   await expect(page.locator("#walletState")).toContainText("0x4c7c…8dcb");
   await page.evaluate(()=>window.__switchToContributor());
   await expect(page.locator("#walletState")).toContainText("0xd6b8…c2af");
@@ -146,7 +146,7 @@ test("MetaMask accountChanged switches Owner to Contributor without another conn
 });
 
 test("normal-user workspace puts wallet and next-step first and hides technical console",async({page})=>{
-  await page.goto("/",{waitUntil:"domcontentloaded"});
+  await page.goto("/legacy.html",{waitUntil:"domcontentloaded"});
   await expect(page.locator("main.app-shell > #walletActionsCard")).toBeVisible();
   await expect(page.locator("#nextStepTitle")).toContainText("Connect your wallet");
   await expect(page.locator("#myWorkCard")).toBeVisible();
@@ -158,7 +158,7 @@ test("normal-user workspace puts wallet and next-step first and hides technical 
   await expect(page.locator("#writeAction")).toBeDisabled();
 });
 test("manual order lookup is optional and collapsed by default",async({page})=>{
-  await page.goto("/",{waitUntil:"domcontentloaded"});
+  await page.goto("/legacy.html",{waitUntil:"domcontentloaded"});
   await page.locator("#jobDetailsDisclosure > summary").click();
   await expect(page.locator("#orderId")).toBeHidden();
   await page.locator(".manual-lookup > summary").click();
@@ -170,7 +170,7 @@ test("paste of a pinned document auto-verifies when field loses focus",async({pa
     headers:{"access-control-allow-origin":"*"},
     body:"A public trial environment guide. No real money is accepted."
   }));
-  await page.goto("/",{waitUntil:"domcontentloaded"});
+  await page.goto("/legacy.html",{waitUntil:"domcontentloaded"});
   await page.locator("#createDisclosure > summary").click();
   await page.locator("#jobReference").fill(
     "https://raw.githubusercontent.com/bearbaba/PROOFLY/fa4d29b0e6f8efb50e2472530aff1d0ab7aca77e/fixtures/evidence/reference.txt");
@@ -180,14 +180,14 @@ test("paste of a pinned document auto-verifies when field loses focus",async({pa
 });
 
 test("normal wallet screen avoids scary default transaction status before any wallet write",async({page})=>{
-  await page.goto("/",{waitUntil:"domcontentloaded"});
+  await page.goto("/legacy.html",{waitUntil:"domcontentloaded"});
   await expect(page.locator("#transactionNotice")).toBeHidden();
   await expect(page.locator("#technicalTransaction")).toBeHidden();
   await expect(page.locator("#writeAction")).toBeDisabled();
 });
 
 test("simple workspace keeps creation and advanced work details collapsed until requested",async({page})=>{
- await page.goto("/",{waitUntil:"domcontentloaded"});
+ await page.goto("/legacy.html",{waitUntil:"domcontentloaded"});
  await expect(page.locator("#createForm")).toBeHidden();
  await expect(page.locator("#orderResult")).toBeHidden();
  await expect(page.locator("#technicalTransaction")).toBeHidden();
@@ -199,7 +199,7 @@ test("simple workspace keeps creation and advanced work details collapsed until 
 });
 
 test("finished job has a prominent proof action but no stale transaction banner",async({page})=>{
-  await page.goto("/",{waitUntil:"domcontentloaded"});
+  await page.goto("/legacy.html",{waitUntil:"domcontentloaded"});
   // No fake completed receipt is invented in unauthenticated public reads.
   await expect(page.locator("#transactionNotice")).toBeHidden();
   await expect(page.locator("#jobDetailsDisclosure")).not.toHaveAttribute("open",/.+/);

@@ -3,5 +3,11 @@
   "framework": null,
   "outputDirectory": "apps/web",
   "installCommand": "npm --prefix apps/web install --no-audit --no-fund",
-  "buildCommand": "npm --prefix apps/web run build && npm --prefix apps/web run bundle"
+  "buildCommand": "npm --prefix apps/web run build && npm --prefix apps/web run bundle",
+  "rewrites": [
+    {
+      "source": "/",
+      "destination": "/milestones.html"
+    }
+  ]
 }

@@ -1,5 +1,14 @@
 # PROOFLY
 
+> **PROOFLY V2 REVIEWER UPDATE — OCTOBER 13, 2026 (experimental Studionet candidate)**
+>
+> The v2 deployment is separate from the v1 production app. [Open v2 Preview, positive order #1](https://proofly-atboqi1pu-khaiptk1998-8088s-projects.vercel.app/milestones.html?order=1) or [negative order #2](https://proofly-atboqi1pu-khaiptk1998-8088s-projects.vercel.app/milestones.html?order=2). [V2 contract on Explorer](https://explorer-studio.genlayer.com/address/0xD67245387dF5448671235CE00c8969664b5aF8bd).
+>
+> **Observed live:** Order #1 COMPLETED/ACCEPTED (3/3 satisfied) with one-time contributor-bound release authorization. Order #2 REVIEWED/CHANGES_REQUIRED (R3 unsatisfied); [claim rollback](https://explorer-studio.genlayer.com/tx/0xca2a98c928199f1b35f38c3e478cd74aae9dd58df546814a217636c21671ca6f) with MILESTONE_NOT_ACCEPTED. Additional [duplicate-claim](https://explorer-studio.genlayer.com/tx/0x0e435e25a54b86048644394051d061f76c710e07dcdef93975409f23edd8a7e3) and [wrong-caller](https://explorer-studio.genlayer.com/tx/0x58c988fd241e854f198c78f6cbc5b33b36b475bb8488b045506220dd8aa09619) rollbacks observed. [Full v2 evidence](docs/V2_STUDIONET_EVIDENCE.md) · [Submission packet](docs/V2_SUBMISSION_PACKET.md) · [Video checklist](docs/V2_VIDEO_SUBMISSION_CHECKLIST.md).
+>
+> **Important:** v2 release means **nontransferable authorization record**, not escrow, a token transfer, or real-world delivery proof. Preview wallet signing succeeded for create/accept/submit on an earlier build; latest transaction-recovery UI has automated CI but needs fresh real-browser smoke verification. Historical v1 sections below describe earlier development stages and are not the current v2 candidate status.
+
+
 **2026-10-12 production evidence update:** The hosted Contributor workflow for Work Order #2 now displays `COMPLETED`, `ACCEPTED`, and a version-1 Proof Receipt with `3 / 3 SATISFIED` according to the user's live website readback. Vercel confirmed Production READY at `8d11604`. See [Order #2 production reviewer evidence](docs/ORDER_2_PRODUCTION_EVIDENCE.md). The historical status sections below describe earlier stages and are not the current deployment status. Independent Explorer GenVM execution confirmation and full transaction provenance remain outstanding.
 
 

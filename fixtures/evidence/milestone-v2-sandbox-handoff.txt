@@ -1,0 +1,21 @@
+PROOFLY V2 - SANDBOX API INTEGRATION HANDOFF
+Milestone: Sandbox API Integration Handoff
+Document version: 1
+Scope: Documentation-only handoff for an illustrative sandbox integration. This document is not evidence that an external API was deployed, tested, or operated.
+
+R1 - Environment and authorization boundary
+This integration runs only in a sandbox and accepts no real money. Use demo credentials exclusively. Secrets must never be committed to source control. Never substitute live credentials or production endpoints during this documentation exercise.
+
+R2 - Reproducible integration steps
+Step 1: Configure the sandbox endpoint and demo credentials.
+Step 2: Send a test request with a unique request ID.
+Step 3: Inspect the response and save the request ID for troubleshooting.
+Keep the steps in this order, and record only sanitized response metadata.
+
+R3 - Failure handling and rollback
+For AUTH_401, refresh demo credentials and retry once.
+For RATE_429, wait for the Retry-After interval before retrying.
+If repeated errors continue, disable the sandbox integration and preserve logs for investigation. Do not automatically retry indefinitely.
+
+Acceptance boundary
+This handoff is being submitted as documentation against the pre-agreed PROOFLY V2 rubric. GenLayer judges whether this written artifact conforms to the requirements. Acceptance is not proof of a live integration, and the milestone release authorization is not a payment or off-chain transfer.

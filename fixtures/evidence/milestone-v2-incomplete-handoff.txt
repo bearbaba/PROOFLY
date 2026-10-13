@@ -1,0 +1,17 @@
+PROOFLY V2 - INCOMPLETE SANDBOX API INTEGRATION HANDOFF
+Milestone: Sandbox API Integration Handoff
+Document version: negative-test-1
+
+R1 - Environment and authorization boundary
+This integration runs only in a sandbox and accepts no real money. Use demo credentials exclusively. Secrets must never be committed to source control.
+
+R2 - Reproducible integration steps
+Step 1: Configure the sandbox endpoint and demo credentials.
+Step 2: Send a test request with a unique request ID.
+Step 3: Inspect the response and save the request ID for troubleshooting.
+
+R3 - Failure handling and rollback
+Not provided. Error recovery, rate limiting and shutdown procedures are intentionally omitted from this incomplete handoff.
+
+Test scope
+This document deliberately lacks the required AUTH_401, RATE_429, Retry-After, and repeated-error rollback instructions. It is a negative-test artifact, not evidence of a production integration.

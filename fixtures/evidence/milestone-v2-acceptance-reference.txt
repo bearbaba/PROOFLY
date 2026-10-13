@@ -1,0 +1,19 @@
+PROOFLY V2 - AGREED MILESTONE ACCEPTANCE SPECIFICATION
+Policy: AGREED_SPEC_ONLY_V1
+Milestone: Sandbox API Integration Handoff
+Scope: Evaluate the delivered documentation against this jointly agreed acceptance specification. The document does not certify any real API, account, payment, or external deployment.
+
+R1 - Environment and authorization boundary
+The handoff must explicitly state that the integration runs only in a sandbox, accepts no real money, and uses demo credentials. It must warn that secrets must never be committed to source control.
+
+R2 - Reproducible integration steps
+The handoff must provide the following steps in this exact order: (1) configure the sandbox endpoint and demo credentials, (2) send a test request with a unique request ID, (3) inspect the response and save the request ID for troubleshooting.
+
+R3 - Failure handling and rollback
+The handoff must describe two distinct failures and remedies: for AUTH_401, refresh demo credentials and retry once; for RATE_429, wait for the Retry-After interval before retrying. It must also instruct the operator to disable the sandbox integration and preserve logs if repeated errors continue.
+
+Acceptance consequence
+If and only if all three requirements are SATISFIED by GenLayer consensus, the v2 work order can reach COMPLETED. The assigned contributor may then claim a one-time on-chain milestone release authorization. This authorization is not a payment, legal certification, or automatic action in any external service.
+
+Evidence authority
+This file is an agreed rubric, not an independent source of facts. SHA-256 and immutable GitHub URLs establish byte identity only. Any claim about live production behavior requires an additional authoritative source and is outside this milestone.
