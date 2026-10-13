@@ -59,7 +59,7 @@ async function connect(){if(!provider()){ $("milestoneWallet").textContent="Meta
  if(Number(BigInt(chain))!==61999)throw Error("Switch MetaMask to GenLayer Studionet (chain 61999) before signing.");
  account=String(accounts[0]||"").toLowerCase();
  if(!/^0x[0-9a-f]{40}$/.test(account))throw Error("No usable wallet account.");
- const client=createClient({chain:studionet,account});
+ const client=createClient({chain:studionet,account,provider:provider()});
  gateway=createWorkflowGateway({client,contractAddress:V2_CONTRACT,finalVariant:final,isSuccessful:tx=>inspectTransaction(tx).kind==="success"});
  $("milestoneWallet").textContent="Connected: "+account+" · Studionet 61999";
  }catch(e){account="";gateway=null;$("milestoneWallet").textContent=String(e.message||e);}
