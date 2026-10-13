@@ -1,122 +1,48 @@
 <!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="description" content="PROOFLY — real GenLayer Studionet work orders and proof receipts">
-<title>PROOFLY / Live Work Orders</title>
-<link rel="stylesheet" href="./live.css">
-<script type="module" src="./live.bundle.js"></script>
-</head>
-<body>
-<div class="wrap">
-<nav class="top"><a class="mark" href="./"><span class="monogram">P</span>PROOFLY</a>
-<div class="top-links"><span class="testnet"><i></i> GENLAYER STUDIONET · 61999</span>
-<a href="./milestones.html">Milestone Gate V2 ↗</a><a href="#myWorkCard">My work</a><a href="#createCard">New job</a><a class="nav-source" href="https://github.com/bearbaba/PROOFLY" target="_blank" rel="noopener noreferrer">GitHub ↗</a></div></nav>
-<header class="hero"><h1>Work. Verified.</h1><p>Agree. Deliver. Verify on GenLayer.</p></header>
-<div class="strip"><span><strong>REAL TESTNET</strong> · Experimental network. No payments or escrow. Never share recovery phrases.</span>
-<a id="studio" target="_blank" rel="noopener noreferrer" href="https://studio.genlayer.com/?import-contract=0xEbb6E4D791299E79317DE796232029194e0F0aCb">Open in Studio ↗</a></div>
-<main class="app-shell">
-<article class="panel dark workspace-wallet" id="walletActionsCard">
-<div class="heading"><div><div class="kicker">CURRENT WORK</div><h2>Your next step</h2></div></div>
-<button id="connectWallet" class="wallet">Connect wallet ↗</button>
-<div id="walletState" class="wallet-state">No wallet connected · Read-only mode</div>
-<div class="next-step" id="nextStepPanel" aria-live="polite">
-<div class="next-step-eyebrow" id="nextStepState">GET STARTED</div>
-<h3 id="nextStepTitle">Connect your wallet</h3>
-<p id="nextStepDescription">You can also read and share work orders without connecting.</p>
-
-</div>
-<div id="actionInfo" class="action-info">Your next step appears here.</div>
-<div id="actionExtra" class="action-extra"></div>
-<button id="writeAction" class="sign" disabled>Choose a work order →</button>
-<details class="advanced-actions"><summary>Other actions and troubleshooting</summary>
-<div class="field"><label for="operation">MANUAL ACTION</label>
-<select id="operation">
-<option value="accept_order">Accept order (Contributor)</option>
-<option value="submit_evidence">Submit evidence (Contributor)</option>
-<option value="evaluate_submission">Run GenLayer verification</option>
-
-<option value="cancel_order">Cancel proposed order (Owner)</option>
-<option value="close_expired">Close expired order</option>
-</select></div>
-</details>
-<p class="hint light">Every transaction requires your MetaMask approval.</p>
-</article>
-<div class="workspace-grid">
-<section class="stack">
-<article class="panel" id="myWorkCard">
-<div class="heading"><div><h2>My work</h2></div></div>
-<div id="myWorkStatus" class="hint" role="status" aria-live="polite">Connect your wallet to see your recent work orders.</div>
-<div id="myWorkList" class="my-work-list" aria-label="Recent work orders associated with your wallet"></div>
-<div class="my-work-footer"><span>Showing recent jobs</span><button id="refreshMyWork" type="button" class="secondary">Refresh ↻</button></div>
-</article>
-<article class="panel" id="currentOrderCard">
-<details class="job-details-disclosure" id="jobDetailsDisclosure"><summary>View requirements and proof</summary>
-<div class="heading"><div><h2>Job details</h2></div></div>
-<details class="manual-lookup"><summary>Open a work order by number (optional)</summary>
-<div class="field"><label for="orderId">WORK ORDER NUMBER</label><div class="inline"><input type="text" id="orderId" inputmode="numeric" value="1" pattern="[1-9][0-9]*" aria-label="Order ID">
-<button id="loadOrder" class="secondary">Open work →</button></div></div></details>
-<details class="contract-info"><summary>Network & contract details</summary><div class="factgrid"><div><span>NETWORK</span><strong>Studionet / 61999</strong></div><div><span>CONTRACT</span><a id="contractLink" target="_blank" rel="noopener noreferrer" href="https://studio.genlayer.com/?import-contract=0xEbb6E4D791299E79317DE796232029194e0F0aCb">0xEbb6…0aCb ↗</a></div></div></details>
-<div id="orderResult" class="result empty" aria-live="polite">Select a work order above to view the agreed requirements and current status.</div>
-<div id="orderHandoff" class="order-handoff" hidden>
-<div class="kicker">SHARE &amp; CONTINUE</div>
-<h3 id="handoffHeading">Verified work order</h3>
-<p id="handoffDescription">Send a link to open this on-chain work order.</p>
-<div class="inline"><input id="shareOrderUrl" readonly aria-label="Verified work order share link"><button id="copyOrderLink" class="secondary" type="button">Copy link ↗</button></div>
-<p class="hint">Anyone with this link can view the job. Signing requires the assigned wallet.</p>
-</div>
-<div class="receipt-heading"><h3>Proof result</h3><p>Available once the verification is complete.</p></div><details class="receipt-controls"><summary>Refresh or view another receipt</summary><div class="inline"><label for="receiptVersion" style="align-self:center;font-size:11px;font-weight:700">VERSION</label><input type="number" id="receiptVersion" value="1" min="1" max="2" style="max-width:70px"><button id="loadReceipt" class="secondary">Refresh result ↻</button></div></details>
-<div id="receiptResult" class="receipt empty" aria-live="polite">A Proof Receipt appears after a finalized successful evaluation.</div>
-</details>
-</article>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="PROOFLY v2 — GenLayer milestone acceptance and on-chain release authorization.">
+<title>PROOFLY — Milestone Gate V2</title><link rel="stylesheet" href="./live.css">
+<style>
+.milestone-hero{padding:42px 0 24px}.milestone-hero h1{font:800 clamp(34px,5vw,58px)/1.13 Manrope,system-ui,sans-serif;letter-spacing:-.055em;margin:12px 0}.milestone-hero p{color:var(--muted);max-width:700px;font-size:15px}
+.milestone-layout{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(290px,.8fr);gap:20px;padding:22px 0 50px}.milestone-stack{display:grid;gap:18px;align-content:start}.milestone-toolbar{display:flex;align-items:end;gap:12px;flex-wrap:wrap}.milestone-toolbar label{flex:1;min-width:130px}.milestone-toolbar button{height:48px}.milestone-status{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.milestone-status strong{font-size:24px}.milestone-panel h3{font:800 17px Manrope,sans-serif}.milestone-kv{display:grid;grid-template-columns:110px minmax(0,1fr);gap:8px;padding:10px 0;border-bottom:1px solid var(--line);overflow-wrap:anywhere}.milestone-kv dt{font-size:11px;color:var(--muted);font-weight:700}.milestone-kv dd{margin:0;font-size:12px}.milestone-criterion{background:#f3faf8;border:1px solid #d8ece7;border-radius:12px;padding:14px;margin:10px 0}.milestone-criterion p{margin:7px 0;color:#455e69}.milestone-quote{display:block;font-size:11px;margin-top:8px;color:#5a7279;overflow-wrap:anywhere}.milestone-badge{background:#e4f7ef;color:#136753;border-radius:100px;padding:5px 10px;font-size:11px;font-weight:800}.milestone-note{padding:12px;background:#f1f6f8;border:1px solid #dce6e9;border-radius:10px;color:#526c79;font-size:12px}.milestone-link{color:#087f86;text-decoration:underline;overflow-wrap:anywhere}.milestone-actions{display:grid;gap:10px}.milestone-actions button{white-space:normal;text-align:left}.milestone-actions button:disabled{opacity:.5}.milestone-actions .field{margin:6px 0}.milestone-actions .field label{font-size:11px}.milestone-actions .hint{margin:0}.milestone-error{color:#a43432}.milestone-success{color:#146c51}.milestone-hidden[hidden]{display:none}#milestoneMessage{min-height:44px}.milestone-small{font-size:11px;color:#718590;overflow-wrap:anywhere}.milestone-steps{display:flex;gap:8px;flex-wrap:wrap;margin:15px 0}.milestone-steps span{border:1px solid #dce6e9;border-radius:20px;padding:7px 10px;font-size:11px}.milestone-steps span.done{background:#e4f6ef;color:#176b57;border-color:#b9e4d0}
+@media(max-width:870px){.milestone-layout{grid-template-columns:1fr}}@media(max-width:520px){.milestone-toolbar{align-items:stretch}.milestone-toolbar button{width:100%}.milestone-kv{grid-template-columns:1fr;gap:2px}.milestone-hero{padding-top:28px}}
+.v2-wallet-connected{background:#e8f7f0!important;border-color:#b0dfcc!important;color:#11694d!important;font-weight:800}.v2-wallet-connected:before{content:"● ";color:#18a374}.v2-live-status{position:fixed;top:16px;left:50%;transform:translateX(-50%);width:min(800px,calc(100vw - 32px));z-index:300;margin:0;padding:16px 18px;border:1px solid #d5e4e9;border-radius:14px;background:#f1f8fb;box-shadow:0 8px 24px #193f4b12;font-size:13px}.v2-live-status[data-state="success"]{background:#e8f8f0;border-color:#abdfc3}.v2-live-status[data-state="attention"]{background:#fff5e7;border-color:#efd09e}.v2-live-status strong{display:block;font-size:15px;margin-bottom:4px}.v2-live-status a{display:inline-block;margin-top:6px;color:#087f86;text-decoration:underline;overflow-wrap:anywhere}.v2-wallet-card{padding:8px 0}.v2-wallet-card strong{color:#146c51}.v2-live-status[hidden]{display:none}.v2-live-close{position:absolute;top:10px;right:10px;background:transparent;border:0;color:#425d6b;cursor:pointer;font-size:18px;padding:4px 9px}.v2-live-status{padding-right:45px!important}
+ .milestone-hero-actions{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-top:20px}.milestone-start{display:inline-flex;text-decoration:none!important;padding:14px 17px;border-radius:11px;font-weight:800;color:white!important;background:#087f86}#newMilestone{scroll-margin-top:24px}
+</style>
+<script type="module" src="./milestones.bundle.js"></script></head>
+<body><div class="wrap">
+<nav class="top"><a href="/" class="mark"><span class="monogram">P</span> PROOFLY <small>V2</small></a><div class="top-links"><span class="testnet"><i></i> STUDIONET · 61999</span><a href="https://proofly-lovat.vercel.app/" target="_blank" rel="noopener noreferrer">Legacy V1 ↗</a><a href="https://github.com/bearbaba/PROOFLY/pull/16" rel="noopener noreferrer" target="_blank">Source ↗</a></div></nav>
+<header class="milestone-hero"><div class="kicker">GENLAYER / MILESTONE ACCEPTANCE</div><h1>Verified work.<br>Provable release.</h1><p>Agree on the evidence. Submit a delivery. Let GenLayer record the verdict, then authorize a milestone release. Every verdict and release displayed here is read from the deployed contract.</p><div class="milestone-steps"><span>01 · Agreement</span><span>02 · Evidence</span><span>03 · AI verdict</span><span>04 · Release authorization</span></div><div class="milestone-hero-actions"><a class="primary milestone-start" href="#newMilestone">+ Create a real milestone ↗</a><a class="milestone-link" href="#milestoneLookup">Inspect an existing order ↓</a></div></header>
+<div class="strip"><span><strong>EXPERIMENTAL TESTNET</strong> · Release authorization is an on-chain record, NOT a token transfer, escrow, payment, or proof of real-world API operation.</span><a target="_blank" rel="noopener noreferrer" href="https://studio.genlayer.com/?import-contract=0xD67245387dF5448671235CE00c8969664b5aF8bd">Open Studio ↗</a></div>
+<div id="v2LiveStatus" class="v2-live-status" role="status" aria-live="polite" hidden><button id="v2LiveClose" class="v2-live-close" type="button" aria-label="Dismiss transaction notice">×</button><strong id="v2LiveTitle"></strong><span id="v2LiveBody"></span><div id="v2LiveLinks"></div></div>
+<main class="milestone-layout">
+<section class="milestone-stack">
+<article class="panel milestone-panel"><div class="heading"><div><div class="kicker">01 / ON-CHAIN STATE</div><h2>Inspect a milestone</h2></div><span class="pill neutral">READ ONLY BY DEFAULT</span></div>
+<form id="milestoneLookup" class="milestone-toolbar"><label class="field" for="milestoneId">WORK ORDER NUMBER<input id="milestoneId" inputmode="numeric" pattern="[1-9][0-9]*" value="1" required></label><button class="primary" type="submit" id="milestoneLoad">Load from chain ↗</button></form>
+<p class="milestone-small">Contract <a class="milestone-link" rel="noopener noreferrer" target="_blank" href="https://explorer-studio.genlayer.com/address/0xD67245387dF5448671235CE00c8969664b5aF8bd">0xD67245387dF5448671235CE00c8969664b5aF8bd ↗</a> · Finalized-state reads requested</p>
+<div id="milestoneMessage" role="status" aria-live="polite" class="milestone-note">Select Load from chain to retrieve the current finalized snapshot.</div>
+<div id="milestoneOrder"></div></article>
+<article class="panel milestone-panel"><div class="kicker">02 / EXPLAINABLE CONSENSUS</div><h2>Proof receipt</h2><p class="milestone-small">Shows the saved verdict and literal supporting excerpts. The webpage does not re-run or invent an AI classification.</p><div id="milestoneReceipt" class="milestone-note">Awaiting order selection.</div></article>
+<article class="panel milestone-panel"><div class="kicker">03 / CONSEQUENTIAL GATE</div><h2>Milestone release</h2><div id="milestoneRelease" class="milestone-note">Awaiting order selection.</div></article>
 </section>
-<aside class="stack">
-<article class="panel" id="createCard">
-<div class="heading"><div><h2>New job</h2></div></div>
-<p class="guide-text">Create a new work agreement only when you need one.</p>
-<details id="createDisclosure" class="create-disclosure"><summary>+ Create a job</summary>
-<button id="loadDemo" type="button" class="secondary">Use demo example</button>
-<form id="createForm" novalidate autocomplete="off">
-<div class="field"><label for="jobTitle">WORK ORDER TITLE</label><input id="jobTitle" maxlength="120" required placeholder="e.g. Write a simple user guide"></div>
-<div class="field"><label for="jobContributor">CONTRIBUTOR WALLET</label><input id="jobContributor" required spellcheck="false" autocomplete="off" aria-describedby="contributorHint" placeholder="0x… address of the person doing the work"><p class="hint" id="contributorHint">Enter a different 0x wallet address from yours. The contributor will accept and submit the work.</p><button id="fillDemoContributor" type="button" class="secondary demo-contributor">Use demo contributor wallet</button></div>
-<div class="field"><label for="jobReference">AGREED REFERENCE DOCUMENT</label><input id="jobReference" required spellcheck="false" placeholder="Permanent public GitHub raw .txt URL"><p class="hint">A public, commit-pinned GitHub .txt link is required.</p></div>
-<button id="verifyReference" type="button" class="secondary">Check document</button>
-<p class="hint" id="referenceStatus" role="status" aria-live="polite">No document verified yet. The SHA-256 is calculated automatically.</p>
-<div class="divider-line"></div>
-<div class="kicker">WHAT MUST THE CONTRIBUTOR PROVE?</div>
-<div class="field"><label for="jobR1">REQUIREMENT 1</label><textarea id="jobR1" rows="2" maxlength="500" required placeholder="An objective, measurable checkpoint"></textarea></div>
-<div class="field"><label for="jobR2">REQUIREMENT 2</label><textarea id="jobR2" rows="2" maxlength="500" required placeholder="A second clear checkpoint"></textarea></div>
-<div class="field"><label for="jobR3">REQUIREMENT 3</label><textarea id="jobR3" rows="2" maxlength="500" required placeholder="A third clear checkpoint"></textarea></div>
-<div class="deadline-grid">
-<div class="field"><label for="submitDays">SUBMIT IN (DAYS)</label><input id="submitDays" type="number" value="2" min="1" max="59"></div>
-<div class="field"><label for="revisionDays">REVISION DEADLINE (DAYS)</label><input id="revisionDays" type="number" value="7" min="2" max="60"></div></div>
-<div id="createState" role="status" class="result empty" aria-live="polite">Connect your wallet and verify the reference document before creating a work order.</div>
-<button id="createNow" type="button" class="primary full-button" disabled>Create job & review in MetaMask →</button>
-</form>
-<p class="hint">MetaMask will ask you to review and approve this testnet transaction.</p>
-<details class="advanced-info"><summary>Developer tools</summary><p><a href="./builder.html">Spec Builder</a></p></details>
-</details>
-</article>
-</aside>
-</div>
-<details class="technical-drawer" id="advancedTools">
-<summary><span>Transaction details & advanced tools</span><span class="drawer-sub">For troubleshooting or verifying a transaction hash</span></summary>
-<div class="technical-content">
-<article class="panel" id="technicalTransaction">
-<div class="heading"><div><div class="kicker">ADVANCED / NETWORK TRANSACTION</div><h2>Transaction details</h2></div><span class="pill neutral">NO AUTO-RETRY</span></div>
-<div id="txResult" class="result empty" aria-live="polite">Your signed transaction status will appear here automatically.</div>
-<div class="field"><label for="txHash">TRANSACTION HASH</label><div class="inline"><input id="txHash" placeholder="0x… (64 hex characters)" spellcheck="false"><button id="trackTx" class="secondary">Check again</button></div></div>
-<p class="hint">Consensus accepted and contract execution success are different checks. Never resend automatically while a transaction is unresolved.</p>
-</article>
-<article class="panel side-note">
-<div class="kicker">REVIEWER / DEMO</div><h3>Previous on-chain demonstration</h3>
-<p>Order #1 was executed manually in Studio with two accounts. The published archive records <strong>COMPLETED / ACCEPTED</strong> and 3/3 SATISFIED criteria. That history is separate from your current finalized RPC read.</p>
-<a href="https://github.com/bearbaba/PROOFLY/blob/main/docs/LIVE_STUDIO_DEMO.md" target="_blank" rel="noopener noreferrer">View archived Studio evidence ↗</a>
-</article>
-<div class="advanced-links"><a href="./builder.html">Advanced Spec Builder ↗</a><a href="./receipt.html">Receipt Inspector ↗</a><a href="https://github.com/bearbaba/PROOFLY" target="_blank" rel="noopener noreferrer">Open source ↗</a></div>
-</div></details></main>
-<footer><span>PROOFLY / Evidence-driven adjudication</span><span>Studionet experimental · No payments · Open source</span></footer>
-</div>
-</body>
-</html>
+<aside class="milestone-stack"><article class="panel milestone-panel"><div class="kicker">CONTRIBUTOR WORKSPACE</div><h2>Actions</h2><button id="milestoneConnect" class="secondary" type="button">Connect MetaMask</button><p id="milestoneWallet" class="milestone-small v2-wallet-card" aria-live="polite">No wallet connected. Public reads work without a wallet.</p>
+<div id="milestoneActions" class="milestone-actions"><p class="milestone-note">Load a work order to see the next eligible action.</p></div><div id="milestoneTx" class="milestone-note" aria-live="polite">Signing is never automatic. Any submitted transaction must be tracked before attempting another.</div></article>
+<article class="panel milestone-panel" id="newMilestone"><div class="kicker">START A NEW AGREEMENT</div><h2>Create milestone</h2><p class="milestone-small">Owner defines an immutable acceptance rubric. A different Contributor wallet must accept it before submitting evidence.</p>
+<details id="v2CreateDetails"><summary class="milestone-link" style="cursor:pointer;font-weight:800">+ Configure new milestone</summary>
+<form id="v2CreateForm" class="milestone-actions" style="margin-top:16px"><button id="v2PositiveExample" type="button" class="secondary">Fill accepted-demo milestone template ↘</button><button id="v2NegativeExample" type="button" class="secondary">Fill negative-test milestone template ↘</button><p class="milestone-small">Fills fields only. Review the rubric, deadlines and wallet before signing.</p>
+<label class="field">TITLE<input id="v2Title" maxlength="120" required placeholder="Sandbox API Integration Handoff"></label>
+<label class="field">CONTRIBUTOR WALLET<input id="v2Contributor" required placeholder="0x…"></label>
+<label class="field">PINNED AGREED REFERENCE URL<input id="v2Reference" required placeholder="https://raw.githubusercontent.com/.../40-hex-commit/...txt"></label>
+<button id="v2CheckReference" type="button" class="secondary">Fetch & hash reference document ↗</button>
+<p class="milestone-small" id="v2ReferenceStatus" aria-live="polite">No reference document checked yet.</p>
+<label class="field">ACCEPTANCE CRITERION R1<textarea id="v2R1" required maxlength="500" rows="3"></textarea></label>
+<label class="field">ACCEPTANCE CRITERION R2<textarea id="v2R2" required maxlength="500" rows="3"></textarea></label>
+<label class="field">ACCEPTANCE CRITERION R3<textarea id="v2R3" required maxlength="500" rows="3"></textarea></label>
+<label class="field">SUBMISSION DEADLINE (DAYS FROM NOW)<input id="v2SubmitDays" type="number" min="1" max="59" value="2" required></label>
+<label class="field">REVISION DEADLINE (DAYS FROM NOW)<input id="v2RevisionDays" type="number" min="2" max="60" value="7" required></label>
+<button type="submit" class="primary" id="v2CreateButton">Review and sign create_order →</button>
+<p class="hint">No escrow or token payment. Do not submit an agreement containing secrets or personal data. The latest checked hash is recomputed before signing.</p>
+</form></details></article>
+<article class="panel milestone-panel"><div class="kicker">TRUST BOUNDARY</div><h3>What this proves</h3><p class="milestone-small">The contract limits each milestone to an accepted, immutable GitHub reference, a hashed delivery, a GenLayer receipt, and one contributor-bound release authorization. It does not authenticate arbitrary off-chain statements or execute external payments.</p><p class="milestone-small">Do not share wallet seed phrases. Confirm contract address, transaction fees, and MetaMask account for every write.</p></article></aside>
+</main><footer><span>PROOFLY / Milestone Acceptance Gate V2</span><span>Studionet experimental · No payments · Open source</span></footer></div></body></html>
