@@ -28,3 +28,14 @@ test("New milestone form displays immutable-reference and three-criterion checks
  await expect(page.getByLabel("ACCEPTANCE CRITERION R3")).toBeVisible();
  await expect(page.getByText(/The latest checked hash is recomputed before signing/)).toBeVisible();
 });
+
+test("Negative template prefills rubric but does not sign or bypass reference verification",async({page})=>{
+ await page.goto("/milestones.html");
+ await page.getByText("+ Configure new milestone").click();
+ await page.getByRole("button",{name:/Fill negative-test milestone template/}).click();
+ await expect(page.locator("#v2Title")).toHaveValue("Sandbox Integration Negative Acceptance Test");
+ await expect(page.locator("#v2Contributor")).toHaveValue("0xd6b8a3a5eb329410d9504784812b8569afa8c2af");
+ await expect(page.locator("#v2R3")).toContainText("AUTH_401");
+ await expect(page.locator("#v2ReferenceStatus")).toContainText("Click Fetch & hash");
+ await expect(page.locator("#milestoneTx")).toContainText("without submitting anything");
+});
