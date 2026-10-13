@@ -100,3 +100,11 @@ User-provided GenLayer Explorer transaction: https://explorer-studio.genlayer.co
 - MetaMask and preview signing was user-observed. **New Work Order ID is not verified by transaction return**; next step is `next_order` and `get_order` finalized reads. No subsequent acceptance, submission, judgment, or release-denial result yet.
 
 This demonstrates a real website-originated write path but does not itself prove the whole negative milestone workflow.
+
+## Work Order #2: real negative artifact submission
+
+Tester-provided [Explorer transaction](https://explorer-studio.genlayer.com/tx/0x281a2d0e2924231e5d9717c1f5b8222d151507e5b9e9cdcf50313b7aff5c0602): `0x281a2d0e2924231e5d9717c1f5b8222d151507e5b9e9cdcf50313b7aff5c0602`. Contributor `0xd6b8a3a5eb329410d9504784812b8569afa8c2af` called `submit_evidence(2, https://raw.githubusercontent.com/bearbaba/PROOFLY/5a98c6be3d74b110ca711e46a30349cb8914e6e1/fixtures/evidence/milestone-v2-incomplete-handoff.txt, 72a9056d2846be017eceb017746860e31c82abe8f9f131a866c02823f71bd5a6)`.
+
+Transaction **FINALIZED**, consensus **Accepted**, GenVM execution **SUCCESS / Return**. This proves the intended incomplete artifact was submitted successfully; **it does not yet establish** that the finalized order shows `SUBMITTED`, what AI consensus outcome is, or that a release attempt was denied. Read `get_order("2")` next, then evaluate the submission exactly once.
+
+The old frontend showed `FINALIZED_VERDICT_UNKNOWN` even though Explorer proved successful execution. Never re-submit the same evidence due to a frontend timeout.
