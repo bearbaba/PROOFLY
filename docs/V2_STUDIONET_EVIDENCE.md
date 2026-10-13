@@ -49,7 +49,7 @@ The state transition and receipt demonstrate **documentation conformance to a bo
 - [x] Quote-backed receipt with three satisfied criteria
 - [x] Direct Studionet negative test: Owner (non-Contributor) claiming release — FINALIZED / GenVM ERROR / Rollback / ONLY_CONTRIBUTOR
 - [x] Direct Studionet negative test: duplicate release claim — FINALIZED / GenVM ERROR / Rollback / RELEASE_ALREADY_CLAIMED
-- [ ] Direct Studionet negative test: rejected/insufficient evidence cannot claim
+- [ ] Direct Studionet negative test: rejected/insufficient evidence cannot claim — prepared [negative-case runbook](V2_NEGATIVE_MILESTONE_TEST.md) and immutable incomplete artifact; no live result yet
 - [ ] Independently capture full write hashes and verify GenVM execution status in Explorer
 - [ ] Verify new v2 website with wallet signing and finalized RPC reads, in browser
 - [ ] Perform adversarial security review and launch checklist
