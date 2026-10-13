@@ -20,7 +20,7 @@ const WRITE_ARITY = Object.freeze({
   close_expired: 1,
   claim_milestone_release: 1
 });
-const READ_ARITY = Object.freeze({ get_order: 1, get_receipt: 2, get_milestone_release: 1, next_order: 0 });
+const READ_ARITY = Object.freeze({ get_order: 1, get_receipt: 2, get_milestone_release: 1, next_order: 0, list_owner_order_ids: 3, list_contributor_order_ids: 3 });
 
 export class IntegrationError extends Error {
   constructor(message, code) { super(message); this.name = "IntegrationError"; this.code = code; }
@@ -47,6 +47,9 @@ export function makeRead(name, args = []) {
   requireCondition(Array.isArray(args) && args.length === READ_ARITY[name], "Invalid read arguments", "BAD_ARGUMENTS");
   if (name === "get_order" || name === "get_milestone_release") validId(args[0]);
   if (name === "get_receipt") { validId(args[0]); validVersion(args[1]); }
+  if (name === "list_owner_order_ids" || name === "list_contributor_order_ids") {
+    requireCondition(typeof args[0] === "string" && ADDR.test(args[0]) && Number.isSafeInteger(args[1]) && args[1] >= 0 && Number.isSafeInteger(args[2]) && args[2] >= 1 && args[2] <= 50, "Invalid wallet index page", "BAD_ARGUMENTS");
+  }
   return { functionName: name, args: [...args] };
 }
 export function makeWrite(name, args = []) {
