@@ -65,7 +65,7 @@ function renderActions(){const box=$("milestoneActions");box.replaceChildren();i
    const resume=node("button","I verified accept_order SUCCESS — unlock next step","secondary");
    resume.type="button";
    resume.addEventListener("click",()=>{
-    if(!window.confirm("Only continue if this exact saved hash was FINALIZED with GenVM Execution SUCCESS for accept_order(2) by your Contributor wallet, and the on-chain Work Order is ACTIVE. Have you checked the Explorer execution and address?"))return;
+    if(!window.confirm("Only continue if this exact saved hash was FINALIZED with GenVM Execution SUCCESS for accept_order("+order.id+") by your Contributor wallet, and the on-chain Work Order is ACTIVE. Have you checked the Explorer execution and address?"))return;
     unresolved=false;try{localStorage.removeItem(PENDING_KEY);}catch{}
     showProgress("Acceptance confirmed by user","Saved pending tracker cleared after explicit Explorer verification and ACTIVE finalized-state read. No transaction was resent.",pending);
     $("milestoneTx").textContent="Explorer success and ACTIVE state confirmed. You can submit evidence once.";
