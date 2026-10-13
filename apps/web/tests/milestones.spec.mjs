@@ -39,3 +39,11 @@ test("Negative template prefills rubric but does not sign or bypass reference ve
  await expect(page.locator("#v2ReferenceStatus")).toContainText("Click Fetch & hash");
  await expect(page.locator("#milestoneTx")).toContainText("without submitting anything");
 });
+
+test("V2 has a visible transaction status surface and persistent MetaMask connect action",async({page})=>{
+ await page.goto("/milestones.html");
+ await expect(page.locator("#v2LiveStatus")).toBeHidden();
+ await expect(page.locator("#v2LiveTitle")).toHaveCount(1);
+ await expect(page.locator("#v2LiveLinks")).toHaveCount(1);
+ await expect(page.locator("#milestoneConnect")).toHaveText("Connect MetaMask");
+});
