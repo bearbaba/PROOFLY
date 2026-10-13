@@ -51,7 +51,7 @@ The state transition and receipt demonstrate **documentation conformance to a bo
 - [x] Direct Studionet negative test: duplicate release claim — FINALIZED / GenVM ERROR / Rollback / RELEASE_ALREADY_CLAIMED
 - [ ] Direct Studionet negative test: rejected/insufficient evidence cannot claim — prepared [negative-case runbook](V2_NEGATIVE_MILESTONE_TEST.md) and immutable incomplete artifact; no live result yet
 - [ ] Independently capture full write hashes and verify GenVM execution status in Explorer
-- [ ] Verify new v2 website with wallet signing and finalized RPC reads, in browser
+- [ ] Verify new v2 website with wallet signing and finalized RPC reads, in browser — user-observed successful Preview create_order write; new-order ID/readback and further writes pending
 - [ ] Perform adversarial security review and launch checklist
 
 **Do not** treat a green GitHub CI or Vercel READY deployment as proof of live signing behavior or completion of the negative Studionet tests.
@@ -85,3 +85,18 @@ Source: [GenLayer Explorer transaction](https://explorer-studio.genlayer.com/tx/
 - **Error: `ONLY_CONTRIBUTOR`**
 
 **Interpretation:** The Owner's transaction was finalized by consensus, but contract execution rolled back because the caller was not the assigned Contributor. This validates the role authorization guard on the live deployment for this tested non-Contributor address. It is not evidence of a successfully issued release, nor a proof that every other address was tested.
+
+## Live Preview wallet write: create_order succeeded
+
+User-provided GenLayer Explorer transaction: https://explorer-studio.genlayer.com/tx/0xa7c782f969c88e726b13b527ba0299d7bf92af9c6f758376736797c0fd1ec012
+
+- From Owner: `0x4c7cb73ac8f8999af21cfc9ff4cf2333a9508dcb`
+- To V2 contract: `0xD67245387dF5448671235CE00c8969664b5aF8bd`
+- Method: `create_order`, title: `Sandbox Integration Negative Acceptance Test`
+- Contributor: `0xd6b8a3a5eb329410d9504784812b8569afa8c2af`
+- Reference digest: `0b39481c3ca9bff673adb40d08eb2d0b04cb27ab4510255d3b699778826f1aec`
+- Deadline timestamps: submission `1792035036`, revision `1792467036`
+- Transaction `FINALIZED`, consensus `Accepted`, **GenVM execution `SUCCESS`, result code `Return`**, return `null`.
+- MetaMask and preview signing was user-observed. **New Work Order ID is not verified by transaction return**; next step is `next_order` and `get_order` finalized reads. No subsequent acceptance, submission, judgment, or release-denial result yet.
+
+This demonstrates a real website-originated write path but does not itself prove the whole negative milestone workflow.
