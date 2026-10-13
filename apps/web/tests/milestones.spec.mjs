@@ -58,3 +58,12 @@ test("V2 landing page exposes the real create workflow and positive demo without
  await expect(page.locator("#v2ReferenceStatus")).toContainText("Fetch & hash");
  await expect(page.locator("#milestoneTx")).toContainText("no wallet request or on-chain write");
 });
+
+test("Preview homepage is V2 and never renders legacy contract",async({page})=>{
+ await page.goto("/",{waitUntil:"domcontentloaded"});
+ await expect(page).toHaveTitle(/Milestone Gate V2/);
+ await expect(page.locator("#milestoneId")).toBeVisible();
+ await expect(page.locator("#v2CreateDetails")).toBeAttached();
+ await expect(page.getByRole("link",{name:/Legacy V1/})).toHaveAttribute("href","https://proofly-lovat.vercel.app/");
+ await expect(page.locator("#connectWallet")).toHaveCount(0);
+});
