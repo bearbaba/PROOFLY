@@ -47,3 +47,14 @@ test("V2 has a visible transaction status surface and persistent MetaMask connec
  await expect(page.locator("#v2LiveLinks")).toHaveCount(1);
  await expect(page.locator("#milestoneConnect")).toHaveText("Connect MetaMask");
 });
+
+test("V2 landing page exposes the real create workflow and positive demo without signing",async({page})=>{
+ await page.goto("/milestones.html");
+ await page.getByRole("link",{name:/Create a real milestone/}).click();
+ await expect(page.locator("#v2CreateDetails")).toHaveAttribute("open","");
+ await page.getByRole("button",{name:/Fill accepted-demo milestone template/}).click();
+ await expect(page.locator("#v2Title")).toHaveValue("Sandbox API Integration Handoff — Live Demonstration");
+ await expect(page.locator("#v2R3")).toHaveValue(/Retry-After/);
+ await expect(page.locator("#v2ReferenceStatus")).toContainText("Fetch & hash");
+ await expect(page.locator("#milestoneTx")).toContainText("no wallet request or on-chain write");
+});
