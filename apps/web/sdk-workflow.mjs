@@ -17,9 +17,10 @@ const WRITE_ARITY = Object.freeze({
   cancel_order: 1,
   submit_evidence: 3,
   evaluate_submission: 1,
-  close_expired: 1
+  close_expired: 1,
+  claim_milestone_release: 1
 });
-const READ_ARITY = Object.freeze({ get_order: 1, get_receipt: 2, next_order: 0 });
+const READ_ARITY = Object.freeze({ get_order: 1, get_receipt: 2, get_milestone_release: 1, next_order: 0 });
 
 export class IntegrationError extends Error {
   constructor(message, code) { super(message); this.name = "IntegrationError"; this.code = code; }
@@ -44,7 +45,7 @@ function validVersion(version) {
 export function makeRead(name, args = []) {
   requireCondition(Object.hasOwn(READ_ARITY, name), "Unknown read method", "UNSAFE_METHOD");
   requireCondition(Array.isArray(args) && args.length === READ_ARITY[name], "Invalid read arguments", "BAD_ARGUMENTS");
-  if (name === "get_order") validId(args[0]);
+  if (name === "get_order" || name === "get_milestone_release") validId(args[0]);
   if (name === "get_receipt") { validId(args[0]); validVersion(args[1]); }
   return { functionName: name, args: [...args] };
 }
