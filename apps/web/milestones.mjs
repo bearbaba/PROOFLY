@@ -90,7 +90,7 @@ async function verifyPublicArtifact(url,digest){
  const raw=new Uint8Array(await response.arrayBuffer());
  if(raw.length===0||raw.length>16000)throw Error("Evidence must contain 1–16000 bytes.");
  const text=new TextDecoder("utf-8",{fatal:true}).decode(raw);
- if(text.length>10000||text.includes("\\0"))throw Error("Evidence text exceeds policy constraints.");
+ if(text.length>10000||text.includes("\0"))throw Error("Evidence text exceeds policy constraints.");
  const bytes=await crypto.subtle.digest("SHA-256",raw);
  const actual=Array.from(new Uint8Array(bytes),n=>n.toString(16).padStart(2,"0")).join("");
  if(actual!==digest)throw Error("Evidence SHA-256 differs from the fetched public document.");
@@ -122,7 +122,11 @@ async function submit(method,artifactUrl,artifactHash){if(busy||unresolved||!gat
   // The newly finalized contract state, not a guessed local transition, decides the next action.
   await load();
  }
- }catch(e){unresolved=true;$("milestoneTx").textContent="Submission may be pending: "+String(e.message||e)+". Check wallet/Studio before any retry.";}
+ }catch(e){
+  const knownNoSubmission=["USER_CANCELLED","BAD_ARGUMENTS","FEE_ESTIMATE_MISSING","FEE_REVIEW_REQUIRED","INVALID_ID"].includes(e?.code);
+  if(!knownNoSubmission)unresolved=true;
+  $("milestoneTx").textContent=knownNoSubmission?"No transaction submitted: "+String(e.message||e):"Submission may be pending: "+String(e.message||e)+". Check wallet/Studio before any retry.";
+ }
  finally{busy=false;renderActions();}
 }
 $("milestoneLookup").addEventListener("submit",e=>{e.preventDefault();void load();});
@@ -138,7 +142,7 @@ async function fetchAndHashReference(url){
  const bytes=new Uint8Array(await response.arrayBuffer());
  if(!bytes.length||bytes.length>16000)throw Error("Document must contain 1–16000 bytes.");
  const content=new TextDecoder("utf-8",{fatal:true}).decode(bytes);
- if(content.length>10000||content.includes("\\0"))throw Error("Reference document is not acceptable UTF-8 text.");
+ if(content.length>10000||content.includes("\0"))throw Error("Reference document is not acceptable UTF-8 text.");
  const hash=Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256",bytes)),n=>n.toString(16).padStart(2,"0")).join("");
  return hash;
 }
@@ -184,7 +188,11 @@ $("v2CreateForm").addEventListener("submit",async e=>{
   const status=await gateway.resumeFinalization(tx.txId);
   $("milestoneTx").textContent="Create TX "+tx.txId+" · "+status.status+". Read next_order or open Studio to discover the order ID.";
   if(status.status==="FINALIZED_SUCCESS"){unresolved=false;try{localStorage.removeItem(PENDING_KEY);}catch{}}
- }catch(err){unresolved=true;$("milestoneTx").textContent="Signature or submission result uncertain: "+String(err.message||err)+". Inspect wallet/Studio before retrying.";}
+ }catch(err){
+  const safeAbort=["USER_CANCELLED","BAD_ARGUMENTS","FEE_ESTIMATE_MISSING","FEE_REVIEW_REQUIRED"].includes(err?.code);
+  if(!safeAbort)unresolved=true;
+  $("milestoneTx").textContent=safeAbort?"No transaction submitted: "+String(err.message||err):"Signature or submission result uncertain: "+String(err.message||err)+". Inspect wallet/Studio before retrying.";
+ }
  finally{busy=false;$("v2CreateButton").disabled=false;renderActions();}
 });
 
