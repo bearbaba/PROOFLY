@@ -4,6 +4,7 @@ import {studionet} from "genlayer-js/chains";
 import {TransactionHashVariant} from "genlayer-js/types";
 import {createWorkflowGateway} from "./sdk-workflow.mjs";
 import {inspectTransaction} from "./tx-verdict.mjs";
+import {pendingConfirmedByState} from "./pending-reconcile.mjs";
 import {validateMilestoneSnapshot, validateRelease, nextMilestoneAction, V2_CONTRACT} from "./milestones-model.mjs";
 
 const $=id=>document.getElementById(id);
@@ -25,18 +26,10 @@ function savePending(hash,method,context={}){
  try{localStorage.setItem(PENDING_KEY,hash);localStorage.setItem(PENDING_META_KEY,JSON.stringify({method,account,orderId:context.orderId||order?.id||null,submittedAt:Date.now(),...context}));}catch{}
 }
 function clearPending(){unresolved=false;try{localStorage.removeItem(PENDING_KEY);localStorage.removeItem(PENDING_META_KEY);localStorage.removeItem(PENDING_KEY+".method");}catch{}}
-function pendingConfirmedByState(record,state,activeAccount){
- if(!record||!state||record.orderId!==state.id||record.account?.toLowerCase()!==activeAccount?.toLowerCase())return false;
- if(record.method==="accept_order")return state.status!=="PROPOSED"&&state.accepted_at>0&&state.contributor.toLowerCase()===activeAccount.toLowerCase()&&record.specSha===state.spec_sha256;
- if(record.method==="submit_evidence")return state.submissions.some(s=>s.artifact_sha256===record.artifactHash&&s.artifact_url===record.artifactUrl&&s.version===record.expectedVersion);
- if(record.method==="evaluate_submission")return state.submissions.some(s=>s.version===record.expectedVersion&&s.outcome!==null&&s.outcome!==undefined);
- if(record.method==="claim_milestone_release")return grant?.recipient?.toLowerCase()===activeAccount.toLowerCase()&&grant?.order_id===state.id;
- return false;
-}
 function reconcilePending(){
  const pending=getPending();
  if(!pending||!order||!account)return;
- if(pendingConfirmedByState(pending,order,account)){
+ if(pendingConfirmedByState(pending,order,account,grant)){
   clearPending();
   showProgress("On-chain state confirmed","The saved transaction effect is present in the finalized order. Pending tracking cleared without another signature.",pending.hash);
   $("milestoneTx").textContent="Saved "+pending.method+" effect verified from finalized contract state. No resubmission.";
