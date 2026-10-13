@@ -1,12 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {validateMilestoneSnapshot,validateRelease,nextMilestoneAction} from "./milestones-model.mjs";
+import {validateMilestoneSnapshot,validateRelease,nextMilestoneAction,V2_CONTRACT} from "./milestones-model.mjs";
 const contributor="0xd6b8a3a5eb329410d9504784812b8569afa8c2af";
 const owner="0x4c7cb73ac8f8999af21cfc9ff4cf2333a9508dcb";
 const h=x=>x.repeat(64);
 function fixture(status="COMPLETED"){
  const order={id:"1",title:"Sandbox handoff",owner,contributor,status,spec_sha256:h("9"),spec:{policy:"proofly.milestone-acceptance.v2",source_policy:"AGREED_SPEC_ONLY_V1",reference_url:"https://example.com/reference",reference_sha256:h("a"),criteria:[1,2,3].map(n=>({id:"R"+n,text:"Criterion "+n}))},submissions:[{version:1,artifact_url:"https://example.com/artifact",artifact_sha256:h("b"),outcome:status==="COMPLETED"?"ACCEPTED":null}]};
- const receipt={schema:"proofly.milestone-acceptance.v2",chain_id:61999,contract:"0xD67245387dF5448671235CE00c8969664b5aF8bd",order_id:"1",spec_sha256:h("9"),reference_url:order.spec.reference_url,reference_sha256:h("a"),version:1,artifact_url:order.submissions[0].artifact_url,artifact_sha256:h("b"),outcome:"ACCEPTED",results:[1,2,3].map(n=>({id:"R"+n,status:"SATISFIED",artifact_quote:"yes",reference_quote:"must"}))};
+ const receipt={schema:"proofly.milestone-acceptance.v2",chain_id:61999,contract:V2_CONTRACT,order_id:"1",spec_sha256:h("9"),reference_url:order.spec.reference_url,reference_sha256:h("a"),version:1,artifact_url:order.submissions[0].artifact_url,artifact_sha256:h("b"),outcome:"ACCEPTED",results:[1,2,3].map(n=>({id:"R"+n,status:"SATISFIED",artifact_quote:"yes",reference_quote:"must"}))};
  const grant={order_id:"1",recipient:contributor,policy:"AGREED_SPEC_ONLY_V1",spec_sha256:h("9"),artifact_sha256:h("b"),receipt_version:1,authorized_at:1791858161};
  return {order,receipt,grant};
 }
