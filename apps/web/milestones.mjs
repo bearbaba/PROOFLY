@@ -129,4 +129,63 @@ $("milestoneLookup").addEventListener("submit",e=>{e.preventDefault();void load(
 $("milestoneConnect").addEventListener("click",()=>void connect());
 provider()?.on?.("accountsChanged",()=>{account="";gateway=null;renderActions();$("milestoneWallet").textContent="Account changed. Reconnect to continue.";});
 provider()?.on?.("chainChanged",()=>{account="";gateway=null;renderActions();$("milestoneWallet").textContent="Network changed. Reconnect to continue.";});
+let checkedReference=null;
+const pinned=/^https:\/\/raw\.githubusercontent\.com\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+\/[a-f0-9]{40}\/[A-Za-z0-9_./-]+\.txt$/;
+async function fetchAndHashReference(url){
+ if(!pinned.test(url)||url.split("/").slice(6).some(p=>p===""||p==="."||p===".."))throw Error("Use a public, commit-pinned raw GitHub .txt URL.");
+ const response=await fetch(url,{cache:"no-store",redirect:"error"});
+ if(!response.ok)throw Error("Reference URL must return HTTP 200.");
+ const bytes=new Uint8Array(await response.arrayBuffer());
+ if(!bytes.length||bytes.length>16000)throw Error("Document must contain 1–16000 bytes.");
+ const content=new TextDecoder("utf-8",{fatal:true}).decode(bytes);
+ if(content.length>10000||content.includes("\\0"))throw Error("Reference document is not acceptable UTF-8 text.");
+ const hash=Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256",bytes)),n=>n.toString(16).padStart(2,"0")).join("");
+ return hash;
+}
+$("v2CheckReference").addEventListener("click",async()=>{
+ const url=$("v2Reference").value.trim();
+ checkedReference=null;$("v2ReferenceStatus").textContent="Checking immutable reference…";
+ try{
+  const sha=await fetchAndHashReference(url);
+  checkedReference={url,sha};
+  $("v2ReferenceStatus").textContent="SHA-256 verified: "+sha;
+ }catch(e){$("v2ReferenceStatus").textContent="Reference check failed: "+String(e.message||e);}
+});
+$("v2Reference").addEventListener("input",()=>{checkedReference=null;$("v2ReferenceStatus").textContent="Reference changed. Recheck before creating.";});
+$("v2CreateForm").addEventListener("submit",async e=>{
+ e.preventDefault();
+ if(busy||unresolved){$("milestoneTx").textContent="Another transaction is unresolved or in progress. Resolve it before creating.";return;}
+ if(!gateway||!account){$("milestoneTx").textContent="Connect the Owner wallet on Studionet first.";return;}
+ const addr=$("v2Contributor").value.trim();
+ const title=$("v2Title").value.trim();
+ const url=$("v2Reference").value.trim();
+ if(!/^0x[0-9a-fA-F]{40}$/.test(addr)||addr.toLowerCase()===account){$("milestoneTx").textContent="Contributor must be another valid wallet.";return;}
+ if(!title||title.length>120||!checkedReference||checkedReference.url!==url){$("milestoneTx").textContent="Enter a title and check the agreed reference document.";return;}
+ const rows=[1,2,3].map(n=>({id:"R"+n,text:$("v2R"+n).value.trim()}));
+ if(rows.some(r=>!r.text||r.text.length>500)){$("milestoneTx").textContent="Each of the three criteria must contain 1–500 characters.";return;}
+ const submitDays=Number($("v2SubmitDays").value), revisionDays=Number($("v2RevisionDays").value);
+ if(!Number.isSafeInteger(submitDays)||!Number.isSafeInteger(revisionDays)||submitDays<1||submitDays>=revisionDays||revisionDays>59){
+  $("milestoneTx").textContent="Choose 1–58 days for submission and a later revision deadline, no more than 59 days.";return;
+ }
+ const chain=await provider().request({method:"eth_chainId"});
+ const accounts=await provider().request({method:"eth_accounts"});
+ if(Number(BigInt(chain))!==61999||String(accounts[0]||"").toLowerCase()!==account){$("milestoneTx").textContent="Wallet or network changed. Reconnect.";return;}
+ let digest;
+ try{digest=await fetchAndHashReference(url);}catch(err){$("milestoneTx").textContent="Reference could not be reverified: "+String(err.message||err);return;}
+ if(digest!==checkedReference.sha){$("milestoneTx").textContent="Reference bytes changed since the last verification. Abort.";return;}
+ const now=Math.floor(Date.now()/1000);
+ const args=[addr,title,JSON.stringify(rows),url,digest,now+submitDays*86400,now+revisionDays*86400];
+ if(!window.confirm("PROOFLY V2 CREATE ORDER\\nContract: "+V2_CONTRACT+"\\nOwner: "+account+"\\nContributor: "+addr+"\\nReference SHA-256: "+digest+"\\nNo escrow/payment. Confirm fees in MetaMask before signing."))return;
+ busy=true;$("v2CreateButton").disabled=true;$("milestoneTx").textContent="Awaiting wallet signature for create_order.";
+ try{
+  const tx=await gateway.submit("create_order",args,hash=>{$("milestoneTx").textContent="Create submitted: "+hash+"; awaiting finality.";},async()=>true);
+  unresolved=true;try{localStorage.setItem(PENDING_KEY,tx.txId);}catch{}
+  $("milestoneTx").textContent="Create TX "+tx.txId+" submitted. Check execution before creating again.";
+  const status=await gateway.resumeFinalization(tx.txId);
+  $("milestoneTx").textContent="Create TX "+tx.txId+" · "+status.status+". Read next_order or open Studio to discover the order ID.";
+  if(status.status==="FINALIZED_SUCCESS"){unresolved=false;try{localStorage.removeItem(PENDING_KEY);}catch{}}
+ }catch(err){unresolved=true;$("milestoneTx").textContent="Signature or submission result uncertain: "+String(err.message||err)+". Inspect wallet/Studio before retrying.";}
+ finally{busy=false;$("v2CreateButton").disabled=false;renderActions();}
+});
+
 const requested=new URLSearchParams(location.search).get("order");if(requested&&/^[1-9][0-9]*$/.test(requested)){$("milestoneId").value=requested;void load();}
