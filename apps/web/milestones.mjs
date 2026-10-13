@@ -166,9 +166,18 @@ async function discoverRecentOrders(reset=true){
   }
   if(epoch!==discoveryEpoch)return;
   renderDiscovery();
-  if(account&&!order){
-   const proposed=[...discoveredOrders.values()].find(x=>x.contributor.toLowerCase()===account&&x.status==="PROPOSED");
-   if(proposed){$("milestoneId").value=proposed.id;void load();}
+  // Prefer a newer unfinished assignment over a completed old URL after reload.
+  // An explicitly inspected active order remains pinned; never switch mid-work.
+  if(account&&!unresolved&&!busy&&(!order||order.status==="COMPLETED"||order.status==="CANCELLED")){
+   const choices=[...discoveredOrders.values()]
+    .filter(x=>x.status!=="COMPLETED"&&x.status!=="CANCELLED")
+    .sort((a,b)=>BigInt(a.id)>BigInt(b.id)?-1:1);
+   const candidate=choices.find(x=>x.contributor.toLowerCase()===account&&x.status==="PROPOSED")
+    ||choices.find(x=>x.owner.toLowerCase()===account||x.contributor.toLowerCase()===account);
+   if(candidate&&(!order||BigInt(candidate.id)>BigInt(order.id))){
+    $("milestoneId").value=candidate.id;
+    void load();
+   }
   }
  }catch(e){$("v2DiscoveryProgress").textContent="Index read failed: "+String(e.message||e)+". No unverified entries shown.";renderDiscovery();}
  finally{discoveryBusy=false;button.disabled=false;renderDiscovery();}
