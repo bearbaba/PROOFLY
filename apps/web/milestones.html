@@ -27,7 +27,7 @@
 <div id="milestoneActions" class="milestone-actions"><p class="milestone-note">Load a work order to see the next eligible action.</p></div><div id="milestoneTx" class="milestone-note" aria-live="polite">Signing is never automatic. Any submitted transaction must be tracked before attempting another.</div></article>
 <article class="panel milestone-panel"><div class="kicker">START A NEW AGREEMENT</div><h2>Create milestone</h2><p class="milestone-small">Owner defines an immutable acceptance rubric. A different Contributor wallet must accept it before submitting evidence.</p>
 <details><summary class="milestone-link" style="cursor:pointer;font-weight:800">+ Configure new milestone</summary>
-<form id="v2CreateForm" class="milestone-actions" style="margin-top:16px">
+<form id="v2CreateForm" class="milestone-actions" style="margin-top:16px"><button id="v2NegativeExample" type="button" class="secondary">Fill negative-test milestone template ↘</button><p class="milestone-small">Fills fields only. Review the rubric, deadlines and wallet before signing.</p>
 <label class="field">TITLE<input id="v2Title" maxlength="120" required placeholder="Sandbox API Integration Handoff"></label>
 <label class="field">CONTRIBUTOR WALLET<input id="v2Contributor" required placeholder="0x…"></label>
 <label class="field">PINNED AGREED REFERENCE URL<input id="v2Reference" required placeholder="https://raw.githubusercontent.com/.../40-hex-commit/...txt"></label>
