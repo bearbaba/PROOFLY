@@ -260,7 +260,9 @@ async function load(){if(busy)return;const id=$("milestoneId").value.trim();if(!
  order=next;receipt=rec;grant=release;
  // Keep the indexed My Work card consistent with the already-verified detail.
  discoveredOrders.set(next.id,next);renderDiscovery();
- reconcilePending();renderOrder();renderReceipt();renderGrant();const url=new URL(location.href);url.searchParams.set("order",id);history.replaceState(null,"",url);message("Finalized-state snapshot received from GenLayer. Transaction execution history is not independently authenticated by this read.");}
+ const wasUnresolved=unresolved;
+ reconcilePending();renderOrder();renderReceipt();renderGrant();
+ if(wasUnresolved&&!unresolved)void discoverRecentOrders(true);const url=new URL(location.href);url.searchParams.set("order",id);history.replaceState(null,"",url);message("Finalized-state snapshot received from GenLayer. Transaction execution history is not independently authenticated by this read.");}
  catch(e){order=null;receipt=null;grant=null;renderOrder();renderReceipt();renderGrant();message("Unable to verify this snapshot: "+String(e.message||e),true);}
  finally{busy=false;$("milestoneLoad").disabled=false;renderActions();}
 }
@@ -460,19 +462,22 @@ if(unresolved){let saved="";try{saved=localStorage.getItem(PENDING_KEY)||"";}cat
 $("v2LiveClose").addEventListener("click",()=>{$("v2LiveStatus").hidden=true;});
 // Read-only recovery: independently query finalized on-chain effects while a
 // tracked transaction is unresolved. Never auto-send or clear unknown writes.
-let recoveryPolls=0;
+let recoveryInFlight=false;
 const recoveryTicker=setInterval(async()=>{
- if(!unresolved||busy||!account||document.hidden||recoveryPolls>=45)return;
+ if(!unresolved||busy||recoveryInFlight||!account||document.hidden)return;
  const pending=getPending();
  if(!pending||pending.account?.toLowerCase()!==account)return;
- recoveryPolls++;
+ recoveryInFlight=true;
+ try{
  if(pending.method==="create_order"){
   if(pending.expectedOrderId)await recoverCreatedOrder(pending);
  }else if(pending.orderId&&/^[1-9][0-9]*$/.test(pending.orderId)){
   $("milestoneId").value=pending.orderId;
   await load();
  }
- if(!unresolved){recoveryPolls=0;void discoverRecentOrders(true);}
+ if(!unresolved)void discoverRecentOrders(true);
+ }catch(error){$("milestoneTx").textContent="Background reconciliation paused by RPC: "+String(error.message||error)+". No new transaction sent.";}
+ finally{recoveryInFlight=false;}
 },12000);
 window.addEventListener("pagehide",()=>clearInterval(recoveryTicker));
 void discoverRecentOrders(true);
