@@ -102,15 +102,15 @@ async function resumePending(hash){
  }catch(e){$("milestoneTx").textContent="Tracking unresolved: "+String(e.message||e);}
  finally{busy=false;renderActions();}
 }
-async function connect(){if(!provider()){ $("milestoneWallet").textContent="MetaMask was not found. Install or unlock a trusted wallet.";return;}
- try{const accounts=await provider().request({method:"eth_requestAccounts"});const chain=await provider().request({method:"eth_chainId"});
+async function connect(silent=false){if(!provider()){if(silent)return; $("milestoneWallet").textContent="MetaMask was not found. Install or unlock a trusted wallet.";return;}
+ try{const accounts=await provider().request({method:silent?"eth_accounts":"eth_requestAccounts"});if(silent&&!accounts.length)return;const chain=await provider().request({method:"eth_chainId"});
  if(Number(BigInt(chain))!==61999)throw Error("Switch MetaMask to GenLayer Studionet (chain 61999) before signing.");
  account=String(accounts[0]||"").toLowerCase();
  if(!/^0x[0-9a-f]{40}$/.test(account))throw Error("No usable wallet account.");
  const client=createClient({chain:studionet,account,provider:provider()});
  gateway=createWorkflowGateway({client,contractAddress:V2_CONTRACT,finalVariant:final,isSuccessful:tx=>inspectTransaction(tx).kind==="success"});
  $("milestoneWallet").textContent="● Connected · "+account.slice(0,8)+"…"+account.slice(-6)+" · Studionet 61999";$("milestoneWallet").title=account;$("milestoneConnect").textContent="✓ Wallet connected · Switch account";$("milestoneConnect").classList.add("v2-wallet-connected");
- }catch(e){account="";gateway=null;$("milestoneConnect").textContent="Connect MetaMask";$("milestoneConnect").classList.remove("v2-wallet-connected");$("milestoneWallet").textContent=String(e.message||e);}
+ }catch(e){if(silent)return;account="";gateway=null;$("milestoneConnect").textContent="Connect MetaMask";$("milestoneConnect").classList.remove("v2-wallet-connected");$("milestoneWallet").textContent=String(e.message||e);}
  renderActions();
 }
 async function verifyPublicArtifact(url,digest){
@@ -257,4 +257,4 @@ $("v2CreateForm").addEventListener("submit",async e=>{
 
 if(unresolved){let saved="";try{saved=localStorage.getItem(PENDING_KEY)||"";}catch{}showProgress("Previous transaction needs review","A previous write may still be pending. Verify the GenVM result before signing again.",saved,true);}
 $("v2LiveClose").addEventListener("click",()=>{$("v2LiveStatus").hidden=true;});
-const requested=new URLSearchParams(location.search).get("order");if(requested&&/^[1-9][0-9]*$/.test(requested)){$("milestoneId").value=requested;void load();}
+void connect(true); // Restore an already authorized wallet without prompting or signing.\nconst requested=new URLSearchParams(location.search).get("order");if(requested&&/^[1-9][0-9]*$/.test(requested)){$("milestoneId").value=requested;void load();}
