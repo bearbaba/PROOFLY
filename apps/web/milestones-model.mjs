@@ -1,5 +1,5 @@
 /** SDK-free fail-closed model for Milestone Gate V2. */
-export const V2_CONTRACT="0xD67245387dF5448671235CE00c8969664b5aF8bd";
+export const V2_CONTRACT="0xb8305F15336a79761157b86e214d3d3DeaDFc1ce";
 export const V2_POLICY="proofly.milestone-acceptance.v2";
 export const SOURCE_POLICY="AGREED_SPEC_ONLY_V1";
 const H=/^[a-f0-9]{64}$/;
