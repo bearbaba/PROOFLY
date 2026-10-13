@@ -115,12 +115,26 @@ async function discoverRecentOrders(){
    if(item){validateMilestoneSnapshot(item,String(id));found.push(item);}
   }
   box.replaceChildren();
+  const linked=account?found.filter(item=>item.owner.toLowerCase()===account||item.contributor.toLowerCase()===account):[];
+  const others=account?found.filter(item=>item.owner.toLowerCase()!==account&&item.contributor.toLowerCase()!==account):found;
+  $("v2DiscoveryTitle").textContent=account?"My work · Recent milestones":"Recent milestones";
   if(!found.length){box.textContent="No milestones created yet. Create the first one below.";return;}
-  for(const item of found){
-   const button=node("button","#"+item.id+" · "+item.title);
-   button.type="button";button.append(node("small",item.status+" · Owner "+item.owner.slice(0,8)+"… · Contributor "+item.contributor.slice(0,8)+"…"));
-   button.addEventListener("click",()=>{$("milestoneId").value=item.id;void load();});
-   box.append(button);
+  if(account&&!linked.length)box.append(node("p","No work linked to this wallet among the latest 10 milestones. Older work can be opened by ID.","milestone-small"));
+  for(const [items,label] of [[linked,"My work"],[others,account?"Other recent milestones":""]]){
+   if(!items.length)continue;
+   if(label)box.append(node("strong",label));
+   for(const item of items){
+    const entry=node("button","#"+item.id+" · "+item.title);
+    entry.type="button";
+    const role=account?(item.contributor.toLowerCase()===account?"Assigned Contributor":item.owner.toLowerCase()===account?"Owner":"Public"):"Public";
+    entry.append(node("small",role+" · "+item.status+" · Owner "+item.owner.slice(0,8)+"… · Contributor "+item.contributor.slice(0,8)+"…"));
+    entry.addEventListener("click",()=>{$("milestoneId").value=item.id;void load();});
+    box.append(entry);
+   }
+  }
+  if(account&&linked.length&&!order){
+   const assigned=linked.find(item=>item.contributor.toLowerCase()===account&&item.status==="PROPOSED");
+   if(assigned){$("milestoneId").value=assigned.id;void load();}
   }
  }catch(e){box.textContent="Could not load milestone list: "+String(e.message||e)+". Retry with Refresh list.";}
  finally{button.disabled=false;}
@@ -232,7 +246,7 @@ async function connect(silent=false){if(!provider()){if(silent)return; $("milest
  if(!/^0x[0-9a-f]{40}$/.test(account))throw Error("No usable wallet account.");
  const client=createClient({chain:studionet,account,provider:provider()});
  gateway=createWorkflowGateway({client,contractAddress:V2_CONTRACT,finalVariant:final,isSuccessful:tx=>inspectTransaction(tx).kind==="success"});
- $("milestoneWallet").textContent="● Connected · "+account.slice(0,8)+"…"+account.slice(-6)+" · Studionet 61999";$("milestoneWallet").title=account;$("milestoneConnect").textContent="✓ Wallet connected · Switch account";$("milestoneConnect").classList.add("v2-wallet-connected");
+ $("milestoneWallet").textContent="● Connected · "+account.slice(0,8)+"…"+account.slice(-6)+" · Studionet 61999";$("milestoneWallet").title=account;$("milestoneConnect").textContent="✓ Wallet connected · Switch account";$("milestoneConnect").classList.add("v2-wallet-connected");void discoverRecentOrders();
  }catch(e){if(silent)return;account="";gateway=null;$("milestoneConnect").textContent="Connect MetaMask";$("milestoneConnect").classList.remove("v2-wallet-connected");$("milestoneWallet").textContent=String(e.message||e);}
  renderActions();
 }
