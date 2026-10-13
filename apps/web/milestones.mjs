@@ -258,6 +258,8 @@ async function load(){if(busy)return;const id=$("milestoneId").value.trim();if(!
  if(rec)validateMilestoneSnapshot(next,id,rec);
  if(release)validateRelease(next,rec,release);
  order=next;receipt=rec;grant=release;
+ // Keep the indexed My Work card consistent with the already-verified detail.
+ discoveredOrders.set(next.id,next);renderDiscovery();
  reconcilePending();renderOrder();renderReceipt();renderGrant();const url=new URL(location.href);url.searchParams.set("order",id);history.replaceState(null,"",url);message("Finalized-state snapshot received from GenLayer. Transaction execution history is not independently authenticated by this read.");}
  catch(e){order=null;receipt=null;grant=null;renderOrder();renderReceipt();renderGrant();message("Unable to verify this snapshot: "+String(e.message||e),true);}
  finally{busy=false;$("milestoneLoad").disabled=false;renderActions();}
