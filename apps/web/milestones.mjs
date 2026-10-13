@@ -458,6 +458,23 @@ $("v2CreateForm").addEventListener("submit",async e=>{
 
 if(unresolved){let saved="";try{saved=localStorage.getItem(PENDING_KEY)||"";}catch{}showProgress("Previous transaction needs review","A previous write may still be pending. Verify the GenVM result before signing again.",saved,true);}
 $("v2LiveClose").addEventListener("click",()=>{$("v2LiveStatus").hidden=true;});
+// Read-only recovery: independently query finalized on-chain effects while a
+// tracked transaction is unresolved. Never auto-send or clear unknown writes.
+let recoveryPolls=0;
+const recoveryTicker=setInterval(async()=>{
+ if(!unresolved||busy||!account||document.hidden||recoveryPolls>=45)return;
+ const pending=getPending();
+ if(!pending||pending.account?.toLowerCase()!==account)return;
+ recoveryPolls++;
+ if(pending.method==="create_order"){
+  if(pending.expectedOrderId)await recoverCreatedOrder(pending);
+ }else if(pending.orderId&&/^[1-9][0-9]*$/.test(pending.orderId)){
+  $("milestoneId").value=pending.orderId;
+  await load();
+ }
+ if(!unresolved){recoveryPolls=0;void discoverRecentOrders(true);}
+},12000);
+window.addEventListener("pagehide",()=>clearInterval(recoveryTicker));
 void discoverRecentOrders(true);
 void connect(true); // Restore an already authorized wallet without prompting or signing.
 const requested=new URLSearchParams(location.search).get("order");if(requested&&/^[1-9][0-9]*$/.test(requested)){$("milestoneId").value=requested;void load();}
