@@ -59,6 +59,34 @@ async function recoverCreatedOrder(pending){
   return rec.id;
  }catch{return null;}
 }
+async function recoverLegacyCreate(){
+ const pending=getPending();
+ if(!pending||pending.method!=="create_order"||pending.expectedOrderId||!account||busy||
+    !/^0x[a-fA-F0-9]{64}$/.test(pending.hash))return;
+ const yes=window.confirm("Legacy transaction recovery (NO NEW SIGNATURE)\\n\\nVerify this EXACT hash in Explorer:\\n"+pending.hash+"\\n\\nMethod must be create_order. From must match this connected Owner wallet, To must match the PROOFLY V2 contract, and GenVM execution must say SUCCESS / Return. Have you independently verified ALL these fields?");
+ if(!yes)return;
+ busy=true;renderActions();
+ try{
+  const n=BigInt(String(await readClient.readContract({address:V2_CONTRACT,functionName:"next_order",args:[],transactionHashVariant:final})));
+  const found=[];
+  for(let j=n-1n;j>=1n&&j>=n-20n;j--){
+   const id=String(j),rec=await read("get_order",[id]);
+   if(rec&&rec.title===pending.title&&rec.owner.toLowerCase()===account&&
+      rec.contributor.toLowerCase()==="0xd6b8a3a5eb329410d9504784812b8569afa8c2af"&&
+      rec.spec.reference_sha256==="0b39481c3ca9bff673adb40d08eb2d0b04cb27ab4510255d3b699778826f1aec"&&
+      rec.spec.criteria.length===3&&rec.spec.criteria[2].text.includes("Retry-After")){
+    validateMilestoneSnapshot(rec,id);found.push(id);
+   }
+  }
+  if(found.length!==1)throw Error("Expected exactly one matching finalized demo order in the recent 20 orders; found "+found.length+". Manual review required.");
+  const id=found[0];
+  clearPending();busy=false;$("milestoneId").value=id;
+  showProgress("Legacy creation recovered","Verified Owner, Contributor, pinned reference and rubric of Work Order #"+id+" after explicit Explorer check. No transaction resent.",pending.hash);
+  await load();
+ }catch(e){
+  showProgress("Legacy recovery requires review",String(e.message||e)+" Do not resubmit.",pending.hash,true);
+ }finally{busy=false;renderActions();}
+}
 async function recheckSavedCreate(){
  const pending=getPending();
  if(!pending||pending.method!=="create_order"||!gateway||!account||busy)return;
@@ -105,7 +133,7 @@ function renderGrant(){const box=$("milestoneRelease");box.replaceChildren();if(
  box.append(node("p","Not a payment, token transfer, or an off-chain unlock.","milestone-small"));
 }
 function field(box,title,id,placeholder){const w=node("label",undefined,"field");w.append(node("span",title));const input=node("input");input.id=id;input.placeholder=placeholder;input.autocomplete="off";w.append(input);box.append(w);return input;}
-function renderActions(){const box=$("milestoneActions");box.replaceChildren();if(!order){box.append(node("p",unresolved?"Previous write unresolved. Check the transaction status at the top.":"Load a work order to see eligible actions.","milestone-note"));const pending=getPending();if(pending?.method==="create_order"&&pending?.expectedOrderId&&gateway&&account&&!busy){const b=node("button","Check saved milestone creation again","secondary");b.type="button";b.addEventListener("click",()=>void recheckSavedCreate());box.append(b);}return;}
+function renderActions(){const box=$("milestoneActions");box.replaceChildren();if(!order){box.append(node("p",unresolved?"Previous write unresolved. Check the transaction status at the top.":"Load a work order to see eligible actions.","milestone-note"));const pending=getPending();if(pending?.method==="create_order"&&!pending?.expectedOrderId&&account&&!busy){const b=node("button","Recover verified legacy create_order (no signature)","secondary");b.type="button";b.addEventListener("click",()=>void recoverLegacyCreate());box.append(b);}if(pending?.method==="create_order"&&pending?.expectedOrderId&&gateway&&account&&!busy){const b=node("button","Check saved milestone creation again","secondary");b.type="button";b.addEventListener("click",()=>void recheckSavedCreate());box.append(b);}return;}
  const suggestion=nextMilestoneAction(order,account,Boolean(grant));
  if(!account){box.append(node("p","Connect the assigned MetaMask account to prepare a write. Anyone can inspect finalized state.","milestone-note"));return;}
  if(unresolved){
