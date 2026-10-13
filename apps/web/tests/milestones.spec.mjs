@@ -13,7 +13,7 @@ test("V2 workspace is explicit about contract and no payments",async({page})=>{
 
 test("No V2 write offered until public read and assigned wallet",async({page})=>{
  await page.goto("/milestones.html");
- await expect(page.getByText("Load a work order to see eligible actions.")).toBeVisible();
+ await expect(page.getByText(/Load a work order to see (the next )?eligible action/)).toBeVisible();
  await expect(page.getByText(/Awaiting order selection/)).toHaveCount(2);
  await expect(page.getByRole("button",{name:/Claim on-chain release authorization/})).toHaveCount(0);
 });
