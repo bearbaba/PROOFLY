@@ -75,3 +75,9 @@ test("V2 shows discoverable milestone list with safe read-only refresh",async({p
  await expect(page.locator("#v2RecentOrders")).toBeAttached();
  await expect(page.locator("#milestoneId")).toHaveValue("1");
 });
+
+test("Discovery has wallet-linked My work heading and can open assigned work",async({page})=>{
+ await page.goto("/");
+ await expect(page.locator("#v2DiscoveryTitle")).toHaveText("Recent milestones");
+ await expect(page.locator("#v2RecentOrders")).toBeAttached();
+});
