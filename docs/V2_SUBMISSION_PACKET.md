@@ -1,5 +1,27 @@
 # PROOFLY V2 — Submission Packet (reviewer-facing)
 
+
+## FINAL VERIFIED OCTOBER 13, 2026 — NEGATIVE WORKFLOW
+
+**Status update superseding earlier pending checkboxes and wording in this document.** Work Order #2 is verified by user-provided Explorer outputs and Studio accepted-state reads:
+
+- Owner [created #2](https://explorer-studio.genlayer.com/tx/0xa7c782f969c88e726b13b527ba0299d7bf92af9c6f758376736797c0fd1ec012) with immutable agreed rubric; on-chain `get_order(2)` PROPOSED.
+- Contributor [accepted the specification](https://explorer-studio.genlayer.com/tx/0x1984f4b9545f6685fb699fc572668f696fc84295089cc227533e7f6622fc62e4); order ACTIVE.
+- Contributor [submitted incomplete pinned evidence](https://explorer-studio.genlayer.com/tx/0x281a2d0e2924231e5d9717c1f5b8222d151507e5b9e9cdcf50313b7aff5c0602); order SUBMITTED.
+- GenLayer [evaluated](https://explorer-studio.genlayer.com/tx/0x2f17900df6961efa6a81eca16f449d2a0b6aa99027d15c834c2d1f4b2775dbbb) R1/R2 SATISFIED, R3 UNSATISFIED; order REVIEWED / CHANGES_REQUIRED.
+- Contributor [attempted claim](https://explorer-studio.genlayer.com/tx/0xca2a98c928199f1b35f38c3e478cd74aae9dd58df546814a217636c21671ca6f); transaction FINALIZED but GenVM ERROR / Rollback / MILESTONE_NOT_ACCEPTED.
+
+Live positive Work Order #1: COMPLETED, quote-backed ACCEPTED R1/R2/R3, release authorization recorded for Contributor; negative additional checks: [duplicate claim](https://explorer-studio.genlayer.com/tx/0x0e435e25a54b86048644394051d061f76c710e07dcdef93975409f23edd8a7e3) and [unauthorized Owner claim](https://explorer-studio.genlayer.com/tx/0x58c988fd241e854f198c78f6cbc5b33b36b475bb8488b045506220dd8aa09619) both rollback.
+
+**Live Preview:** [V2 Work Order #1](https://proofly-atboqi1pu-khaiptk1998-8088s-projects.vercel.app/milestones.html?order=1) · [V2 Work Order #2](https://proofly-atboqi1pu-khaiptk1998-8088s-projects.vercel.app/milestones.html?order=2). This commit had CI PASSED and Vercel READY when checked. Wallet signing of create/accept/submit was user-observed. Fresh real-browser confirmation of the subsequent transaction-tracking fix is still a release gate.
+
+**No escrow or token payout:** `claim_milestone_release` stores a contributor-specific on-chain authorization record only.
+
+Full evidence and limitations: [V2_STUDIONET_EVIDENCE.md](V2_STUDIONET_EVIDENCE.md).
+
+---
+
+
 ## Project
 **Name:** PROOFLY V2 — Consensus-Gated Milestone Acceptance
 
