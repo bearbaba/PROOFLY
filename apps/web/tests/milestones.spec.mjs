@@ -81,3 +81,11 @@ test("Discovery has wallet-linked My work heading and can open assigned work",as
  await expect(page.locator("#v2DiscoveryTitle")).toHaveText("Recent milestones");
  await expect(page.locator("#v2RecentOrders")).toBeAttached();
 });
+
+test("V2 historical discovery exposes pagination and wallet scan controls",async({page})=>{
+ await page.goto("/");
+ await expect(page.locator("#v2DiscoveryProgress")).toBeAttached();
+ await expect(page.locator("#v2LoadOlder")).toBeAttached();
+ await expect(page.locator("#v2FindMyWork")).toBeAttached();
+ await expect(page.locator("#v2DiscoveryTitle")).toBeVisible();
+});
