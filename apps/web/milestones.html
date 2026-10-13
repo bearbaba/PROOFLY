@@ -25,5 +25,21 @@
 </section>
 <aside class="milestone-stack"><article class="panel milestone-panel"><div class="kicker">CONTRIBUTOR WORKSPACE</div><h2>Actions</h2><button id="milestoneConnect" class="secondary" type="button">Connect MetaMask</button><p id="milestoneWallet" class="milestone-small" aria-live="polite">No wallet connected. Public reads work without a wallet.</p>
 <div id="milestoneActions" class="milestone-actions"><p class="milestone-note">Load a work order to see the next eligible action.</p></div><div id="milestoneTx" class="milestone-note" aria-live="polite">Signing is never automatic. Any submitted transaction must be tracked before attempting another.</div></article>
+<article class="panel milestone-panel"><div class="kicker">START A NEW AGREEMENT</div><h2>Create milestone</h2><p class="milestone-small">Owner defines an immutable acceptance rubric. A different Contributor wallet must accept it before submitting evidence.</p>
+<details><summary class="milestone-link" style="cursor:pointer;font-weight:800">+ Configure new milestone</summary>
+<form id="v2CreateForm" class="milestone-actions" style="margin-top:16px">
+<label class="field">TITLE<input id="v2Title" maxlength="120" required placeholder="Sandbox API Integration Handoff"></label>
+<label class="field">CONTRIBUTOR WALLET<input id="v2Contributor" required placeholder="0x…"></label>
+<label class="field">PINNED AGREED REFERENCE URL<input id="v2Reference" required placeholder="https://raw.githubusercontent.com/.../40-hex-commit/...txt"></label>
+<button id="v2CheckReference" type="button" class="secondary">Fetch & hash reference document ↗</button>
+<p class="milestone-small" id="v2ReferenceStatus" aria-live="polite">No reference document checked yet.</p>
+<label class="field">ACCEPTANCE CRITERION R1<textarea id="v2R1" required maxlength="500" rows="3"></textarea></label>
+<label class="field">ACCEPTANCE CRITERION R2<textarea id="v2R2" required maxlength="500" rows="3"></textarea></label>
+<label class="field">ACCEPTANCE CRITERION R3<textarea id="v2R3" required maxlength="500" rows="3"></textarea></label>
+<label class="field">SUBMISSION DEADLINE (DAYS FROM NOW)<input id="v2SubmitDays" type="number" min="1" max="59" value="2" required></label>
+<label class="field">REVISION DEADLINE (DAYS FROM NOW)<input id="v2RevisionDays" type="number" min="2" max="60" value="7" required></label>
+<button type="submit" class="primary" id="v2CreateButton">Review and sign create_order →</button>
+<p class="hint">No escrow or token payment. Do not submit an agreement containing secrets or personal data. The latest checked hash is recomputed before signing.</p>
+</form></details></article>
 <article class="panel milestone-panel"><div class="kicker">TRUST BOUNDARY</div><h3>What this proves</h3><p class="milestone-small">The contract limits each milestone to an accepted, immutable GitHub reference, a hashed delivery, a GenLayer receipt, and one contributor-bound release authorization. It does not authenticate arbitrary off-chain statements or execute external payments.</p><p class="milestone-small">Do not share wallet seed phrases. Confirm contract address, transaction fees, and MetaMask account for every write.</p></article></aside>
 </main><footer><span>PROOFLY / Milestone Acceptance Gate V2</span><span>Studionet experimental · No payments · Open source</span></footer></div></body></html>
