@@ -12,6 +12,7 @@ const readClient=createClient({chain:studionet});
 const final=TransactionHashVariant.LATEST_FINAL;
 const PENDING_KEY="proofly.indexed.61999.b8305f15336a79761157b86e214d3d3deadfc1ce.pending-write";
 let order=null, receipt=null, grant=null, account="", gateway=null, busy=false, unresolved=false;
+let didCheckInitialSelection=false;
 try{unresolved=Boolean(localStorage.getItem(PENDING_KEY));}catch{unresolved=true;}
 
 const provider=()=>window.ethereum;
@@ -166,9 +167,18 @@ async function discoverRecentOrders(reset=true){
   }
   if(epoch!==discoveryEpoch)return;
   renderDiscovery();
-  if(account&&!order){
-   const proposed=[...discoveredOrders.values()].find(x=>x.contributor.toLowerCase()===account&&x.status==="PROPOSED");
-   if(proposed){$("milestoneId").value=proposed.id;void load();}
+  // Prefer a newer unfinished assignment over a completed old URL after reload.
+  // An explicitly inspected active order remains pinned; never switch mid-work.
+  if(account&&!unresolved&&!busy&&(!order||order.status==="COMPLETED"||order.status==="CANCELLED")){
+   const choices=[...discoveredOrders.values()]
+    .filter(x=>x.status!=="COMPLETED"&&x.status!=="CANCELLED")
+    .sort((a,b)=>BigInt(a.id)>BigInt(b.id)?-1:1);
+   const candidate=choices.find(x=>x.contributor.toLowerCase()===account&&x.status==="PROPOSED")
+    ||choices.find(x=>x.owner.toLowerCase()===account||x.contributor.toLowerCase()===account);
+   if(candidate&&(!order||BigInt(candidate.id)>BigInt(order.id))){
+    $("milestoneId").value=candidate.id;
+    void load();
+   }
   }
  }catch(e){$("v2DiscoveryProgress").textContent="Index read failed: "+String(e.message||e)+". No unverified entries shown.";renderDiscovery();}
  finally{discoveryBusy=false;button.disabled=false;renderDiscovery();}
@@ -262,7 +272,14 @@ async function load(){if(busy)return;const id=$("milestoneId").value.trim();if(!
  discoveredOrders.set(next.id,next);renderDiscovery();
  const wasUnresolved=unresolved;
  reconcilePending();renderOrder();renderReceipt();renderGrant();
- if(wasUnresolved&&!unresolved)void discoverRecentOrders(true);const url=new URL(location.href);url.searchParams.set("order",id);history.replaceState(null,"",url);message("Finalized-state snapshot received from GenLayer. Transaction execution history is not independently authenticated by this read.");}
+ if(wasUnresolved&&!unresolved)void discoverRecentOrders(true);
+ // On first load, index discovery may have finished before the old ?order=1
+ // snapshot. A read-only second discovery guarantees the newer assignment wins.
+ if(!didCheckInitialSelection&&account&&(next.status==="COMPLETED"||next.status==="CANCELLED")){
+  didCheckInitialSelection=true;
+  setTimeout(()=>{if(!busy&&!unresolved)void discoverRecentOrders(true);},0);
+ }
+ const url=new URL(location.href);url.searchParams.set("order",id);history.replaceState(null,"",url);message("Finalized-state snapshot received from GenLayer. Transaction execution history is not independently authenticated by this read.");}
  catch(e){order=null;receipt=null;grant=null;renderOrder();renderReceipt();renderGrant();message("Unable to verify this snapshot: "+String(e.message||e),true);}
  finally{busy=false;$("milestoneLoad").disabled=false;renderActions();}
 }
