@@ -482,4 +482,19 @@ const recoveryTicker=setInterval(async()=>{
 window.addEventListener("pagehide",()=>clearInterval(recoveryTicker));
 void discoverRecentOrders(true);
 void connect(true); // Restore an already authorized wallet without prompting or signing.
+// MetaMask account/network events must invalidate stale permissions and My Work.
+if(provider()?.on){
+ const refreshWallet=()=>{
+  account="";gateway=null;order=null;receipt=null;grant=null;
+  discoveredOrders.clear();workOffset=0;workMore=false;
+  $("milestoneWallet").textContent="Wallet changed. Checking connected account…";
+  $("milestoneConnect").textContent="Connect MetaMask";
+  $("milestoneConnect").classList.remove("v2-wallet-connected");
+  renderOrder();renderReceipt();renderGrant();renderDiscovery();renderActions();
+  void connect(true);
+ };
+ provider().on("accountsChanged",refreshWallet);
+ provider().on("chainChanged",refreshWallet);
+}
+
 const requested=new URLSearchParams(location.search).get("order");if(requested&&/^[1-9][0-9]*$/.test(requested)){$("milestoneId").value=requested;void load();}
