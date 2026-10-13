@@ -61,17 +61,8 @@ function renderActions(){const box=$("milestoneActions");box.replaceChildren();i
  if(pending&&/^0x[a-fA-F0-9]{64}$/.test(pending)){
   const link=node("a","Inspect saved transaction in Explorer ↗","milestone-link");
   link.href="https://explorer-studio.genlayer.com/tx/"+pending;link.target="_blank";link.rel="noopener noreferrer";box.append(link);
-  if(order.status==="ACTIVE"&&account===order.contributor.toLowerCase()){
-   const resume=node("button","I verified accept_order SUCCESS — unlock next step","secondary");
-   resume.type="button";
-   resume.addEventListener("click",()=>{
-    if(!window.confirm("Only continue if this exact saved hash was FINALIZED with GenVM Execution SUCCESS for accept_order("+order.id+") by your Contributor wallet, and the on-chain Work Order is ACTIVE. Have you checked the Explorer execution and address?"))return;
-    unresolved=false;try{localStorage.removeItem(PENDING_KEY);}catch{}
-    showProgress("Acceptance confirmed by user","Saved pending tracker cleared after explicit Explorer verification and ACTIVE finalized-state read. No transaction was resent.",pending);
-    $("milestoneTx").textContent="Explorer success and ACTIVE state confirmed. You can submit evidence once.";
-    renderActions();
-   });box.append(resume);
-  }
+  const notice=node("p","This transaction has a different hash from previously verified actions. Confirm its exact method and GenVM result in Explorer before continuing. Never use an earlier accept_order result to clear a newer transaction.","milestone-note milestone-error");
+  box.append(notice);
  }
  return;}
  if(!suggestion){box.append(node("p",grant?"Release authorization already recorded. No further claim is allowed.":"No action is available for this account and order state.","milestone-note"));return;}
@@ -156,7 +147,7 @@ async function submit(method,artifactUrl,artifactHash){if(busy||unresolved||!gat
  if(!ok)return;
  busy=true;renderActions();$("milestoneTx").textContent="Awaiting wallet approval. Do not submit again.";
  try{const result=await gateway.submit(method,args,hash=>{$("milestoneTx").textContent="Submitted: "+hash+" · Finality/execution unknown. Track before any other write.";},async()=>true);
- unresolved=true;try{localStorage.setItem(PENDING_KEY,result.txId);}catch{}
+ unresolved=true;try{localStorage.setItem(PENDING_KEY,result.txId);localStorage.setItem(PENDING_KEY+".method",method);}catch{}
  $("milestoneTx").textContent="Transaction "+result.txId+" submitted. Await finality; never retry based on timeout.";
  const verdict=await gateway.resumeFinalization(result.txId);
  $("milestoneTx").textContent="Transaction "+result.txId+" · "+verdict.status+". "+(verdict.note||"")+" Refresh from chain before further actions.";
@@ -245,10 +236,10 @@ $("v2CreateForm").addEventListener("submit",async e=>{
  let submittedHash="";
  try{
   const tx=await gateway.submit("create_order",args,hash=>{
-   submittedHash=hash;unresolved=true;try{localStorage.setItem(PENDING_KEY,hash);}catch{}
+   submittedHash=hash;unresolved=true;try{localStorage.setItem(PENDING_KEY,hash);localStorage.setItem(PENDING_KEY+".method","create_order");}catch{}
    showProgress("Milestone transaction submitted","Waiting for finalized GenVM execution. Do not sign again.",hash,true);
   },async()=>true);
-  submittedHash=tx.txId;unresolved=true;try{localStorage.setItem(PENDING_KEY,tx.txId);}catch{}
+  submittedHash=tx.txId;unresolved=true;try{localStorage.setItem(PENDING_KEY,tx.txId);localStorage.setItem(PENDING_KEY+".method","create_order");}catch{}
   showProgress("Milestone creation pending","Transaction submitted. Checking finality and execution.",tx.txId,true);
   const status=await gateway.resumeFinalization(tx.txId);
   if(status.status==="FINALIZED_SUCCESS"){
