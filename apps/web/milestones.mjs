@@ -55,7 +55,7 @@ async function recoverCreatedOrder(pending){
   clearPending();
   showProgress("Created milestone verified","Matching on-chain order #"+rec.id+" was read from finalized state; no second signature was sent.",pending.hash);
   $("milestoneTx").textContent="Created Work Order #"+rec.id+" confirmed by finalized state.";
-  await load();
+  await load();void discoverRecentOrders();
   return rec.id;
  }catch{return null;}
 }
@@ -82,7 +82,7 @@ async function recoverLegacyCreate(){
   const id=found[0];
   clearPending();busy=false;$("milestoneId").value=id;
   showProgress("Legacy creation recovered","Verified Owner, Contributor, pinned reference and rubric of Work Order #"+id+" after explicit Explorer check. No transaction resent.",pending.hash);
-  await load();
+  await load();void discoverRecentOrders();
  }catch(e){
   showProgress("Legacy recovery requires review",String(e.message||e)+" Do not resubmit.",pending.hash,true);
  }finally{busy=false;renderActions();}
@@ -102,6 +102,30 @@ async function recheckSavedCreate(){
  }catch(e){showProgress("Recovery inconclusive",String(e.message||e),pending.hash,true);}
  finally{busy=false;renderActions();}
 }
+async function discoverRecentOrders(){
+ const box=$("v2RecentOrders"),button=$("v2RefreshRecent");
+ if(!box)return;
+ button.disabled=true;box.textContent="Reading latest finalized milestones…";
+ try{
+  const raw=await readClient.readContract({address:V2_CONTRACT,functionName:"next_order",args:[],transactionHashVariant:final});
+  const next=BigInt(String(raw));if(next<1n)throw Error("Unexpected next_order value");
+  const found=[];
+  for(let id=next-1n;id>=1n&&id>=next-11n;id--){
+   const item=await read("get_order",[String(id)]);
+   if(item){validateMilestoneSnapshot(item,String(id));found.push(item);}
+  }
+  box.replaceChildren();
+  if(!found.length){box.textContent="No milestones created yet. Create the first one below.";return;}
+  for(const item of found){
+   const button=node("button","#"+item.id+" · "+item.title);
+   button.type="button";button.append(node("small",item.status+" · Owner "+item.owner.slice(0,8)+"… · Contributor "+item.contributor.slice(0,8)+"…"));
+   button.addEventListener("click",()=>{$("milestoneId").value=item.id;void load();});
+   box.append(button);
+  }
+ }catch(e){box.textContent="Could not load milestone list: "+String(e.message||e)+". Retry with Refresh list.";}
+ finally{button.disabled=false;}
+}
+$("v2RefreshRecent").addEventListener("click",()=>void discoverRecentOrders());
 async function findCreatedOrder(title,owner){
  try{
   const val=await readClient.readContract({address:V2_CONTRACT,functionName:"next_order",args:[],transactionHashVariant:final});
@@ -109,7 +133,7 @@ async function findCreatedOrder(title,owner){
   const id=String(n-1n),rec=await read("get_order",[id]);
   if(!rec||rec.title!==title||rec.owner.toLowerCase()!==owner.toLowerCase())return null;
   validateMilestoneSnapshot(rec,id);
-  $("milestoneId").value=id;await load();return id;
+  $("milestoneId").value=id;await load();void discoverRecentOrders();return id;
  }catch{return null;}
 }
 const node=(tag,value,className)=>{const n=document.createElement(tag); if(value!==undefined)n.textContent=String(value); if(className)n.className=className;return n;};
@@ -382,5 +406,6 @@ $("v2CreateForm").addEventListener("submit",async e=>{
 
 if(unresolved){let saved="";try{saved=localStorage.getItem(PENDING_KEY)||"";}catch{}showProgress("Previous transaction needs review","A previous write may still be pending. Verify the GenVM result before signing again.",saved,true);}
 $("v2LiveClose").addEventListener("click",()=>{$("v2LiveStatus").hidden=true;});
+void discoverRecentOrders();
 void connect(true); // Restore an already authorized wallet without prompting or signing.
 const requested=new URLSearchParams(location.search).get("order");if(requested&&/^[1-9][0-9]*$/.test(requested)){$("milestoneId").value=requested;void load();}
