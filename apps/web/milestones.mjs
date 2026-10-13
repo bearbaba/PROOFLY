@@ -10,7 +10,7 @@ import {validateMilestoneSnapshot, validateRelease, nextMilestoneAction, V2_CONT
 const $=id=>document.getElementById(id);
 const readClient=createClient({chain:studionet});
 const final=TransactionHashVariant.LATEST_FINAL;
-const PENDING_KEY="proofly.v2.61999.pending-write";
+const PENDING_KEY="proofly.indexed.61999.b8305f15336a79761157b86e214d3d3deadfc1ce.pending-write";
 let order=null, receipt=null, grant=null, account="", gateway=null, busy=false, unresolved=false;
 try{unresolved=Boolean(localStorage.getItem(PENDING_KEY));}catch{unresolved=true;}
 
@@ -55,7 +55,7 @@ async function recoverCreatedOrder(pending){
   clearPending();
   showProgress("Created milestone verified","Matching on-chain order #"+rec.id+" was read from finalized state; no second signature was sent.",pending.hash);
   $("milestoneTx").textContent="Created Work Order #"+rec.id+" confirmed by finalized state.";
-  await load();void discoverRecentOrders(true,false);
+  await load();void discoverRecentOrders(true);
   return rec.id;
  }catch{return null;}
 }
@@ -82,7 +82,7 @@ async function recoverLegacyCreate(){
   const id=found[0];
   clearPending();busy=false;$("milestoneId").value=id;
   showProgress("Legacy creation recovered","Verified Owner, Contributor, pinned reference and rubric of Work Order #"+id+" after explicit Explorer check. No transaction resent.",pending.hash);
-  await load();void discoverRecentOrders(true,false);
+  await load();void discoverRecentOrders(true);
  }catch(e){
   showProgress("Legacy recovery requires review",String(e.message||e)+" Do not resubmit.",pending.hash,true);
  }finally{busy=false;renderActions();}
@@ -102,86 +102,80 @@ async function recheckSavedCreate(){
  }catch(e){showProgress("Recovery inconclusive",String(e.message||e),pending.hash,true);}
  finally{busy=false;renderActions();}
 }
-// The deployed V2 contract does not expose address indexes. Scan finalized
-// order pages with bounded RPC concurrency; never claim this is indexed search.
-const DISCOVERY_PAGE_SIZE=20, discoveryCache=new Map();
-let discoveryCursor=0n,discoveryNext=1n,discoveryBusy=false,discoveryEpoch=0,discoveryScanAll=false;
-async function readOrderPage(ids){
- const results=[];
- for(let offset=0;offset<ids.length;offset+=4){
-  const chunk=ids.slice(offset,offset+4);
-  const values=await Promise.allSettled(chunk.map(id=>read("get_order",[id])));
-  values.forEach((result,i)=>{
-   if(result.status==="fulfilled"&&result.value){
-    try{validateMilestoneSnapshot(result.value,chunk[i]);results.push(result.value);}
-    catch{}
-   }
-  });
- }
- return results;
+// Single indexed contract: wallet pages are fetched directly from on-chain indexes.
+const PAGE_SIZE=20;
+let workOffset=0,workMore=false,discoveryBusy=false,discoveryEpoch=0;
+const discoveredOrders=new Map(),seenByRole={owner:new Set(),contributor:new Set()};
+async function indexedPage(role,wallet,offset){
+ const method=role==="owner"?"list_owner_order_ids":"list_contributor_order_ids";
+ const result=await read(method,[wallet,offset,PAGE_SIZE]);
+ if(!result||result.wallet?.toLowerCase()!==wallet||result.role!==role||
+    !Array.isArray(result.order_ids)||result.order_ids.length>PAGE_SIZE||
+    !Number.isSafeInteger(result.total)||result.total<0||
+    typeof result.has_more!=="boolean")throw Error("Malformed "+method+" index response");
+ return result;
 }
 function renderDiscovery(){
  const box=$("v2RecentOrders");box.replaceChildren();
- const all=[...discoveryCache.values()].sort((a,b)=>BigInt(a.id)>BigInt(b.id)?-1:1);
- const linked=account?all.filter(x=>x.owner.toLowerCase()===account||x.contributor.toLowerCase()===account):[];
- const publicItems=account?all.filter(x=>x.owner.toLowerCase()!==account&&x.contributor.toLowerCase()!==account).slice(0,20):all;
- $("v2DiscoveryTitle").textContent=account?"My work · On-chain discovery":"Recent milestones";
- if(account&&!linked.length)box.append(node("p",discoveryCursor>0n?"No work linked to this wallet in scanned pages. Find all my work to search older orders.":"No linked milestones found in full scanned history.","milestone-small"));
- if(!all.length)box.append(node("p","No milestones found in scanned pages.","milestone-small"));
- for(const [items,heading] of [[linked,account?"My work":""],[publicItems,account?"Other recent milestones":""]]){
-  if(!items.length)continue;
-  if(heading)box.append(node("strong",heading));
-  for(const item of items){
-   const button=node("button","#"+item.id+" · "+item.title);
-   button.type="button";
-   const role=account?(item.contributor.toLowerCase()===account?"Assigned Contributor":item.owner.toLowerCase()===account?"Owner":"Public"):"Public";
-   button.append(node("small",role+" · "+item.status+" · Owner "+item.owner.slice(0,8)+"… · Contributor "+item.contributor.slice(0,8)+"…"));
-   button.addEventListener("click",()=>{$("milestoneId").value=item.id;void load();});
-   box.append(button);
-  }
+ const items=[...discoveredOrders.values()].sort((a,b)=>BigInt(a.id)>BigInt(b.id)?-1:1);
+ $("v2DiscoveryTitle").textContent=account?"My Work · Owner & Contributor":"Recent milestones";
+ if(!items.length)box.append(node("p",account?"No indexed work found for this wallet.":"No milestones found.","milestone-small"));
+ for(const item of items){
+  const entry=node("button","#"+item.id+" · "+item.title);
+  entry.type="button";
+  const role=account?(item.contributor.toLowerCase()===account?"Assigned Contributor":item.owner.toLowerCase()===account?"Owner":"Public"):"Public";
+  entry.append(node("small",role+" · "+item.status+" · Owner "+item.owner.slice(0,8)+"… · Contributor "+item.contributor.slice(0,8)+"…"));
+  entry.addEventListener("click",()=>{$("milestoneId").value=item.id;void load();});
+  box.append(entry);
  }
- $("v2LoadOlder").hidden=discoveryCursor<1n;
+ $("v2LoadOlder").hidden=!workMore;
  $("v2LoadOlder").disabled=discoveryBusy;
- $("v2FindMyWork").hidden=!account||discoveryCursor<1n;
- $("v2FindMyWork").disabled=discoveryBusy;
+ $("v2FindMyWork").hidden=true;
 }
-async function scanNextDiscoveryPage(epoch){
- if(discoveryCursor<1n)return;
- const ids=[];
- for(let j=0;j<DISCOVERY_PAGE_SIZE&&discoveryCursor>0n;j++,discoveryCursor--)ids.push(String(discoveryCursor));
- const results=await readOrderPage(ids);
- if(epoch!==discoveryEpoch)return;
- for(const item of results)discoveryCache.set(item.id,item);
- renderDiscovery();
- if(account&&!order){
-  const proposed=results.find(x=>x.contributor.toLowerCase()===account&&x.status==="PROPOSED");
-  if(proposed){$("milestoneId").value=proposed.id;void load();}
- }
-}
-async function discoverRecentOrders(reset=true,allHistory=false){
+async function discoverRecentOrders(reset=true){
  if(discoveryBusy)return;
- const epoch=++discoveryEpoch,button=$("v2RefreshRecent");
- discoveryBusy=true;button.disabled=true;
- $("v2LoadOlder").disabled=true;$("v2FindMyWork").disabled=true;
+ const epoch=++discoveryEpoch;
+ const button=$("v2RefreshRecent");discoveryBusy=true;button.disabled=true;
  try{
-  if(reset){
-   discoveryCache.clear();
-   const raw=await readClient.readContract({address:V2_CONTRACT,functionName:"next_order",args:[],transactionHashVariant:final});
-   discoveryNext=BigInt(String(raw));if(discoveryNext<1n)throw Error("Invalid next_order");
-   discoveryCursor=discoveryNext-1n;
+  if(reset){workOffset=0;workMore=false;discoveredOrders.clear();seenByRole.owner.clear();seenByRole.contributor.clear();}
+  const idSet=new Set();
+  if(account){
+   const [own,assigned]=await Promise.all([indexedPage("owner",account,workOffset),indexedPage("contributor",account,workOffset)]);
+   workMore=own.has_more||assigned.has_more;
+   for(const id of own.order_ids){if(!/^[1-9][0-9]*$/.test(String(id)))throw Error("Invalid indexed owner ID");idSet.add(String(id));seenByRole.owner.add(String(id));}
+   for(const id of assigned.order_ids){if(!/^[1-9][0-9]*$/.test(String(id)))throw Error("Invalid indexed contributor ID");idSet.add(String(id));seenByRole.contributor.add(String(id));}
+   workOffset+=PAGE_SIZE;
+   $("v2DiscoveryProgress").textContent="Indexed My Work · Owner "+own.total+" · Contributor "+assigned.total+" · "+(workMore?"More pages available":"All pages loaded");
+  }else{
+   const next=BigInt(String(await readClient.readContract({address:V2_CONTRACT,functionName:"next_order",args:[],transactionHashVariant:final})));
+   for(let i=next-1n;i>=1n&&i>=next-21n;i--)idSet.add(String(i));
+   $("v2DiscoveryProgress").textContent="Public recent milestones · Connect wallet to see indexed My Work";
+   workMore=false;
   }
-  do{
-   await scanNextDiscoveryPage(epoch);
-   const examined=Number(discoveryNext-1n-discoveryCursor);
-   $("v2DiscoveryProgress").textContent="Scanned "+examined+" of "+String(discoveryNext-1n)+" finalized order IDs · "+discoveryCache.size+" records read"+(discoveryCursor===0n?" · History scan complete":"");
-   // Yield control to the browser between pages; don't fan out all RPCs at once.
-  }while(allHistory&&discoveryCursor>0n&&epoch===discoveryEpoch);
- }catch(e){$("v2DiscoveryProgress").textContent="Order discovery paused: "+String(e.message||e)+". Refresh or continue scanning.";}
+  const ids=[...idSet];
+  for(let i=0;i<ids.length;i+=4){
+   const batch=ids.slice(i,i+4);
+   const results=await Promise.allSettled(batch.map(id=>read("get_order",[id])));
+   for(let j=0;j<batch.length;j++){
+    const v=results[j];if(v.status!=="fulfilled"||!v.value)throw Error("Could not verify indexed order "+batch[j]);
+    validateMilestoneSnapshot(v.value,batch[j]);
+    if(account&&v.value.owner.toLowerCase()!==account&&v.value.contributor.toLowerCase()!==account)
+      throw Error("Wallet index returned an unrelated order");
+    discoveredOrders.set(batch[j],v.value);
+   }
+  }
+  if(epoch!==discoveryEpoch)return;
+  renderDiscovery();
+  if(account&&!order){
+   const proposed=[...discoveredOrders.values()].find(x=>x.contributor.toLowerCase()===account&&x.status==="PROPOSED");
+   if(proposed){$("milestoneId").value=proposed.id;void load();}
+  }
+ }catch(e){$("v2DiscoveryProgress").textContent="Index read failed: "+String(e.message||e)+". No unverified entries shown.";renderDiscovery();}
  finally{discoveryBusy=false;button.disabled=false;renderDiscovery();}
 }
-$("v2RefreshRecent").addEventListener("click",()=>void discoverRecentOrders(true,false));
-$("v2LoadOlder").addEventListener("click",()=>void discoverRecentOrders(false,false));
-$("v2FindMyWork").addEventListener("click",()=>void discoverRecentOrders(false,true));
+$("v2RefreshRecent").addEventListener("click",()=>void discoverRecentOrders(true));
+$("v2LoadOlder").addEventListener("click",()=>void discoverRecentOrders(false));
+$("v2FindMyWork").addEventListener("click",()=>void discoverRecentOrders(true));
 async function findCreatedOrder(title,owner){
  try{
   const val=await readClient.readContract({address:V2_CONTRACT,functionName:"next_order",args:[],transactionHashVariant:final});
@@ -189,7 +183,7 @@ async function findCreatedOrder(title,owner){
   const id=String(n-1n),rec=await read("get_order",[id]);
   if(!rec||rec.title!==title||rec.owner.toLowerCase()!==owner.toLowerCase())return null;
   validateMilestoneSnapshot(rec,id);
-  $("milestoneId").value=id;await load();void discoverRecentOrders(true,false);return id;
+  $("milestoneId").value=id;await load();void discoverRecentOrders(true);return id;
  }catch{return null;}
 }
 const node=(tag,value,className)=>{const n=document.createElement(tag); if(value!==undefined)n.textContent=String(value); if(className)n.className=className;return n;};
@@ -288,7 +282,7 @@ async function connect(silent=false){if(!provider()){if(silent)return; $("milest
  if(!/^0x[0-9a-f]{40}$/.test(account))throw Error("No usable wallet account.");
  const client=createClient({chain:studionet,account,provider:provider()});
  gateway=createWorkflowGateway({client,contractAddress:V2_CONTRACT,finalVariant:final,isSuccessful:tx=>inspectTransaction(tx).kind==="success"});
- $("milestoneWallet").textContent="● Connected · "+account.slice(0,8)+"…"+account.slice(-6)+" · Studionet 61999";$("milestoneWallet").title=account;$("milestoneConnect").textContent="✓ Wallet connected · Switch account";$("milestoneConnect").classList.add("v2-wallet-connected");void discoverRecentOrders(true,false);
+ $("milestoneWallet").textContent="● Connected · "+account.slice(0,8)+"…"+account.slice(-6)+" · Studionet 61999";$("milestoneWallet").title=account;$("milestoneConnect").textContent="✓ Wallet connected · Switch account";$("milestoneConnect").classList.add("v2-wallet-connected");void discoverRecentOrders(true);
  }catch(e){if(silent)return;account="";gateway=null;$("milestoneConnect").textContent="Connect MetaMask";$("milestoneConnect").classList.remove("v2-wallet-connected");$("milestoneWallet").textContent=String(e.message||e);}
  renderActions();
 }
@@ -462,6 +456,6 @@ $("v2CreateForm").addEventListener("submit",async e=>{
 
 if(unresolved){let saved="";try{saved=localStorage.getItem(PENDING_KEY)||"";}catch{}showProgress("Previous transaction needs review","A previous write may still be pending. Verify the GenVM result before signing again.",saved,true);}
 $("v2LiveClose").addEventListener("click",()=>{$("v2LiveStatus").hidden=true;});
-void discoverRecentOrders(true,false);
+void discoverRecentOrders(true);
 void connect(true); // Restore an already authorized wallet without prompting or signing.
 const requested=new URLSearchParams(location.search).get("order");if(requested&&/^[1-9][0-9]*$/.test(requested)){$("milestoneId").value=requested;void load();}
