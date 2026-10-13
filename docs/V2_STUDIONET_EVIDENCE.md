@@ -47,7 +47,7 @@ The state transition and receipt demonstrate **documentation conformance to a bo
 - [x] Positive manual Studio flow, including release claim and final-state readback
 - [x] Scoped immutable reference and submission digests observed on-chain
 - [x] Quote-backed receipt with three satisfied criteria
-- [ ] Direct Studionet negative test: unrelated signer claiming release
+- [x] Direct Studionet negative test: Owner (non-Contributor) claiming release — FINALIZED / GenVM ERROR / Rollback / ONLY_CONTRIBUTOR
 - [x] Direct Studionet negative test: duplicate release claim — FINALIZED / GenVM ERROR / Rollback / RELEASE_ALREADY_CLAIMED
 - [ ] Direct Studionet negative test: rejected/insufficient evidence cannot claim
 - [ ] Independently capture full write hashes and verify GenVM execution status in Explorer
@@ -70,3 +70,18 @@ Source: [GenLayer Explorer transaction](https://explorer-studio.genlayer.com/tx/
 - **Contract error message: `RELEASE_ALREADY_CLAIMED`**
 
 **Interpretation:** Consensus accepted/finalized the transaction, but the contract **rejected its execution and rolled back**. This is a successful *negative test*, not a successful second claim. The previously observed release grant had already been recorded; the duplicate attempt did not issue another authorization. A separate post-attempt finalized-state read may additionally confirm that the grant remains unchanged.
+
+## Live adversarial test: unauthorized Owner claim blocked
+
+Source: [GenLayer Explorer transaction](https://explorer-studio.genlayer.com/tx/0x58c988fd241e854f198c78f6cbc5b33b36b475bb8488b045506220dd8aa09619), transaction details provided by the tester, October 13, 2026 at 09:50:53 local time.
+
+- Transaction: `0x58c988fd241e854f198c78f6cbc5b33b36b475bb8488b045506220dd8aa09619`
+- From: `0x4c7cb73ac8f8999af21cfc9ff4cf2333a9508dcb` (**Owner, not the Contributor**)
+- To: `0xD67245387dF5448671235CE00c8969664b5aF8bd`
+- Method: `claim_milestone_release`; `order_id=1`
+- Value: `0 GEN`; execution mode: `Normal`; initial validators: 5
+- Transaction: `FINALIZED`; consensus: `Accepted`
+- **GenVM execution: `ERROR` / `Rollback`**
+- **Error: `ONLY_CONTRIBUTOR`**
+
+**Interpretation:** The Owner's transaction was finalized by consensus, but contract execution rolled back because the caller was not the assigned Contributor. This validates the role authorization guard on the live deployment for this tested non-Contributor address. It is not evidence of a successfully issued release, nor a proof that every other address was tested.
