@@ -68,7 +68,7 @@ async function resumePending(hash){
   $("milestoneTx").textContent="Saved transaction "+hash+" · "+verdict.status+".";
   if(verdict.status==="FINALIZED_SUCCESS"){
    unresolved=false;try{localStorage.removeItem(PENDING_KEY);}catch{}
-   await load();
+   busy=false;await load();
   }
  }catch(e){$("milestoneTx").textContent="Tracking unresolved: "+String(e.message||e);}
  finally{busy=false;renderActions();}
