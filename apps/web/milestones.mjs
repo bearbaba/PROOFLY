@@ -42,6 +42,38 @@ function showProgress(title,details,hash="",attention=false){
  const links=$("v2LiveLinks");links.replaceChildren();
  if(/^0x[a-fA-F0-9]{64}$/.test(hash)){const a=node("a","View transaction in Explorer ↗");a.href="https://explorer-studio.genlayer.com/tx/"+hash;a.target="_blank";a.rel="noopener noreferrer";links.append(a);}
 }
+async function recoverCreatedOrder(pending){
+ if(pending?.method!=="create_order"||pending.account?.toLowerCase()!==account||!pending.expectedOrderId)return null;
+ try{
+  const rec=await read("get_order",[pending.expectedOrderId]);
+  if(!rec||rec.id!==pending.expectedOrderId||rec.title!==pending.title||
+     rec.owner.toLowerCase()!==account||rec.contributor.toLowerCase()!==pending.contributor?.toLowerCase()||
+     rec.spec.reference_url!==pending.referenceUrl||rec.spec.reference_sha256!==pending.referenceSha||
+     JSON.stringify(rec.spec.criteria)!==JSON.stringify(pending.criteria))return null;
+  validateMilestoneSnapshot(rec,pending.expectedOrderId);
+  $("milestoneId").value=rec.id;
+  clearPending();
+  showProgress("Created milestone verified","Matching on-chain order #"+rec.id+" was read from finalized state; no second signature was sent.",pending.hash);
+  $("milestoneTx").textContent="Created Work Order #"+rec.id+" confirmed by finalized state.";
+  await load();
+  return rec.id;
+ }catch{return null;}
+}
+async function recheckSavedCreate(){
+ const pending=getPending();
+ if(!pending||pending.method!=="create_order"||!gateway||!account||busy)return;
+ busy=true;renderActions();
+ try{
+  const verdict=await gateway.resumeFinalization(pending.hash);
+  busy=false;
+  const id=await recoverCreatedOrder(pending);
+  if(!id){
+   showProgress("Transaction still needs review","Receipt: "+verdict.status+". No exact matching finalized order found. Inspect Explorer; do not sign again.",pending.hash,true);
+   $("milestoneTx").textContent="Cannot safely reconcile saved create_order "+pending.hash+".";
+  }
+ }catch(e){showProgress("Recovery inconclusive",String(e.message||e),pending.hash,true);}
+ finally{busy=false;renderActions();}
+}
 async function findCreatedOrder(title,owner){
  try{
   const val=await readClient.readContract({address:V2_CONTRACT,functionName:"next_order",args:[],transactionHashVariant:final});
@@ -73,7 +105,7 @@ function renderGrant(){const box=$("milestoneRelease");box.replaceChildren();if(
  box.append(node("p","Not a payment, token transfer, or an off-chain unlock.","milestone-small"));
 }
 function field(box,title,id,placeholder){const w=node("label",undefined,"field");w.append(node("span",title));const input=node("input");input.id=id;input.placeholder=placeholder;input.autocomplete="off";w.append(input);box.append(w);return input;}
-function renderActions(){const box=$("milestoneActions");box.replaceChildren();if(!order){box.append(node("p",unresolved?"Previous write unresolved. Check the transaction status at the top.":"Load a work order to see eligible actions.","milestone-note"));return;}
+function renderActions(){const box=$("milestoneActions");box.replaceChildren();if(!order){box.append(node("p",unresolved?"Previous write unresolved. Check the transaction status at the top.":"Load a work order to see eligible actions.","milestone-note"));const pending=getPending();if(pending?.method==="create_order"&&pending?.expectedOrderId&&gateway&&account&&!busy){const b=node("button","Check saved milestone creation again","secondary");b.type="button";b.addEventListener("click",()=>void recheckSavedCreate());box.append(b);}return;}
  const suggestion=nextMilestoneAction(order,account,Boolean(grant));
  if(!account){box.append(node("p","Connect the assigned MetaMask account to prepare a write. Anyone can inspect finalized state.","milestone-note"));return;}
  if(unresolved){
@@ -283,6 +315,9 @@ $("v2CreateForm").addEventListener("submit",async e=>{
  if(digest!==checkedReference.sha){$("milestoneTx").textContent="Reference bytes changed since the last verification. Abort.";return;}
  const now=Math.floor(Date.now()/1000);
  const args=[addr,title,JSON.stringify(rows),url,digest,now+submitDays*86400,now+revisionDays*86400];
+ let expectedOrderId;
+ try{expectedOrderId=String(await readClient.readContract({address:V2_CONTRACT,functionName:"next_order",args:[],transactionHashVariant:final}));if(!/^[1-9][0-9]*$/.test(expectedOrderId))throw Error("bad id");}catch{$("milestoneTx").textContent="Could not capture the next on-chain order ID. No transaction sent; retry after network recovers.";return;}
+ const createContext={orderId:null,expectedOrderId,title,contributor:addr.toLowerCase(),referenceUrl:url,referenceSha:digest,criteria:rows};
  if(!window.confirm("PROOFLY V2 CREATE ORDER\\nContract: "+V2_CONTRACT+"\\nOwner: "+account+"\\nContributor: "+addr+"\\nReference SHA-256: "+digest+"\\nNo escrow/payment. Confirm fees in MetaMask before signing."))return;
  busy=true;$("v2CreateButton").disabled=true;
  showProgress("Approve agreement in MetaMask","Review the wallet, contract and fee. Do not submit another request.", "",true);
@@ -290,20 +325,22 @@ $("v2CreateForm").addEventListener("submit",async e=>{
  let submittedHash="";
  try{
   const tx=await gateway.submit("create_order",args,hash=>{
-   submittedHash=hash;savePending(hash,"create_order",{orderId:null,title});
+   submittedHash=hash;savePending(hash,"create_order",createContext);
    showProgress("Milestone transaction submitted","Waiting for finalized GenVM execution. Do not sign again.",hash,true);
   },async()=>true);
-  submittedHash=tx.txId;savePending(tx.txId,"create_order",{orderId:null,title});
+  submittedHash=tx.txId;savePending(tx.txId,"create_order",createContext);
   showProgress("Milestone creation pending","Transaction submitted. Checking finality and execution.",tx.txId,true);
   const status=await gateway.resumeFinalization(tx.txId);
   if(status.status==="FINALIZED_SUCCESS"){
-   unresolved=false;try{localStorage.removeItem(PENDING_KEY);}catch{}
+   clearPending();
    showProgress("Agreement created","GenVM execution succeeded. Finding the new Work Order.",tx.txId);
    busy=false;
    const id=await findCreatedOrder(title,account);
    showProgress("Agreement created",id?"Work Order #"+id+" loaded. Contributor can now accept the agreement.":"Contract execution succeeded; Work Order number could not be matched automatically. Inspect next_order in Studio.",tx.txId);
    $("milestoneTx").textContent=id?"Work Order #"+id+" created and loaded.":"Created successfully; use Studio to identify Work Order.";
   }else{
+   busy=false;
+   if(await recoverCreatedOrder(getPending()))return;
    showProgress("Execution not confirmed","Status: "+status.status+". Inspect GenVM execution in Explorer before further writes.",tx.txId,true);
    $("milestoneTx").textContent="Create TX "+tx.txId+" · "+status.status+". Do not resubmit.";
   }
