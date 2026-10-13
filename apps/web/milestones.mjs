@@ -123,10 +123,11 @@ async function resumePending(hash){
  try{
   const verdict=await gateway.resumeFinalization(hash);
   $("milestoneTx").textContent="Saved transaction "+hash+" · "+verdict.status+".";
-  if(verdict.status==="FINALIZED_SUCCESS"){
-   clearPending();
+  if(verdict.status==="FINALIZED_SUCCESS")clearPending();
+  if(verdict.status!=="FINALIZED_EXECUTION_FAILED"){
    busy=false;await load();
-  }
+   if(unresolved)showProgress("Transaction still unverified","SDK receipt was inconclusive and no matching finalized contract effect was found. Check the exact hash in Explorer; do not resend.",hash,true);
+  }else showProgress("GenVM execution failed","The transaction finalized with an explicit execution error. Inspect the exact transaction error before proceeding.",hash,true);
  }catch(e){$("milestoneTx").textContent="Tracking unresolved: "+String(e.message||e);}
  finally{busy=false;renderActions();}
 }
