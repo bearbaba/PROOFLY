@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "test": "node --test *.test.mjs",
-    "build": "node --check app.mjs && node --check model.mjs && node --check receipt.mjs && node --check receipt-model.mjs && node --check studio-plan.mjs && node --check sdk-workflow.mjs && node --check live-model.mjs && node --check live-app.mjs && node --check tx-verdict.mjs && node --check order-handoff.mjs && node --check workboard.mjs && node --check tx-progress.mjs && node --check milestones-model.mjs && node --check milestones.mjs",
+    "build": "node --check app.mjs && node --check model.mjs && node --check receipt.mjs && node --check receipt-model.mjs && node --check studio-plan.mjs && node --check sdk-workflow.mjs && node --check live-model.mjs && node --check live-app.mjs && node --check tx-verdict.mjs && node --check order-handoff.mjs && node --check workboard.mjs && node --check tx-progress.mjs && node --check milestones-model.mjs && node --check pending-reconcile.mjs && node --check milestones.mjs",
     "bundle": "esbuild live-app.mjs --bundle --format=iife --platform=browser --target=es2022 --outfile=live.bundle.js && esbuild milestones.mjs --bundle --format=iife --platform=browser --target=es2022 --outfile=milestones.bundle.js",
     "test:browser": "playwright test"
   },
