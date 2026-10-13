@@ -58,6 +58,21 @@ function renderActions(){const box=$("milestoneActions");box.replaceChildren();i
  const pending=(()=>{try{return localStorage.getItem(PENDING_KEY);}catch{return null;}})();
  box.append(node("p","An earlier write may still be pending or its execution is unresolved. "+(pending?"TX: "+pending+". ":"")+"Track it in Studio; do not resend.","milestone-note milestone-error"));
  if(pending&&gateway&&!busy){const check=node("button","Check saved transaction again","secondary");check.type="button";check.addEventListener("click",()=>void resumePending(pending));box.append(check);}
+ if(pending&&/^0x[a-fA-F0-9]{64}$/.test(pending)){
+  const link=node("a","Inspect saved transaction in Explorer ↗","milestone-link");
+  link.href="https://explorer-studio.genlayer.com/tx/"+pending;link.target="_blank";link.rel="noopener noreferrer";box.append(link);
+  if(order.status==="ACTIVE"&&account===order.contributor.toLowerCase()){
+   const resume=node("button","I verified accept_order SUCCESS — unlock next step","secondary");
+   resume.type="button";
+   resume.addEventListener("click",()=>{
+    if(!window.confirm("Only continue if this exact saved hash was FINALIZED with GenVM Execution SUCCESS for accept_order(2) by your Contributor wallet, and the on-chain Work Order is ACTIVE. Have you checked the Explorer execution and address?"))return;
+    unresolved=false;try{localStorage.removeItem(PENDING_KEY);}catch{}
+    showProgress("Acceptance confirmed by user","Saved pending tracker cleared after explicit Explorer verification and ACTIVE finalized-state read. No transaction was resent.",pending);
+    $("milestoneTx").textContent="Explorer success and ACTIVE state confirmed. You can submit evidence once.";
+    renderActions();
+   });box.append(resume);
+  }
+ }
  return;}
  if(!suggestion){box.append(node("p",grant?"Release authorization already recorded. No further claim is allowed.":"No action is available for this account and order state.","milestone-note"));return;}
  const b=node("button",suggestion.label,"primary");b.type="button";b.disabled=busy;
