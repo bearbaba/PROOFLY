@@ -67,3 +67,11 @@ test("Preview homepage is V2 and never renders legacy contract",async({page})=>{
  await expect(page.getByRole("link",{name:/Legacy V1/})).toHaveAttribute("href","https://proofly-lovat.vercel.app/");
  await expect(page.locator("#connectWallet")).toHaveCount(0);
 });
+
+test("V2 shows discoverable milestone list with safe read-only refresh",async({page})=>{
+ await page.goto("/",{waitUntil:"domcontentloaded"});
+ await expect(page.getByText("Recent milestones",{exact:true})).toBeVisible();
+ await expect(page.getByRole("button",{name:/Refresh list/})).toBeVisible();
+ await expect(page.locator("#v2RecentOrders")).toBeAttached();
+ await expect(page.locator("#milestoneId")).toHaveValue("1");
+});
