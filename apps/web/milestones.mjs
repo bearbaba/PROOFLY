@@ -277,7 +277,7 @@ async function load(){if(busy)return;const scopedWalletEpoch=walletEpoch;const i
   setTimeout(()=>{if(!busy&&!unresolved)void discoverRecentOrders(true);},0);
  }
  const url=new URL(location.href);url.searchParams.set("order",id);history.replaceState(null,"",url);message("Finalized-state snapshot received from GenLayer. Transaction execution history is not independently authenticated by this read.");}
- catch(e){order=null;receipt=null;grant=null;renderOrder();renderReceipt();renderGrant();message("Unable to verify this snapshot: "+String(e.message||e),true);}
+ catch(e){if(scopedWalletEpoch!==walletEpoch)return;order=null;receipt=null;grant=null;renderOrder();renderReceipt();renderGrant();message("Unable to verify this snapshot: "+String(e.message||e),true);}
  finally{busy=false;$("milestoneLoad").disabled=false;renderActions();}
 }
 async function resumePending(hash){
