@@ -43,6 +43,7 @@
 <label class="field">SUBMISSION DEADLINE (DAYS FROM NOW)<input id="v2SubmitDays" type="number" min="1" max="59" value="2" required></label>
 <label class="field">REVISION DEADLINE (DAYS FROM NOW)<input id="v2RevisionDays" type="number" min="2" max="60" value="7" required></label>
 <button type="submit" class="primary" id="v2CreateButton">Review and sign create_order →</button>
+<p id="v2CreateStatus" role="status" aria-live="polite" class="milestone-note">Ready to prepare a transaction. Connect Owner wallet, confirm GenLayer Studionet, then Fetch &amp; hash the reference before signing. No signature is requested until you click the Create button.</p>
 <p class="hint">No escrow or token payment. Do not submit an agreement containing secrets or personal data. The latest checked hash is recomputed before signing.</p>
 </form></details></article>
 <article class="panel milestone-panel"><div class="kicker">TRUST BOUNDARY</div><h3>What this proves</h3><p class="milestone-small">The contract limits each milestone to an accepted, immutable GitHub reference, a hashed delivery, a GenLayer receipt, and one contributor-bound release authorization. It does not authenticate arbitrary off-chain statements or execute external payments.</p><p class="milestone-small">Do not share wallet seed phrases. Confirm contract address, transaction fees, and MetaMask account for every write.</p></article></aside>
