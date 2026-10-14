@@ -16,7 +16,10 @@ const PENDING_KEY="proofly.indexed.61999.b8305f15336a79761157b86e214d3d3deadfc1c
 let order=null, receipt=null, grant=null, account="", gateway=null, busy=false, unresolved=false;
 let didCheckInitialSelection=false;
 let walletEpoch=0;
+const MANUAL_DISCONNECT_KEY="proofly.indexed.61999.b8305f15336a79761157b86e214d3d3deadfc1ce.wallet-disconnected.v1";
+let manuallyDisconnected=false;
 try{unresolved=Boolean(localStorage.getItem(PENDING_KEY));}catch{unresolved=true;}
+try{manuallyDisconnected=localStorage.getItem(MANUAL_DISCONNECT_KEY)==="1";}catch{}
 
 const provider=()=>window.ethereum;
 const PENDING_META_KEY=PENDING_KEY+".meta";
@@ -342,15 +345,68 @@ async function resumePending(hash){
  }catch(e){$("milestoneTx").textContent="Tracking unresolved: "+String(e.message||e);}
  finally{busy=false;renderActions();}
 }
-async function connect(silent=false){if(!provider()){if(silent)return; $("milestoneWallet").textContent="MetaMask was not found. Install or unlock a trusted wallet.";return;}
- try{const accounts=await provider().request({method:silent?"eth_accounts":"eth_requestAccounts"});if(silent&&!accounts.length)return;
- await ensureStudionet(provider(), !silent);
- account=String(accounts[0]||"").toLowerCase();
- if(!/^0x[0-9a-f]{40}$/.test(account))throw Error("No usable wallet account.");
- const client=createClient({chain:studionet,account,provider:provider()});
- gateway=createWorkflowGateway({client,contractAddress:V2_CONTRACT,finalVariant:final,isSuccessful:tx=>inspectTransaction(tx).kind==="success"});
- $("milestoneWallet").textContent="● Connected · "+account.slice(0,8)+"…"+account.slice(-6)+" · Studionet 61999";$("milestoneWallet").title=account;$("milestoneConnect").textContent="✓ Wallet connected · Switch account";$("milestoneConnect").classList.add("v2-wallet-connected");void discoverRecentOrders(true);
- }catch(e){if(silent)return;account="";gateway=null;$("milestoneConnect").textContent="Connect MetaMask";$("milestoneConnect").classList.remove("v2-wallet-connected");$("milestoneWallet").textContent=explainWalletError(e);}
+function renderWalletControls(){
+ const connected=Boolean(account&&gateway);
+ $("milestoneConnect").textContent=connected?"Reconnect / Switch Wallet":"Connect Wallet";
+ $("milestoneConnect").classList.toggle("v2-wallet-connected",connected);
+ $("milestoneDisconnect").hidden=!connected;
+}
+function invalidateWalletContext(status,refreshPublic=true){
+ ++walletEpoch;++discoveryEpoch;discoveryBusy=false;
+ $("v2RefreshRecent").disabled=false;
+ account="";gateway=null;
+ // Publicly finalized order, receipt and release remain visible after disconnect.
+ // Invalidate wallet-specific index cards and signing permissions only.
+ discoveredOrders.clear();seenByRole.owner.clear();seenByRole.contributor.clear();
+ workOffset=0;workMore=false;
+ $("milestoneWallet").textContent=status;
+ $("milestoneWallet").title="";
+ renderWalletControls();renderDiscovery();renderActions();
+ if(refreshPublic)void discoverRecentOrders(true);
+}
+function disconnectWallet(){
+ manuallyDisconnected=true;
+ try{localStorage.setItem(MANUAL_DISCONNECT_KEY,"1");}catch{}
+ invalidateWalletContext("Disconnected from PROOFLY. Public reads stay available. To revoke MetaMask site permission, use MetaMask settings.");
+}
+async function connect(silent=false){
+ if(silent&&manuallyDisconnected)return;
+ if(!provider()){
+  if(!silent)$("milestoneWallet").textContent="MetaMask was not found. Install or unlock a trusted wallet.";
+  return;
+ }
+ const startEpoch=walletEpoch;
+ try{
+  const accounts=await provider().request({method:silent?"eth_accounts":"eth_requestAccounts"});
+  if(silent&&!accounts.length)return;
+  await ensureStudionet(provider(),!silent);
+  const nextAccount=String(accounts[0]||"").toLowerCase();
+  if(!/^0x[0-9a-f]{40}$/.test(nextAccount))throw Error("No usable wallet account.");
+  const client=createClient({chain:studionet,account:nextAccount,provider:provider()});
+  const nextGateway=createWorkflowGateway({client,contractAddress:V2_CONTRACT,finalVariant:final,isSuccessful:tx=>inspectTransaction(tx).kind==="success"});
+  // Ignore a stale connection response if a disconnect/account change occurred.
+  if(startEpoch!==walletEpoch||(silent&&manuallyDisconnected))return;
+  if(account&&account!==nextAccount){
+   ++walletEpoch;++discoveryEpoch;discoveryBusy=false;
+   $("v2RefreshRecent").disabled=false;
+   discoveredOrders.clear();seenByRole.owner.clear();seenByRole.contributor.clear();
+   workOffset=0;workMore=false;
+  }
+  account=nextAccount;gateway=nextGateway;
+  if(!silent){
+   manuallyDisconnected=false;
+   try{localStorage.removeItem(MANUAL_DISCONNECT_KEY);}catch{}
+  }
+  $("milestoneWallet").textContent="● Connected · "+account.slice(0,8)+"…"+account.slice(-6)+" · Studionet 61999";
+  $("milestoneWallet").title=account;
+  renderWalletControls();
+  void discoverRecentOrders(true);
+ }catch(error){
+  if(silent)return;
+  // Rejected reconnect must not silently discard an already connected wallet.
+  if(!account){gateway=null;renderWalletControls();}
+  $("milestoneWallet").textContent=explainWalletError(error);
+ }
  renderActions();
 }
 async function verifyPublicArtifact(url,digest){
@@ -406,6 +462,7 @@ async function submit(method,artifactUrl,artifactHash){if(busy||unresolved||!gat
 }
 $("milestoneLookup").addEventListener("submit",e=>{e.preventDefault();void load();});
 $("milestoneConnect").addEventListener("click",()=>void connect());
+$("milestoneDisconnect").addEventListener("click",disconnectWallet);
 let checkedReference=null;
 const pinned=/^https:\/\/raw\.githubusercontent\.com\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+\/[a-f0-9]{40}\/[A-Za-z0-9_./-]+\.txt$/;
 async function fetchAndHashReference(url){
@@ -560,20 +617,18 @@ const recoveryTicker=setInterval(async()=>{
  finally{recoveryInFlight=false;}
 },12000);
 window.addEventListener("pagehide",()=>clearInterval(recoveryTicker));
+renderWalletControls();
 void discoverRecentOrders(true);
-void connect(true); // Restore an already authorized wallet without prompting or signing.
+if(!manuallyDisconnected)void connect(true); // Restore only if the user did not explicitly disconnect.
 // MetaMask account/network events must invalidate stale permissions and My Work.
 if(provider()?.on){
  const refreshWallet=()=>{
-  ++walletEpoch;++discoveryEpoch;discoveryBusy=false;
-  $("v2RefreshRecent").disabled=false;
-  account="";gateway=null;order=null;receipt=null;grant=null;
-  discoveredOrders.clear();seenByRole.owner.clear();seenByRole.contributor.clear();workOffset=0;workMore=false;
-  $("milestoneWallet").textContent="Wallet changed. Checking connected account…";
-  $("milestoneConnect").textContent="Connect MetaMask";
-  $("milestoneConnect").classList.remove("v2-wallet-connected");
-  renderOrder();renderReceipt();renderGrant();renderDiscovery();renderActions();
-  void connect(true);
+  // Disconnect is a deliberate local opt-out; provider events cannot undo it.
+  if(manuallyDisconnected)return;
+  invalidateWalletContext("Wallet changed. Rechecking account and network…",false);
+  void connect(true).then(()=>{
+   if(!account)void discoverRecentOrders(true);
+  });
  };
  provider().on("accountsChanged",refreshWallet);
  provider().on("chainChanged",refreshWallet);
