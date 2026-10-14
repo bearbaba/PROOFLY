@@ -1,6 +1,6 @@
 import {test,expect} from "@playwright/test";
 
-test("V2 workspace is explicit about contract and no payments",async({page})=>{
+test("Indexed workspace is explicit about contract and no payments",async({page})=>{
  await page.goto("/milestones.html");
  await expect(page).toHaveTitle(/Indexed Milestone Workspace/);
  await expect(page.getByRole("heading",{name:"Verified work. Provable release."})).toBeVisible();
@@ -11,7 +11,7 @@ test("V2 workspace is explicit about contract and no payments",async({page})=>{
  await expect(page.getByRole("heading",{name:"Milestone release"})).toBeVisible();
 });
 
-test("No V2 write offered until public read and assigned wallet",async({page})=>{
+test("No write offered until public read and assigned wallet",async({page})=>{
  await page.goto("/milestones.html");
  await expect(page.getByText(/Load a work order to see (the next )?eligible action/)).toBeVisible();
  await expect(page.getByText(/Awaiting order selection/)).toHaveCount(2);
@@ -59,7 +59,7 @@ test("V2 landing page exposes the real create workflow and positive demo without
  await expect(page.locator("#milestoneTx")).toContainText("no wallet request or on-chain write");
 });
 
-test("Preview homepage is V2 and never renders legacy contract",async({page})=>{
+test("Preview homepage is indexed and never renders legacy contract",async({page})=>{
  await page.goto("/",{waitUntil:"domcontentloaded"});
  await expect(page).toHaveTitle(/Indexed Milestone Workspace/);
  await expect(page.locator("#milestoneId")).toBeVisible();
