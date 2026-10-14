@@ -4,6 +4,7 @@ import {studionet} from "genlayer-js/chains";
 import {TransactionHashVariant} from "genlayer-js/types";
 import {createWorkflowGateway} from "./sdk-workflow.mjs";
 import {inspectTransaction} from "./tx-verdict.mjs";
+import {addTx, readTxs, setTxStatus, txLabel} from "./tx-history.mjs";
 import {ensureStudionet, explainWalletError, rejectedBeforeBroadcast} from "./wallet-connect.mjs";
 import {pendingConfirmedByState, verifiedCreatedOrderNotice} from "./pending-reconcile.mjs";
 import {validateMilestoneSnapshot, validateRelease, nextMilestoneAction, V2_CONTRACT} from "./milestones-model.mjs";
@@ -26,24 +27,58 @@ function getPending(){
 }
 function savePending(hash,method,context={}){
  unresolved=true;
- try{localStorage.setItem(PENDING_KEY,hash);localStorage.setItem(PENDING_META_KEY,JSON.stringify({method,account,orderId:context.orderId||order?.id||null,submittedAt:Date.now(),...context}));}catch{}
+ const submittedAt=Date.now();
+ try{localStorage.setItem(PENDING_KEY,hash);localStorage.setItem(PENDING_META_KEY,JSON.stringify({method,account,orderId:context.orderId||order?.id||null,submittedAt,...context}));}catch{}
+ const storage=txStorage();
+ if(storage)addTx(storage,{hash,method,account,orderId:context.orderId||context.expectedOrderId||order?.id||null,submittedAt});
+ renderTxHistory();
 }
-function clearPending(){unresolved=false;try{localStorage.removeItem(PENDING_KEY);localStorage.removeItem(PENDING_META_KEY);localStorage.removeItem(PENDING_KEY+".method");}catch{}}
+function clearPending(status="ONCHAIN_VERIFIED",orderId=null){
+ const pending=getPending();
+ if(pending?.hash)updateTxState(pending.hash,status,orderId||pending.orderId||pending.expectedOrderId||null);
+ unresolved=false;
+ try{localStorage.removeItem(PENDING_KEY);localStorage.removeItem(PENDING_META_KEY);localStorage.removeItem(PENDING_KEY+".method");}catch{}
+}
 function reconcilePending(){
  const pending=getPending();
  if(!pending||!order||!account)return;
  if(pendingConfirmedByState(pending,order,account,grant)){
   clearPending();
   showProgress("On-chain state confirmed","The saved transaction effect is present in the finalized order. Pending tracking cleared without another signature.",pending.hash);
-  $("milestoneTx").textContent="Saved "+pending.method+" effect verified from finalized contract state. No resubmission.";
+  $("milestoneTx").textContent="Confirmed on-chain · "+pending.method.replaceAll("_"," ")+". Continue with the next available action.";
  }
 }
 
+
+function txStorage(){try{return window.localStorage;}catch{return null;}}
+function updateTxState(hash,status,orderId=null){
+ const storage=txStorage();if(storage)setTxStatus(storage,hash,status,orderId);
+ renderTxHistory();
+}
+function renderTxHistory(){
+ const list=$("txHistoryList"),count=$("txHistoryCount");if(!list||!count)return;
+ const storage=txStorage(),txs=storage?readTxs(storage):[];
+ count.textContent=String(txs.length);list.replaceChildren();
+ if(!txs.length){list.append(node("p","No transactions recorded by this browser yet.","milestone-small"));return;}
+ for(const tx of txs){
+  const item=node("div",undefined,"proofly-tx-entry");
+  const label=tx.method.replaceAll("_"," ");
+  item.append(node("strong",label+" · "+(tx.orderId?"Order #"+tx.orderId:"New work order")),
+    node("small",txLabel(tx.status)),
+    node("small",tx.account.slice(0,9)+"…"+tx.account.slice(-6)+" · "+new Date(tx.submittedAt).toLocaleString()));
+  const link=node("a",tx.hash.slice(0,12)+"…"+tx.hash.slice(-6)+" ↗");
+  link.href="https://explorer-studio.genlayer.com/tx/"+tx.hash;link.target="_blank";link.rel="noopener noreferrer";item.append(link);list.append(item);
+ }
+}
+let noticeTimer=null;
+
 function showProgress(title,details,hash="",attention=false){
- const box=$("v2LiveStatus");box.hidden=false;box.dataset.state=attention?"attention":"success";
+ const box=$("v2LiveStatus");if(noticeTimer!==null)clearTimeout(noticeTimer);noticeTimer=null;box.hidden=false;box.dataset.state=attention?"attention":"success";
  $("v2LiveTitle").textContent=title;$("v2LiveBody").textContent=details;
  const links=$("v2LiveLinks");links.replaceChildren();
  if(/^0x[a-fA-F0-9]{64}$/.test(hash)){const a=node("a","View transaction in Explorer ↗");a.href="https://explorer-studio.genlayer.com/tx/"+hash;a.target="_blank";a.rel="noopener noreferrer";links.append(a);}
+ // Informational banners disappear; unknown/failed executions stay visible until dismissed.
+ if(!attention)noticeTimer=setTimeout(()=>{box.hidden=true;noticeTimer=null;},6500);
 }
 async function recoverCreatedOrder(pending){
  if(pending?.method!=="create_order"||pending.account?.toLowerCase()!==account||!pending.expectedOrderId)return null;
@@ -57,7 +92,7 @@ async function recoverCreatedOrder(pending){
      JSON.stringify(rec.spec.criteria)!==JSON.stringify(pending.criteria))return null;
   validateMilestoneSnapshot(rec,pending.expectedOrderId);
   $("milestoneId").value=rec.id;
-  clearPending();
+  clearPending("ONCHAIN_VERIFIED",rec.id);
   showProgress("Created milestone verified","Matching on-chain order #"+rec.id+" was read from finalized state; no second signature was sent.",pending.hash);
   createStatus(verifiedCreatedOrderNotice(rec.id)); // Keep the Create panel aligned with verified chain readback.
   await load();void discoverRecentOrders(true);
@@ -286,7 +321,8 @@ async function resumePending(hash){
  try{
   const verdict=await gateway.resumeFinalization(hash);
   $("milestoneTx").textContent="Saved transaction "+hash+" · "+verdict.status+".";
-  if(verdict.status==="FINALIZED_SUCCESS")clearPending();
+  if(verdict.status==="FINALIZED_SUCCESS")clearPending("FINALIZED_SUCCESS");
+  else updateTxState(hash,verdict.status==="FINALIZED_EXECUTION_FAILED"?"EXECUTION_FAILED":"TRACKING_UNRESOLVED");
   if(verdict.status!=="FINALIZED_EXECUTION_FAILED"){
    busy=false;await load();
    if(unresolved)showProgress("Transaction still unverified","SDK receipt was inconclusive and no matching finalized contract effect was found. Check the exact hash in Explorer; do not resend.",hash,true);
@@ -335,14 +371,15 @@ async function submit(method,artifactUrl,artifactHash){if(busy||unresolved||!gat
  try{const context={account,orderId:order.id,specSha:order.spec_sha256,artifactUrl,artifactHash,expectedVersion:order.submissions.length+(method==="submit_evidence"?1:0)};
  const result=await gateway.submit(method,args,hash=>{
   savePending(hash,method,context);
-  showProgress("Transaction submitted","Waiting for GenVM finality. Do not resubmit.",hash,true);
+  showProgress("Transaction sent","Saved in Transaction history. Continue when on-chain confirmation appears.",hash);
   $("milestoneTx").textContent="Submitted: "+hash+" · Finality/execution unknown.";
  },async()=>true);
  savePending(result.txId,method,context);
  $("milestoneTx").textContent="Transaction "+result.txId+" submitted. Checking finalized state and execution.";
  const verdict=await gateway.resumeFinalization(result.txId);
  $("milestoneTx").textContent="Transaction "+result.txId+" · "+verdict.status+".";
- if(verdict.status==="FINALIZED_SUCCESS")clearPending();
+ if(verdict.status==="FINALIZED_SUCCESS")clearPending("FINALIZED_SUCCESS");
+ else updateTxState(result.txId,verdict.status==="FINALIZED_EXECUTION_FAILED"?"EXECUTION_FAILED":"TRACKING_UNRESOLVED");
  if(verdict.status!=="FINALIZED_EXECUTION_FAILED"){
   busy=false;await load();
   if(!unresolved)showProgress("On-chain progress verified","Transaction complete or its exact effect verified in finalized state.",result.txId);
@@ -453,11 +490,14 @@ $("v2CreateForm").addEventListener("submit",async e=>{
  try{
   const tx=await gateway.submit("create_order",args,hash=>{
    submittedHash=hash;savePending(hash,"create_order",createContext);
-   showProgress("Milestone transaction submitted","Waiting for finalized GenVM execution. Do not sign again.",hash,true);
+   showProgress("Transaction sent","Saved in Transaction history; checking finalized on-chain state.",hash);
   },async()=>true);
   submittedHash=tx.txId;savePending(tx.txId,"create_order",createContext);
-  showProgress("Milestone creation pending","Transaction submitted. Checking finality and execution.",tx.txId,true);
+  showProgress("Transaction sent","Saved in Transaction history; checking finalized on-chain state.",tx.txId);
   const status=await gateway.resumeFinalization(tx.txId);
+  if(status.status==="FINALIZED_EXECUTION_FAILED")updateTxState(tx.txId,"EXECUTION_FAILED");
+  else if(status.status==="FINALIZED_SUCCESS")updateTxState(tx.txId,"FINALIZED_SUCCESS");
+  else updateTxState(tx.txId,"TRACKING_UNRESOLVED");
   if(status.status==="FINALIZED_SUCCESS"){
    busy=false;
    const id=await recoverCreatedOrder({...createContext,method:"create_order",hash:tx.txId});
