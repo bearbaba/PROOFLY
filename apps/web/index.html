@@ -33,6 +33,7 @@
 .milestone-complete-banner a{display:inline-block;font-size:12px;font-weight:800;color:#087f86;text-decoration:underline}
 @media(max-width:760px){.proofly-activity{padding:0 16px}.milestone-complete-banner{margin:14px 16px;padding:20px}}
 
+.milestone-wallet-controls{display:flex;flex-wrap:wrap;gap:9px;align-items:center;margin-top:12px}.milestone-wallet-controls button{font-size:12px;padding:9px 12px;min-width:125px}.milestone-wallet-controls .milestone-disconnect{background:#fff;color:#a23f42;border:1px solid #e8c5c5}.milestone-wallet-controls .milestone-disconnect:hover{background:#fff2f1}.milestone-wallet-controls .milestone-disconnect[hidden]{display:none}
 </style>
 <script type="module" src="./milestones.bundle.js"></script></head>
 <body><div class="wrap">
@@ -52,7 +53,7 @@
 <article class="panel milestone-panel"><div class="kicker">02 / EXPLAINABLE CONSENSUS</div><h2>Proof receipt</h2><p class="milestone-small">Shows the saved verdict and literal supporting excerpts. The webpage does not re-run or invent an AI classification.</p><div id="milestoneReceipt" class="milestone-note">Awaiting order selection.</div></article>
 <article class="panel milestone-panel"><div class="kicker">03 / CONSEQUENTIAL GATE</div><h2>Milestone release</h2><div id="milestoneRelease" class="milestone-note">Awaiting order selection.</div></article>
 </section>
-<aside class="milestone-stack"><article class="panel milestone-panel"><div class="kicker">CONTRIBUTOR WORKSPACE</div><h2>Actions</h2><button id="milestoneConnect" class="secondary" type="button">Connect MetaMask</button><p id="milestoneWallet" class="milestone-small v2-wallet-card" aria-live="polite">No wallet connected. Public reads work without a wallet.</p>
+<aside class="milestone-stack"><article class="panel milestone-panel"><div class="kicker">CONTRIBUTOR WORKSPACE</div><h2>Actions</h2><div class="milestone-wallet-controls"><button id="milestoneConnect" class="secondary" type="button">Connect Wallet</button><button id="milestoneDisconnect" class="secondary milestone-disconnect" type="button" hidden>Disconnect</button></div><p id="milestoneWallet" class="milestone-small v2-wallet-card" aria-live="polite">No wallet connected. Public reads work without a wallet.</p>
 <div id="milestoneActions" class="milestone-actions"><p class="milestone-note">Load a work order to see the next eligible action.</p></div><div id="milestoneTx" class="milestone-note" aria-live="polite">Signing is never automatic. Any submitted transaction must be tracked before attempting another.</div></article>
 <article class="panel milestone-panel" id="newMilestone"><div class="kicker">START A NEW AGREEMENT</div><h2>Create milestone</h2><p class="milestone-small">Owner defines an immutable acceptance rubric. A different Contributor wallet must accept it before submitting evidence.</p>
 <details id="v2CreateDetails"><summary class="milestone-link" style="cursor:pointer;font-weight:800">+ Configure new milestone</summary>

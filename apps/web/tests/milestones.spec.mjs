@@ -45,7 +45,7 @@ test("V2 has a visible transaction status surface and persistent MetaMask connec
  await expect(page.locator("#v2LiveStatus")).toBeHidden();
  await expect(page.locator("#v2LiveTitle")).toHaveCount(1);
  await expect(page.locator("#v2LiveLinks")).toHaveCount(1);
- await expect(page.locator("#milestoneConnect")).toHaveText("Connect MetaMask");
+ await expect(page.locator("#milestoneConnect")).toHaveText("Connect Wallet");
 });
 
 test("V2 landing page exposes the real create workflow and positive demo without signing",async({page})=>{
@@ -138,4 +138,72 @@ test("Public completion card defaults to hidden and is not fabricated from URL a
  await expect(page.locator("#milestoneCelebration")).toBeHidden();
  await expect(page.locator("#milestoneSuccessTitle")).toHaveText("Milestone successfully verified");
  await expect(page.locator("#txHistoryToggle")).toBeVisible();
+});
+
+test("Connect, switch, and Disconnect are explicit while public records and tx history survive",async({page})=>{
+ await page.addInitScript(()=>{
+  window.__walletCalls=[];
+  window.__walletAccount="0x"+"a".repeat(40);
+  window.__walletListeners={};
+  const historyKey="proofly.indexed.61999.b8305f15336a79761157b86e214d3d3deadfc1ce.tx-history.v1";
+  localStorage.setItem(historyKey,JSON.stringify([{
+   hash:"0x"+"9".repeat(64),account:"0x"+"a".repeat(40),method:"create_order",
+   orderId:"2",submittedAt:Date.now(),status:"ONCHAIN_VERIFIED"
+  }]));
+  window.ethereum={
+   on:(event,handler)=>{window.__walletListeners[event]=handler;},
+   request:async({method})=>{
+    window.__walletCalls.push(method);
+    if(method==="eth_accounts"||method==="eth_requestAccounts")return [window.__walletAccount];
+    if(method==="eth_chainId")return "0xf22f";
+    throw Error("Unexpected wallet RPC "+method);
+   }
+  };
+ });
+ await page.goto("/milestones.html?order=2");
+ await expect(page.locator("#milestoneWallet")).toContainText("Connected");
+ await expect(page.locator("#milestoneDisconnect")).toBeVisible();
+ await expect(page.locator("#milestoneConnect")).toHaveText("Reconnect / Switch Wallet");
+ await page.evaluate(()=>{
+  window.__walletAccount="0x"+"b".repeat(40);
+  window.__walletListeners.accountsChanged([window.__walletAccount]);
+ });
+ await expect(page.locator("#milestoneWallet")).toContainText("0xbbbbbb");
+ await page.locator("#milestoneDisconnect").click();
+ await expect(page.locator("#milestoneWallet")).toContainText("Disconnected from PROOFLY");
+ await expect(page.locator("#milestoneDisconnect")).toBeHidden();
+ await expect(page.locator("#milestoneConnect")).toHaveText("Connect Wallet");
+ await expect(page.locator("#milestoneId")).toHaveValue("2");
+ await expect(page.locator("#txHistoryCount")).toHaveText("1");
+ await page.evaluate(()=>window.__walletListeners.accountsChanged(["0x"+"a".repeat(40)]));
+ await expect(page.locator("#milestoneWallet")).toContainText("Disconnected from PROOFLY");
+ await page.reload();
+ await expect(page.locator("#milestoneConnect")).toHaveText("Connect Wallet");
+ await expect(page.locator("#milestoneDisconnect")).toBeHidden();
+ expect(await page.evaluate(()=>window.__walletCalls.filter(x=>x==="eth_accounts"||x==="eth_requestAccounts"))).toEqual([]);
+ await expect(page.locator("#txHistoryCount")).toHaveText("1");
+ await page.locator("#milestoneConnect").click();
+ await expect(page.locator("#milestoneWallet")).toContainText("Connected");
+ await expect(page.locator("#milestoneDisconnect")).toBeVisible();
+});
+
+test("Disconnected session does not trigger network switches or wallet prompts on refresh",async({page})=>{
+ await page.addInitScript(()=>{
+  localStorage.setItem("proofly.indexed.61999.b8305f15336a79761157b86e214d3d3deadfc1ce.wallet-disconnected.v1","1");
+  window.__walletCalls=[];
+  window.ethereum={on:()=>{},request:async({method})=>{
+    window.__walletCalls.push(method);
+    if(method==="eth_chainId")return "0x1";
+    if(method==="eth_accounts"||method==="eth_requestAccounts")return ["0x"+"a".repeat(40)];
+    throw Error("Unexpected wallet request: "+method);
+  }};
+ });
+ await page.goto("/");
+ await expect(page.locator("#milestoneConnect")).toHaveText("Connect Wallet");
+ await expect(page.locator("#milestoneDisconnect")).toBeHidden();
+ const called=await page.evaluate(()=>window.__walletCalls);
+ expect(called).not.toContain("eth_accounts");
+ expect(called).not.toContain("eth_requestAccounts");
+ expect(called).not.toContain("wallet_switchEthereumChain");
+ expect(called).not.toContain("wallet_requestSnaps");
 });
