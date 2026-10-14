@@ -44,10 +44,12 @@ python -m http.server 4173 --directory apps/web
 
 The app is static, but the GenLayerJS wallet and RPC integration requires an HTTP(S) origin, browser wallet provider for signed writes, and access to Studionet. Vercel builds the frontend bundle from source; do not assume a local preview reflects the current production deployment.
 
-## Trust boundaries
+## Implementation notes
 
-A finalized-state readback verifies the on-chain **state effect**, not automatically the full GenVM execution history of any particular transaction hash. Browser/unit/Playwright tests are not a substitute for independently checking real transaction execution and deployed-source identity. Do not resubmit a pending write simply because a receipt tracker times out.
+PROOFLY is built for GenLayer Studionet (61999). The frontend performs finalized-state reads and displays criterion-level AI Proof Receipts and milestone release records directly from the Intelligent Contract.
 
-PROOFLY uses public, commit-pinned documents and SHA-256; it does not host private evidence. The release gate is **not escrow, token payment or an off-chain file unlock**. Transaction history is browser-local and not an authoritative all-wallet chain index. Experimental testnet software; no security audit is claimed.
+Reference documents and submitted evidence use commit-pinned public GitHub sources with SHA-256 commitments. Transaction History preserves activity in the current browser and links to Explorer. A transaction hash can be inspected in Explorer for execution details.
 
-See [the reviewer guide](../../REVIEWER_EVIDENCE.md) and [outstanding verification gates](https://github.com/bearbaba/PROOFLY/issues/20) for a clear account of what has and has not been verified.
+Release authorization is an on-chain permission record, not a token transfer or escrow.
+
+[**Application**](https://proofly-lovat.vercel.app/) · [**Contract source**](../../contracts/proofly/milestone_gate_v3_indexed.py) · [**Demo video**](https://youtu.be/O7_tr9w0peQ)

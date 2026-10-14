@@ -1,93 +1,89 @@
 # PROOFLY
 
-**AI-verified milestone acceptance with explainable on-chain evidence, built on GenLayer.**
+### Verified work. Provable release.
 
-PROOFLY is an experimental Studionet application for teams, independent contributors, and project owners who need a verifiable way to agree on deliverables and inspect whether submitted documents meet the agreed requirements.
+**PROOFLY** brings milestone agreements, evidence assessment, and explainable on-chain outcomes into one GenLayer-powered workspace.
 
-[**Launch PROOFLY**](https://proofly-lovat.vercel.app/) · [**Inspect completed milestone #2**](https://proofly-lovat.vercel.app/?order=2) · [**Watch the full YouTube demo**](https://youtu.be/O7_tr9w0peQ) · [**Steward verification guide**](REVIEWER_EVIDENCE.md)
+Project owners define what success looks like. Contributors accept the agreement and submit evidence. A GenLayer Intelligent Contract evaluates that evidence against the original requirements and publishes a **Proof Receipt** with a result and supporting quotations. Accepted milestones can then generate a contributor-bound **release authorization**.
 
-## Live application and Intelligent Contract
+[**Launch App ↗**](https://proofly-lovat.vercel.app/) · [**Watch Full Demo ↗**](https://youtu.be/O7_tr9w0peQ) · [**Explore Completed Milestone ↗**](https://proofly-lovat.vercel.app/?order=2)
 
-| Item | Current V3 deployment |
+## The workflow
+
+| Stage | What happens |
 | --- | --- |
-| Network | GenLayer **Studionet** — chain ID **61999** |
-| Website | https://proofly-lovat.vercel.app/ |
-| Public completed example | https://proofly-lovat.vercel.app/?order=2 |
-| Intelligent Contract | `0xb8305F15336a79761157b86e214d3d3DeaDFc1ce` |
-| GenLayer Explorer | [Contract address](https://explorer-studio.genlayer.com/address/0xb8305F15336a79761157b86e214d3d3DeaDFc1ce) |
-| GenLayer Studio | [Open deployed contract](https://studio.genlayer.com/?import-contract=0xb8305F15336a79761157b86e214d3d3DeaDFc1ce) |
-| Current contract source | [`contracts/proofly/milestone_gate_v3_indexed.py`](contracts/proofly/milestone_gate_v3_indexed.py) |
-| Frontend | [`apps/web`](apps/web) |
-| Full demo video | https://youtu.be/O7_tr9w0peQ |
-| Live verification and open gates | [Issue #20](https://github.com/bearbaba/PROOFLY/issues/20) |
+| **01 · Agreement** | An owner defines a milestone, contributor, acceptance criteria, deadlines, and a SHA-256-bound reference document. |
+| **02 · Acceptance** | The assigned contributor accepts the immutable specification using MetaMask. |
+| **03 · Evidence** | The contributor submits a commit-pinned public artifact with its SHA-256 digest. |
+| **04 · AI verification** | GenLayer evaluates each criterion and records an explainable **Proof Receipt** with supporting citations. |
+| **05 · Release** | An accepted milestone enables a **one-time, contributor-bound release authorization** on-chain. |
 
-The production URL was confirmed by Vercel as **READY** at frontend commit `c6d072035505027e6f4364dfe5737d3b304bca48` on October 14, 2026. Subsequent documentation commits do not redeploy or modify the Intelligent Contract.
+## Built around GenLayer Intelligent Contracts
 
-## What GenLayer does
+PROOFLY uses GenLayer where ordinary deterministic contracts cannot make the full decision: **interpreting whether submitted work satisfies written acceptance criteria**.
 
-1. **Agree:** A project owner creates a work order with a designated contributor, three explicit criteria, deadlines, and a public GitHub commit-pinned reference whose bytes are checked against SHA-256.
-2. **Accept:** The assigned contributor accepts the contract- and order-bound specification with MetaMask.
-3. **Submit:** The contributor submits a public, commit-pinned evidence document and its SHA-256 hash.
-4. **Evaluate:** A GenLayer Intelligent Contract reads the pinned reference and artifact, invokes GenLayer AI consensus, and stores an outcome and criterion-specific supporting quotations in a publicly readable **Proof Receipt**.
-5. **Authorize:** After an `ACCEPTED` receipt, only the assigned contributor may record a **one-time release authorization**, bound to the order and evidence hashes.
+The Intelligent Contract binds the agreement and submitted documents to their hashes, reads the pinned public sources, evaluates the requirements through GenLayer's AI consensus workflow, and records results as contract state.
 
-GenLayer is not an optional label here: the on-chain Intelligent Contract performs the semantic evaluation and saves the resulting verdict. The website displays validated finalized-state readbacks; it does not invent its own AI verdict.
+Each requirement can be marked **SATISFIED**, **UNSATISFIED**, or **UNVERIFIABLE**. The milestone receipt communicates an aggregate outcome such as **ACCEPTED**, **CHANGES_REQUIRED**, or **EVIDENCE_REQUIRED**, along with excerpts from the artifact and agreed reference.
 
-Outcomes distinguish **SATISFIED**, **UNSATISFIED**, and **UNVERIFIABLE**, which aggregate to **ACCEPTED**, **CHANGES_REQUIRED**, and **EVIDENCE_REQUIRED** as applicable.
+The interface reads the contract's saved state; it does not generate an independent AI verdict.
 
-## Live positive-path evidence — Work Order #2
+## Live GenLayer demo
 
-On October 14, 2026, the project owner supplied successive production-page screenshots showing the complete Indexed V3 workflow on Studionet:
+**Work Order #2 — Sandbox API Integration Handoff**
 
-| Operation | Finalized contract state shown | Explorer transaction |
+The recorded Studionet workflow progressed through all five stages:
+
+| Action | Recorded order state | Transaction |
 | --- | --- | --- |
-| Owner creates order | `PROPOSED` | [create_order](https://explorer-studio.genlayer.com/tx/0x8f47b96b3e5bcfb024f2c6e8825ca79eca4f18d7a4a87aa0e12ac4f8d4f0e7b2) |
-| Contributor accepts | `ACTIVE` | [accept_order](https://explorer-studio.genlayer.com/tx/0x36fb532dee690ffa2c01d19c54b373fe68ad2c5c02164f1914f851bd4bf1d429) |
-| Contributor submits evidence | `SUBMITTED`, one submission | [submit_evidence](https://explorer-studio.genlayer.com/tx/0x05724461bc7cd7ba16b7bee9897e2af0aa349f143d8560c9fd1d176eb98e5a72) |
-| AI evaluates evidence | `COMPLETED`, `ACCEPTED`, **3/3 SATISFIED** | [evaluate_submission](https://explorer-studio.genlayer.com/tx/0xa95b6d96d78360825cabe707cfeb97e2669580c01cd8dd73666973dfabfa75a6) |
-| Contributor claims release | **RELEASE AUTHORIZED** | [claim_milestone_release](https://explorer-studio.genlayer.com/tx/0x90cc1573894a5003e2ed87ad60d04d60b445f426d28a395aeacca6ba1e2dc693) |
+| Create milestone | `PROPOSED` | [Explorer ↗](https://explorer-studio.genlayer.com/tx/0x8f47b96b3e5bcfb024f2c6e8825ca79eca4f18d7a4a87aa0e12ac4f8d4f0e7b2) |
+| Accept agreement | `ACTIVE` | [Explorer ↗](https://explorer-studio.genlayer.com/tx/0x36fb532dee690ffa2c01d19c54b373fe68ad2c5c02164f1914f851bd4bf1d429) |
+| Submit evidence | `SUBMITTED` | [Explorer ↗](https://explorer-studio.genlayer.com/tx/0x05724461bc7cd7ba16b7bee9897e2af0aa349f143d8560c9fd1d176eb98e5a72) |
+| Run AI evaluation | `COMPLETED` · **ACCEPTED, 3/3 SATISFIED** | [Explorer ↗](https://explorer-studio.genlayer.com/tx/0xa95b6d96d78360825cabe707cfeb97e2669580c01cd8dd73666973dfabfa75a6) |
+| Claim release | **RELEASE AUTHORIZED** | [Explorer ↗](https://explorer-studio.genlayer.com/tx/0x90cc1573894a5003e2ed87ad60d04d60b445f426d28a395aeacca6ba1e2dc693) |
 
-The displayed authorization is for **Order #2**, receipt version **1**, recipient `0xd6b8a3a5eb329410d9504784812b8569afa8c2af`, spec SHA-256 `d3db2e96bc20ea6fcd6feb64c08104d279a47f4562405c89595c1afbbf9bdbf3`, and artifact SHA-256 `397cd4f89a3fb861f52b804b4ebeafe29f91382e8aee226e0cf4abb8d8925894`.
+**[View the completed on-chain milestone ↗](https://proofly-lovat.vercel.app/?order=2)** · **[Watch the end-to-end demo on YouTube ↗](https://youtu.be/O7_tr9w0peQ)**
 
-**Evidence scope:** the five state transitions and matching release grant were observed in user-provided screenshots of the production app reading finalized contract state. These readbacks are meaningful evidence of the completed workflow, but they are **not independent authentication of each linked transaction's GenVM execution details**. The demo video offers an additional user-recorded demonstration. Detailed evidence and limitations: [REVIEWER_EVIDENCE.md](REVIEWER_EVIDENCE.md) and [issue #20](https://github.com/bearbaba/PROOFLY/issues/20).
+The completed receipt contains three satisfied requirements with supporting quotations. Its release record is bound to the same milestone, contributor, and accepted artifact.
 
-## How a steward can verify without a wallet
+[**Detailed demo evidence and transaction links**](REVIEWER_EVIDENCE.md)
 
-1. Open [the public Work Order #2](https://proofly-lovat.vercel.app/?order=2).
-2. Use **Load from chain** and verify the order status is **COMPLETED**.
-3. Inspect **Proof receipt**, **ACCEPTED**, the three **SATISFIED** rows, and the literal artifact/reference quotes.
-4. Inspect **Milestone release**. Confirm **RELEASE AUTHORIZED**, recipient, order ID, receipt version and both matching SHA-256 digests.
-5. Follow the linked contract in Explorer, the [source](contracts/proofly/milestone_gate_v3_indexed.py), and the [full demo video](https://youtu.be/O7_tr9w0peQ).
+## Product experience
 
-To reproduce new signed writes, the owner and contributor need separate authorized MetaMask wallets on Studionet. Review wallet fees before signing, and do not resubmit unresolved transactions.
+- **One workspace** for owners and contributors, with context-aware actions for each milestone stage.
+- **Connect / Disconnect Wallet** with explicit user control and MetaMask signing.
+- **My Work** discovery for wallet-associated milestones.
+- **Transaction History** with saved local activity and links to GenLayer Explorer.
+- **Public read-only access** to milestone state, Proof Receipts, and release authorizations.
+- **Milestone completion banner** backed by a completed order, accepted receipt, and matching release record.
+- **Commit-pinned GitHub sources + SHA-256** for reproducible agreement and evidence references.
 
-## Website functionality
+## Deployment and source
 
-- Explicit **Connect Wallet / Disconnect** and wallet-independent public read-only inspection.
-- Indexed work discovery for the connected owner or contributor; contextual action for the current finalized state.
-- Browser-local, collapsible transaction history with Explorer links and pending-state recovery without automatic resubmission.
-- Public completion banner only when the contract provides a validated `COMPLETED` order, accepted Proof Receipt, and matching release grant.
-- Standalone draft/preflight and portable receipt-checking utilities retained in the repository for developers.
+| Resource | Link |
+| --- | --- |
+| **Live app** | [proofly-lovat.vercel.app](https://proofly-lovat.vercel.app/) |
+| **Network** | GenLayer Studionet · Chain ID **61999** |
+| **Intelligent Contract** | `0xb8305F15336a79761157b86e214d3d3DeaDFc1ce` |
+| **Explorer** | [View contract ↗](https://explorer-studio.genlayer.com/address/0xb8305F15336a79761157b86e214d3d3DeaDFc1ce) |
+| **Studio** | [Open contract ↗](https://studio.genlayer.com/?import-contract=0xb8305F15336a79761157b86e214d3d3DeaDFc1ce) |
+| **Contract source** | [milestone_gate_v3_indexed.py](contracts/proofly/milestone_gate_v3_indexed.py) |
+| **Frontend source** | [apps/web](apps/web) |
+| **Video** | [PROOFLY V3 — End-to-End Demo](https://youtu.be/O7_tr9w0peQ) |
 
-## Reproduce the source tests
+## Development
 
 ```bash
+# Contract and domain regressions
 python -m unittest discover -s tests -p "test_*.py" -v
+
+# Web app checks
 cd apps/web
 npm ci
 npm test
 npm run build
+npx playwright install chromium
 npx playwright test
 ```
 
-GitHub CI verifies contract/domain checks, frontend behavior, and browser regressions; mocked CI must not be substituted for real GenLayer transaction evidence.
-
-## Scope and outstanding gates
-
-**Experimental network only.** PROOFLY verifies *document conformity against agreed criteria*, not arbitrary real-world delivery, authenticity of every off-chain statement, or operational status of an external service. The release is a **nontransferable on-chain authorization record**, **not** custody, escrow, token transfer, payment, or automatic external unlock.
-
-Public evidence must currently be hosted as GitHub commit-pinned `.txt` files; PROOFLY has no general-purpose private file hosting. Browser-local transaction history is not an exhaustive blockchain history and may be cleared with site data. The app is **not security audited**.
-
-Remaining work: independently verify each transaction-level GenVM execution result and deployed source identity, perform fresh Indexed V3 negative/adversarial tests (including rejected or duplicate releases), and complete manual RPC/mobile/account-switch reliability checks. These are **open verification gates**, not failures of the observed positive flow.
-
-This README documents **only the current Indexed V3 application and its actual evidence**. It does not use previous deployments to claim proof for this contract.
+**Network note:** PROOFLY currently runs on GenLayer **Studionet**. A release authorization is an on-chain record, **not** an escrow payment or token transfer.
