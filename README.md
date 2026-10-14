@@ -1,5 +1,13 @@
 # PROOFLY
 
+## Current indexed workspace — October 14, 2026
+
+The single-contract web workspace is configured for **GenLayer Studionet (chain ID 61999)** and contract `0xb8305F15336a79761157b86e214d3dDeaDFc1ce`. The canonical candidate source is [milestone_gate_v3_indexed.py](contracts/proofly/milestone_gate_v3_indexed.py). The latest verified Vercel production build before this update was READY; this does **not** prove live GenVM execution. User-provided Studio import/deployment information identifies the new address, but deployed bytecode/source identity and full fresh V3 transaction receipts have **not** been independently reproduced here.
+
+**Product boundary:** PROOFLY evaluates a submission against an agreed, commit-pinned public reference, records a quote-backed consensus receipt, and can grant a single nontransferable release **authorization** to the contributor. It does not hold funds, transfer tokens, certify arbitrary external truth, or prove off-chain delivery.
+
+**Release gates still open:** verify the exact V3 deployed source and signed transaction, perform complete positive and negative end-to-end flows on that address, validate both wallet indexes and account-switch/reload/timeout recovery in real MetaMask, and complete an adversarial security review. Do not present legacy V2 transaction proofs as proofs for V3. Legacy V1/V2 data may still exist on-chain but is not loaded into the main indexed workspace.
+
 > **PROOFLY V2 REVIEWER UPDATE — OCTOBER 13, 2026 (experimental Studionet candidate)**
 >
 > The v2 deployment is separate from the v1 production app. [Open v2 Preview, positive order #1](https://proofly-atboqi1pu-khaiptk1998-8088s-projects.vercel.app/milestones.html?order=1) or [negative order #2](https://proofly-atboqi1pu-khaiptk1998-8088s-projects.vercel.app/milestones.html?order=2). [V2 contract on Explorer](https://explorer-studio.genlayer.com/address/0xD67245387dF5448671235CE00c8969664b5aF8bd).
