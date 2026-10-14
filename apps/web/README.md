@@ -1,278 +1,53 @@
-# PROOFLY — browser-only Spec Builder preview
+# PROOFLY V3 — Indexed Milestone Web Workspace
 
-The Spec Builder at `/builder.html` is a **local, offline specification drafting prototype**. The site homepage `/` is now a separate, wallet-capable Studionet console.
-It does not connect a wallet, deploy contracts, upload files, call LLMs,
-read public URLs or produce a finalized proof receipt.
+This directory contains the **current GenLayer Studionet web application** for PROOFLY and its developer utilities. The canonical public entry point is **https://proofly-lovat.vercel.app/**, not a preview website or an archived deploy.
 
-## Run locally
+[Launch](https://proofly-lovat.vercel.app/) · [Completed Work Order #2](https://proofly-lovat.vercel.app/?order=2) · [Full demo](https://youtu.be/O7_tr9w0peQ) · [Reviewer guide](../../REVIEWER_EVIDENCE.md)
 
-From the repository root:
+## Current contract and network
 
-    python -m http.server 4173 --directory apps/web
+- GenLayer Studionet chain ID: **61999**.
+- Indexed V3 Intelligent Contract: `0xb8305F15336a79761157b86e214d3d3DeaDFc1ce`.
+- Contract source: [milestone_gate_v3_indexed.py](../../contracts/proofly/milestone_gate_v3_indexed.py).
+- Explorer: https://explorer-studio.genlayer.com/address/0xb8305F15336a79761157b86e214d3d3DeaDFc1ce.
+- Full observed finalized-state workflow: `PROPOSED → ACTIVE → SUBMITTED → COMPLETED/ACCEPTED → RELEASE AUTHORIZED`, documented under [Work Order #2](https://proofly-lovat.vercel.app/?order=2).
 
-Visit http://localhost:4173/builder.html for the offline Spec Builder, or `/` for the live console (after `npm run bundle`). This must be served over HTTP, not by
-double-clicking index.html, because the browser loads JavaScript modules.
+## What this frontend actually does
 
-No install required for the preview itself. For JS unit tests (Node 22+):
+- **Read-only by default**: anybody may inspect finalized work orders, their requirements, AI Proof Receipts, quotes and on-chain release authorizations without connecting a wallet.
+- **Owner signs creation**: the user provides criteria, contributor wallet, deadlines and a commit-pinned public reference. The app hashes and rechecks the document before asking MetaMask for a signature.
+- **Contributor signs work actions**: the designated wallet accepts the agreement, then submits a public artifact and matching SHA-256.
+- **GenLayer evaluates**: the contract performs AI consensus evaluation. The frontend requests evaluation and then reads the saved receipt; it cannot invent or overwrite a contract verdict.
+- **One-time release gate**: an accepted milestone allows its contributor to claim the matching, nontransferable on-chain release authorization.
+- **Wallet controls**: explicit Connect Wallet and Disconnect; intentional browser-local disconnect is maintained through refresh.
+- **Transaction History**: collapsible list of transactions observed in the current browser, with Explorer links and cautious pending/error classifications.
+- **Public completion banner**: shown only after validated finalized-state reads provide a completed milestone, an accepted Proof Receipt and its matching release record.
 
-    cd apps/web
-    npm test
-    npm run build
+## Run and test
 
-The build command checks JavaScript syntax; this is a static HTML app.
+Node.js 22+ is recommended.
 
-## Preflight
+```bash
+cd apps/web
+npm ci
+npm test
+npm run build
+npx playwright install chromium
+npx playwright test
+```
 
-The criteria and hash/URL checks are syntactic, not semantic. A green
-draft does NOT mean a fetched document has the claimed SHA-256 or that
-GenLayer has accepted a work order. The exported JSON is an **unsigned
-offline draft** intended for review.
+To serve a built frontend from the repository root:
 
-The example loads a fictional documentation fixture using a public,
-commit-pinned URL from this repository. It is not a real customer order.
-No private or sensitive evidence should be pasted into a public website
-or uploaded to GenLayer validators.
+```bash
+python -m http.server 4173 --directory apps/web
+```
 
-## Deployment
+The app is static, but the GenLayerJS wallet and RPC integration requires an HTTP(S) origin, browser wallet provider for signed writes, and access to Studionet. Vercel builds the frontend bundle from source; do not assume a local preview reflects the current production deployment.
 
-The repository's vercel.json points at the apps/web static files.
-Vercel deployment remains separate from contract verification; publishing
-this UI does not mean wallet integration or consensus is operational.
+## Trust boundaries
 
-Future integration requires actual contract ABI confirmation, wallet
-transaction status/finality handling, evidence hosting, trusted source
-hash checks, and browser-level security regression tests.
+A finalized-state readback verifies the on-chain **state effect**, not automatically the full GenVM execution history of any particular transaction hash. Browser/unit/Playwright tests are not a substitute for independently checking real transaction execution and deployed-source identity. Do not resubmit a pending write simply because a receipt tracker times out.
 
+PROOFLY uses public, commit-pinned documents and SHA-256; it does not host private evidence. The release gate is **not escrow, token payment or an off-chain file unlock**. Transaction history is browser-local and not an authoritative all-wallet chain index. Experimental testnet software; no security audit is claimed.
 
-## Browser regression checks
-
-Browser E2E runs using Playwright/Chromium. It covers the loaded preview,
-draft validity, add/remove controls, exported JSON, HTML-like input safety,
-bad URL/hash and mobile overflow. It stubs only Google Fonts for stability.
-
-    cd apps/web
-    npm install
-    npx playwright install chromium
-    npm run test:browser
-
-The GitHub Actions workflow runs these cases on changes to apps/web.
-The tests do not simulate wallet, contract, chain finality or true evidence
-consensus; those belong to a separate live integration milestone.
-
-
-## Offline Proof Receipt Inspector
-
-Visit `http://localhost:4173/receipt.html` (or use **Receipt Inspector**
-in the main navigation). Upload four files: JSON from `get_order`, JSON
-from `get_receipt`, the original artifact TXT, and the original reference
-TXT. The browser rejects duplicate JSON keys and malformed files, recomputes
-the version/contract/chain-bound spec commitment, hashes both documents,
-checks literal citations and verifies deterministic outcome aggregation.
-
-The inspector never sends uploaded bytes anywhere, makes no RPC requests and
-does **not** authenticate JSON provenance, GenLayer consensus or transaction
-finality. An attacker can fabricate four internally consistent files. Always
-compare exported records with finalized trusted network state separately.
-
-Both Node tests and Playwright browser tests cover tampering, malformed JSON,
-HTML injection, mobile display and the explicit offline boundary.
-
-
-## Studio call-plan export (unsigned)
-
-When the Spec Builder draft passes offline checks, select **Export Studio
-call plan (unsigned)**. The downloaded JSON maps directly to the seven
-arguments of `ProoflyWorkOrder.create_order` in the order expected by the
-candidate GenLayer contract. The criteria argument is a JSON **string**.
-The export contains no contract address, wallet signature, tx ID or verdict.
-It does not verify public evidence URLs or send a transaction.
-
-`studio-plan.mjs` and `sdk-workflow.mjs` have isolated Node tests.
-The SDK gateway is intentionally **not wired into the preview UI** until
-live Studio proof has established runtime/chain/ABI compatibility.
-See [Studio integration runbook](../../docs/SDK_WORKFLOW.md).
-
-
-## Live Studionet console (wallet-backed, experimental)
-
-After \`npm install && npm run bundle\` in \`apps/web\`, open
-\`/live.html\` alongside the existing offline Spec Builder.
-
-- Read \`get_order\` and \`get_receipt\` from \`LATEST_FINAL\` using
-  \`genlayer-js@1.1.8\`, pointing at the **actual** contract deployed to
-  Studionet chain ID 61999.
-- Use an injected EIP-1193 wallet (e.g., MetaMask) to opt into the
-  chain and authenticate writes. The site never generates or holds
-  wallet secrets. Studio's built-in **local development accounts are not
-  automatically available as injected browser wallets**.
-- Owner \`create_order\` imports a validated, unsigned call-plan JSON
-  from the offline Spec Builder; accepted spec digest is loaded from chain.
-- Contributor \`accept_order\` and \`submit_evidence\` are permission-gated
-  in UI and rechecked inside the contract. \`evaluate_submission\`
-  is permissionless; \`cancel_order\` is owner-only.
-- Fee estimation and explicit confirmation occur **before** signing.
-  Submitted tx hashes are retained for manual finality tracking.
-  The UI does not automatically resend on a timeout.
-- FINALIZED and GenVM SUCCESS must be confirmed separately before
-  showing final execution success; readback is refreshed afterward.
-- Unknown RPC/CORS/fee/provider errors are shown, not hidden by
-  fallbacks, mocked balances or offline receipts.
-
-The compiled \`live.bundle.js\` is a build artifact, not checked into Git.
-Production/preview builds bundle pinned SDK dependencies in Vercel.
-The UI has not yet undergone a signed browser-wallet end-to-end test;
-**do not report production readiness until a real injected-wallet
-transaction and finalized read have been verified on the deployment**.
-
-\`npm run bundle\` requires network access to install npm dependencies.
-
-
-### Live MetaMask SDK compatibility fix (2026-10-11)
-
-This site pins `genlayer-js@1.1.8`. That release supports
-`waitForTransactionReceipt({hash,status:"FINALIZED"})`, **not** the
-future `waitForFinalization` helper, and does **not** export
-`estimateTransactionFeesForWrite` or `isSuccessful`. The adapter
-accepts legacy clients, requires explicit user consent before attempting
-any write, and then lets MetaMask review the actual wallet fee. It
-**never invents a numeric protocol fee estimate**. Writes carry
-`value:0n`; PROOFLY does not transfer escrow funds. Once a transaction
-hash exists, the app waits for a FINALIZED receipt and checks the
-`txExecutionResultName` independently.
-
-Wallet smoke tests still require a human signature; CI now verifies the
-adapter against a **real** pinned SDK client, not only mocked clients.
-
-## User-facing creation workflow (no JSON required)
-
-The latest source homepage includes **Create a work order** directly (the production deployment must be checked separately; at the last verified check it was on an older commit).
-A customer enters a job title, contributor wallet, three objective
-requirements, and a public commit-pinned reference text URL. The browser
-automatically downloads that reference and calculates/verifies its
-SHA-256 digest before signing. Deadlines are chosen as a number of
-days, so users never calculate Unix timestamps or prepare ABI arrays.
-**Fill example requirements** makes the successful public trial-guide
-fixture usable for a first walkthrough; it does not fabricate blockchain
-outcomes. The reference digest is rechecked before signing.
-
-The signer sees the wallet cost warning and must approve in MetaMask.
-A returned transaction hash is **not** treated as finality; the
-user tracks it to finalized execution and the app verifies any inferred
-order ID against the actual owner/contributor/title on the chain.
-Duplicate submissions are blocked while an unresolved transaction
-hash is saved locally.
-
-**Remaining MVP limitation:** arbitrary reference/evidence files still
-must be publicly published as immutable GitHub commit-pinned .txt files.
-There is no built-in permanent document upload/storage backend yet.
-The application does not claim a file upload that does not exist.
-
-
-### No manual Work Order number after creating
-
-A real signed `create_order` now automatically triggers read-only
-finality tracking. The app verifies the actual order ID by checking
-every newly allocated order against **all seven creation arguments** and
-the Owner/Contributor addresses. It does not guess an ID from the
-pre-sign next-order counter.
-
-When uniquely verified, the work order is opened on the page and a
-shareable `?order=<id>` URL appears for the Contributor. Opening a
-shared link automatically reads that order from finalized state
-without requesting a wallet signature.
-
-The submitted hash and expected work-order identity are stored locally
-for read-only recovery on refresh. Unknown execution outcomes,
-unavailable RPC, or multiple matching orders do not trigger a
-new write or fake success. A user can manually re-track the saved hash.
-
-
-### Wallet connect compatibility: no MetaMask Snap prompt
-
-GenLayerJS 1.1.8's `client.connect("studionet")` automatically requests
-`wallet_getSnaps` and may trigger `wallet_requestSnaps`. It is **not**
-the same thing as plain EIP-1193 wallet permission; it used to produce
-a repeating third-party software notice when a user switched to the
-Contributor MetaMask account. The live dApp's `Connect wallet` now
-requests only `eth_requestAccounts` and `eth_chainId`, then creates
-a provider-bound GenLayer client. A wrong-chain wallet is rejected
-with clear instructions; we do not automatically install a Snap.
-The supported `writeContract` flow sends an `eth_sendTransaction`
-through the wallet after separate human fee/signature review.
-
-This does not automatically switch between the Owner and Contributor
-accounts. The user explicitly chooses the intended MetaMask account
-and grants it site access. Browser tests assert no `wallet_requestSnaps`
-or `wallet_getSnaps` calls in either the correct-network or wrong-
-network case.
-
-
-### Wallet-aware My Work board and auto-refresh
-
-The public homepage includes a read-only **Your work orders** board,
-populated after wallet connection from up to the latest 25 finalized
-contract-stored orders. No transaction, seed phrase, or wallet signature
-is needed for reads. A connected user's created/assigned orders are
-filtered by on-chain Owner and Contributor addresses. All text is
-rendered using textContent; no injected contract strings become HTML.
-
-Recent on-chain status and the connected account are refreshed
-automatically and after writes or account switching. Default eligible
-actions follow the user's role and the finalized order state, never
-auto-trigger a transaction. Older orders remain accessible through
-their links. This bounded range is a prototype discovery method,
-not a complete historical index; a permanent indexer is a future
-scaling improvement.
-
-### Guided user workspace (October 2026)
-
-The main page is now arranged for end users, not contract developers:
-
-1. **Continue your work**: wallet connection, role and the relevant next action;
-2. **Your work orders**: wallet-matched, finalized recent jobs and their status;
-3. **Work details**: agreement, shareable URL and auto-loaded Proof Receipt;
-4. **Create a job**: ordinary form, one-click complete demo example and
-   auto-verified public document bytes;
-5. **Transaction details & advanced tools**: opt-in disclosure only.
-
-The app never signs without deliberate MetaMask approval. Signed writes
-automatically display progress in the main workflow; tracking and original
-Explorer proof remain accessible in the advanced drawer. Selected order
-status is re-read roughly every 30 seconds while visible; the bounded work
-board refreshes roughly every two minutes (or on wallet change). No
-unnecessary continuous bulk RPC scans. A completed order's latest Proof
-Receipt is automatically loaded when safe to read.
-
-The fixed contract still requires public, immutable GitHub raw text URLs:
-this is a transparent technical limitation, not a promise of private
-document uploads or escrow. The normal flow stays fully English.
-
-### Release gate for the guided workspace
-
-Before treating this UX as production-ready, the review must confirm:
-- The normal dashboard works on desktop and mobile with no unexpected overflow.
-- The connected wallet changes passively when MetaMask changes account.
-- The selected order can be accepted or submitted only by an authorized wallet.
-- The app never sends another wallet transaction while read-only polling.
-- The full GenLayer receipt and direct evidence link match finalized state.
-- Production deploy commit exactly matches the reviewed GitHub main SHA.
-
-These are verification gates, not a claim that signing has already passed.
-
-
-### State vs. receipt clarity (2026-10-12)
-
-When the pinned GenLayer SDK returns a finalized receipt without usable
-GenVM execution fields, the transaction remains **not independently
-verified**. The user's workflow now shows the **separately verified on-chain
-Work Order status** where available instead of presenting a cryptic
-"execution not verified" banner as though the order were stuck.
-
-This does **not** attribute the confirmed contract state to a particular
-transaction, invent a GenVM success, hide an explicit execution failure,
-or automatically retry a wallet write. The original receipt information
-and full Explorer link remain available in Advanced.
-
-The Contributor's **Submit evidence & sign** action is now disabled until
-the public deliverable URL is successfully checked and hashed. Editing
-the URL invalidates the previous hash and disables signing again.
+See [the reviewer guide](../../REVIEWER_EVIDENCE.md) and [outstanding verification gates](https://github.com/bearbaba/PROOFLY/issues/20) for a clear account of what has and has not been verified.
