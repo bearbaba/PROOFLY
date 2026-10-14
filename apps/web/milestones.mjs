@@ -462,7 +462,7 @@ $("v2CreateForm").addEventListener("submit",async e=>{
    busy=false;
    const id=await recoverCreatedOrder({...createContext,method:"create_order",hash:tx.txId});
    showProgress(id?"Agreement created":"Agreement readback requires review",id?"Exact Work Order #"+id+" verified. Contributor can accept the agreement.":"GenVM execution succeeded but no exact matching finalized Work Order was found. Inspect the transaction and contract before continuing; do not resubmit.",tx.txId,!id);
-   createStatus(id?"Work Order #"+id+" created and loaded.":"GenVM SUCCESS); exact Work Order readback missing. Do not resubmit.";
+   createStatus(id?"Work Order #"+id+" created and loaded.":"GenVM SUCCESS; exact Work Order readback missing. Do not resubmit.",!id);
   }else{
    busy=false;
    if(await recoverCreatedOrder(getPending()))return;
