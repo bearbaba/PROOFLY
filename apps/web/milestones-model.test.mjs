@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {validateMilestoneSnapshot,validateRelease,nextMilestoneAction,V2_CONTRACT} from "./milestones-model.mjs";
+import {validateMilestoneSnapshot,validateRelease,nextMilestoneAction,isMilestoneCompleted,V2_CONTRACT} from "./milestones-model.mjs";
 const contributor="0xd6b8a3a5eb329410d9504784812b8569afa8c2af";
 const owner="0x4c7cb73ac8f8999af21cfc9ff4cf2333a9508dcb";
 const h=x=>x.repeat(64);
@@ -38,4 +38,14 @@ test("state machine never recommends another claim after a grant",()=>{
  order.status="PROPOSED";assert.equal(nextMilestoneAction(order,contributor,false).method,"accept_order");
  order.status="ACTIVE";assert.equal(nextMilestoneAction(order,contributor,false).method,"submit_evidence");
  order.status="CANCELLED";assert.equal(nextMilestoneAction(order,contributor,false),null);
+});
+
+test("public completion banner requires a fully validated accepted receipt and matching release grant",()=>{
+ const {order,receipt,grant}=fixture();
+ assert.equal(isMilestoneCompleted(order,receipt,grant),true);
+ assert.equal(isMilestoneCompleted(order,receipt,null),false);
+ assert.equal(isMilestoneCompleted({...order,status:"SUBMITTED"},receipt,grant),false);
+ assert.equal(isMilestoneCompleted(order,{...receipt,outcome:"CHANGES_REQUIRED"},grant),false);
+ assert.equal(isMilestoneCompleted(order,receipt,{...grant,order_id:"999"}),false);
+ assert.equal(isMilestoneCompleted(order,{...receipt,contract:owner},grant),false);
 });
