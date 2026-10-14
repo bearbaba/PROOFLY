@@ -8,11 +8,11 @@
 
 This source keeps the milestone workflow (create / accept / submit / AI consensus / claim) and introduces owner/contributor append-only indexes with `list_owner_order_ids` and `list_contributor_order_ids` (page size 1–50). It is a **candidate**, not a deployed or audited contract.
 
-## Deployment boundary
+## Deployment boundary (updated October 14, 2026)
 
-There is currently **no verified new GenLayer contract address**. GitHub commits and Vercel deployments are not deployments of GenLayer contracts. Do not substitute the previously deployed V2 address: `0xD67245387dF5448671235CE00c8969664b5aF8bd` for the new one.
+The new address supplied via GenLayer Studio import is `0xb8305F15336a79761157b86e214d3dDeaDFc1ce` on Studionet chain 61999. The web application is configured to use this **single indexed contract address**. The Vercel production build at commit `7f4a769c` reported READY on October 13. **These facts do not independently establish** deployed source parity, GenVM execution, or a complete V3 acceptance workflow. Do not substitute V2 transaction proofs for the new contract.
 
-**Required next step:** deploy the exact pinned canonical Python source in GenLayer Studio, then capture the NEW contract address and deployment transaction / source identity. Do not use simulation-only results.
+**Required next step:** independently capture the new contract deployment transaction, verified deployed source identity, and fresh create/accept/submit/evaluate/claim transaction hashes with GenVM result and final-state reads. Do not use simulation-only results.
 
 Before deploying, test/inspect:
 - The indexed `TreeMap` state and `get` access are supported by the active GenVM toolchain.
