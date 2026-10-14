@@ -243,7 +243,19 @@ function renderReceipt(){const box=$("milestoneReceipt");box.replaceChildren();i
  line(box,"Receipt schema",receipt.schema);line(box,"Version",receipt.version);line(box,"Contract",receipt.contract);line(box,"Artifact SHA-256",receipt.artifact_sha256);
  for(const r of receipt.results){const c=node("div",undefined,"milestone-criterion");c.append(node("strong",r.id+" · "+r.status),node("p",r.reason_code),node("small","Artifact quote: "+(r.artifact_quote||"None"),"milestone-quote"),node("small","Reference quote: "+(r.reference_quote||"None"),"milestone-quote"));box.append(c);}
 }
-function renderGrant(){const box=$("milestoneRelease");box.replaceChildren();if(!grant){box.textContent="No release authorization recorded for this work order.";return;}
+function renderMilestoneCompletion(){
+ const banner=$("milestoneCelebration");if(!banner)return;
+ const success=Boolean(order&&receipt&&grant&&order.status==="COMPLETED"&&receipt.outcome==="ACCEPTED");
+ banner.hidden=!success;
+ if(!success)return;
+ const met=receipt.results.filter(row=>row.status==="SATISFIED").length;
+ $("milestoneSuccessTitle").textContent="Milestone #"+order.id+" successfully completed";
+ $("milestoneSuccessDescription").textContent=order.title+" · "+met+"/"+receipt.results.length+
+  " criteria satisfied · Contributor "+grant.recipient.slice(0,10)+"…"+grant.recipient.slice(-6)+
+  " · release authorized in finalized contract state.";
+ $("milestoneSuccessShare").href="?order="+encodeURIComponent(order.id)+"#milestoneLookup";
+}
+function renderGrant(){const box=$("milestoneRelease");box.replaceChildren();renderMilestoneCompletion();if(!grant){box.textContent="No release authorization recorded for this work order.";return;}
  const h=node("div",undefined,"milestone-status");h.append(node("strong","RELEASE AUTHORIZED"),node("span","ON-CHAIN RECORD","milestone-badge"));box.append(h);
  line(box,"Recipient",grant.recipient);line(box,"Order",grant.order_id);line(box,"Receipt version",grant.receipt_version);line(box,"Spec SHA-256",grant.spec_sha256);line(box,"Artifact SHA-256",grant.artifact_sha256);line(box,"Authorized at",new Date(grant.authorized_at*1000).toLocaleString());
  box.append(node("p","Not a payment, token transfer, or an off-chain unlock.","milestone-small"));
@@ -518,8 +530,16 @@ $("v2CreateForm").addEventListener("submit",async e=>{
  }finally{busy=false;$("v2CreateButton").disabled=false;renderActions();}
 });
 
+// Upgrade the earlier single pending hash into the new local history without resending.
+const previousPending=getPending();
+if(previousPending?.hash&&previousPending?.method&&previousPending?.account){
+ const storage=txStorage();
+ if(storage)addTx(storage,{hash:previousPending.hash,account:previousPending.account,method:previousPending.method,
+  orderId:previousPending.orderId||previousPending.expectedOrderId||null,submittedAt:previousPending.submittedAt||Date.now()});
+}
+renderTxHistory();
 if(unresolved){let saved="";try{saved=localStorage.getItem(PENDING_KEY)||"";}catch{}showProgress("Previous transaction needs review","A previous write may still be pending. Verify the GenVM result before signing again.",saved,true);}
-$("v2LiveClose").addEventListener("click",()=>{$("v2LiveStatus").hidden=true;});
+$("v2LiveClose").addEventListener("click",()=>{$("v2LiveStatus").hidden=true;if(noticeTimer!==null)clearTimeout(noticeTimer);noticeTimer=null;});
 // Read-only recovery: independently query finalized on-chain effects while a
 // tracked transaction is unresolved. Never auto-send or clear unknown writes.
 let recoveryInFlight=false;
