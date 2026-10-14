@@ -52,3 +52,9 @@ export function nextMilestoneAction(order,account,hasGrant=false){
  if(order.status==="COMPLETED"&&contributor&&!hasGrant)return {method:"claim_milestone_release",label:"Claim on-chain release authorization →"};
  return null;
 }
+
+/** True only for an authenticated-by-readback accepted receipt and matching release grant. */
+export function isMilestoneCompleted(order,receipt,grant){
+ if(!obj(order)||!obj(receipt)||!obj(grant)||order.status!=="COMPLETED"||receipt.outcome!=="ACCEPTED")return false;
+ try{validateMilestoneSnapshot(order,order.id,receipt);validateRelease(order,receipt,grant);return true;}catch{return false;}
+}
