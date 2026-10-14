@@ -4,6 +4,7 @@ import {studionet} from "genlayer-js/chains";
 import {TransactionHashVariant} from "genlayer-js/types";
 import {createWorkflowGateway} from "./sdk-workflow.mjs";
 import {inspectTransaction} from "./tx-verdict.mjs";
+import {ensureStudionet, explainWalletError, rejectedBeforeBroadcast} from "./wallet-connect.mjs";
 import {pendingConfirmedByState} from "./pending-reconcile.mjs";
 import {validateMilestoneSnapshot, validateRelease, nextMilestoneAction, V2_CONTRACT} from "./milestones-model.mjs";
 
@@ -294,14 +295,14 @@ async function resumePending(hash){
  finally{busy=false;renderActions();}
 }
 async function connect(silent=false){if(!provider()){if(silent)return; $("milestoneWallet").textContent="MetaMask was not found. Install or unlock a trusted wallet.";return;}
- try{const accounts=await provider().request({method:silent?"eth_accounts":"eth_requestAccounts"});if(silent&&!accounts.length)return;const chain=await provider().request({method:"eth_chainId"});
- if(Number(BigInt(chain))!==61999)throw Error("Switch MetaMask to GenLayer Studionet (chain 61999) before signing.");
+ try{const accounts=await provider().request({method:silent?"eth_accounts":"eth_requestAccounts"});if(silent&&!accounts.length)return;
+ await ensureStudionet(provider(), !silent);
  account=String(accounts[0]||"").toLowerCase();
  if(!/^0x[0-9a-f]{40}$/.test(account))throw Error("No usable wallet account.");
  const client=createClient({chain:studionet,account,provider:provider()});
  gateway=createWorkflowGateway({client,contractAddress:V2_CONTRACT,finalVariant:final,isSuccessful:tx=>inspectTransaction(tx).kind==="success"});
  $("milestoneWallet").textContent="● Connected · "+account.slice(0,8)+"…"+account.slice(-6)+" · Studionet 61999";$("milestoneWallet").title=account;$("milestoneConnect").textContent="✓ Wallet connected · Switch account";$("milestoneConnect").classList.add("v2-wallet-connected");void discoverRecentOrders(true);
- }catch(e){if(silent)return;account="";gateway=null;$("milestoneConnect").textContent="Connect MetaMask";$("milestoneConnect").classList.remove("v2-wallet-connected");$("milestoneWallet").textContent=String(e.message||e);}
+ }catch(e){if(silent)return;account="";gateway=null;$("milestoneConnect").textContent="Connect MetaMask";$("milestoneConnect").classList.remove("v2-wallet-connected");$("milestoneWallet").textContent=explainWalletError(e);}
  renderActions();
 }
 async function verifyPublicArtifact(url,digest){
@@ -410,36 +411,44 @@ $("v2CheckReference").addEventListener("click",async()=>{
  }catch(e){$("v2ReferenceStatus").textContent="Reference check failed: "+String(e.message||e);}
 });
 $("v2Reference").addEventListener("input",()=>{checkedReference=null;$("v2ReferenceStatus").textContent="Reference changed. Recheck before creating.";});
+function createStatus(text,error=false){
+ $("milestoneTx").textContent=text;
+ const inline=$("v2CreateStatus");
+ if(inline){inline.textContent=text;inline.className=error?"milestone-note milestone-error":"milestone-note";}
+}
 $("v2CreateForm").addEventListener("submit",async e=>{
  e.preventDefault();
- if(busy||unresolved){$("milestoneTx").textContent="Another transaction is unresolved or in progress. Resolve it before creating.";return;}
- if(!gateway||!account){$("milestoneTx").textContent="Connect the Owner wallet on Studionet first.";return;}
+ if(busy||unresolved){const pending=getPending();createStatus(unresolved?"An earlier write may still be pending"+(pending?.hash?" ("+pending.hash+")":"")+". Check the transaction in Explorer before signing again.":"A contract read or transaction is still running. Retry after it completes.",true);return;}
+ if(!gateway||!account){createStatus("Connect the Owner MetaMask wallet on GenLayer Studionet (61999) before creating.",true);return;}
  const addr=$("v2Contributor").value.trim();
  const title=$("v2Title").value.trim();
  const url=$("v2Reference").value.trim();
- if(!/^0x[0-9a-fA-F]{40}$/.test(addr)||addr.toLowerCase()===account){$("milestoneTx").textContent="Contributor must be another valid wallet.";return;}
- if(!title||title.length>120||!checkedReference||checkedReference.url!==url){$("milestoneTx").textContent="Enter a title and check the agreed reference document.";return;}
+ if(!/^0x[0-9a-fA-F]{40}$/.test(addr)||addr.toLowerCase()===account){createStatus("Contributor must be another valid wallet.",true);return;}
+ if(!title||title.length>120||!checkedReference||checkedReference.url!==url){createStatus("Enter a title and check the agreed reference document.",true);return;}
  const rows=[1,2,3].map(n=>({id:"R"+n,text:$("v2R"+n).value.trim()}));
- if(rows.some(r=>!r.text||r.text.length>500)){$("milestoneTx").textContent="Each of the three criteria must contain 1–500 characters.";return;}
+ if(rows.some(r=>!r.text||r.text.length>500)){createStatus("Each of the three criteria must contain 1–500 characters.",true);return;}
  const submitDays=Number($("v2SubmitDays").value), revisionDays=Number($("v2RevisionDays").value);
  if(!Number.isSafeInteger(submitDays)||!Number.isSafeInteger(revisionDays)||submitDays<1||submitDays>=revisionDays||revisionDays>59){
-  $("milestoneTx").textContent="Choose 1–58 days for submission and a later revision deadline, no more than 59 days.";return;
+  createStatus("Choose 1–58 days for submission and a later revision deadline, no more than 59 days.",true);return;
  }
- const chain=await provider().request({method:"eth_chainId"});
- const accounts=await provider().request({method:"eth_accounts"});
- if(Number(BigInt(chain))!==61999||String(accounts[0]||"").toLowerCase()!==account){$("milestoneTx").textContent="Wallet or network changed. Reconnect.";return;}
+ try{
+  await ensureStudionet(provider(),false);
+  const accounts=await provider().request({method:"eth_accounts"});
+  if(String(accounts[0]||"").toLowerCase()!==account)throw Error("Active MetaMask account changed. Click Connect MetaMask to reconnect.");
+ }catch(error){createStatus("Wallet preflight: "+explainWalletError(error),true);return;}
  let digest;
- try{digest=await fetchAndHashReference(url);}catch(err){$("milestoneTx").textContent="Reference could not be reverified: "+String(err.message||err);return;}
- if(digest!==checkedReference.sha){$("milestoneTx").textContent="Reference bytes changed since the last verification. Abort.";return;}
+ try{digest=await fetchAndHashReference(url);}catch(err){createStatus("Reference could not be reverified: "+String(err.message||err),true);return;}
+ if(digest!==checkedReference.sha){createStatus("Reference bytes changed since the last verification. Abort.",true);return;}
  const now=Math.floor(Date.now()/1000);
  const args=[addr,title,JSON.stringify(rows),url,digest,now+submitDays*86400,now+revisionDays*86400];
  let expectedOrderId;
- try{expectedOrderId=String(await readClient.readContract({address:V2_CONTRACT,functionName:"next_order",args:[],transactionHashVariant:final}));if(!/^[1-9][0-9]*$/.test(expectedOrderId))throw Error("bad id");}catch{$("milestoneTx").textContent="Could not capture the next on-chain order ID. No transaction sent; retry after network recovers.";return;}
+ try{expectedOrderId=String(await readClient.readContract({address:V2_CONTRACT,functionName:"next_order",args:[],transactionHashVariant:final}));if(!/^[1-9][0-9]*$/.test(expectedOrderId))throw Error("Invalid next_order response");}
+ catch(error){createStatus("GenLayer RPC preflight failed before MetaMask signing: "+String(error?.message||error)+". Check Studionet RPC and contract address; no transaction was sent.",true);return;}
  const createContext={account,orderId:null,expectedOrderId,title,contributor:addr.toLowerCase(),referenceUrl:url,referenceSha:digest,criteria:rows,submitDeadline:args[5],revisionDeadline:args[6]};
- if(!window.confirm("PROOFLY INDEXED CREATE ORDER\\nContract: "+V2_CONTRACT+"\\nOwner: "+account+"\\nContributor: "+addr+"\\nReference SHA-256: "+digest+"\\nNo escrow/payment. Confirm fees in MetaMask before signing."))return;
+ if(!window.confirm("PROOFLY INDEXED CREATE ORDER\\nContract: "+V2_CONTRACT+"\\nOwner: "+account+"\\nContributor: "+addr+"\\nReference SHA-256: "+digest+"\\nNo escrow/payment. Confirm fees in MetaMask before signing.")){createStatus("Creation cancelled before MetaMask signing. No transaction was submitted.");return;}
  busy=true;$("v2CreateButton").disabled=true;
  showProgress("Approve agreement in MetaMask","Review the wallet, contract and fee. Do not submit another request.", "",true);
- $("milestoneTx").textContent="Awaiting wallet signature for create_order.";
+ createStatus("Requesting MetaMask signature for create_order. If no popup appears, open the MetaMask extension and check pending requests.");
  let submittedHash="";
  try{
   const tx=await gateway.submit("create_order",args,hash=>{
@@ -453,18 +462,19 @@ $("v2CreateForm").addEventListener("submit",async e=>{
    busy=false;
    const id=await recoverCreatedOrder({...createContext,method:"create_order",hash:tx.txId});
    showProgress(id?"Agreement created":"Agreement readback requires review",id?"Exact Work Order #"+id+" verified. Contributor can accept the agreement.":"GenVM execution succeeded but no exact matching finalized Work Order was found. Inspect the transaction and contract before continuing; do not resubmit.",tx.txId,!id);
-   $("milestoneTx").textContent=id?"Work Order #"+id+" created and loaded.":"GenVM SUCCESS; exact Work Order readback missing. Do not resubmit.";
+   createStatus(id?"Work Order #"+id+" created and loaded.":"GenVM SUCCESS); exact Work Order readback missing. Do not resubmit.";
   }else{
    busy=false;
    if(await recoverCreatedOrder(getPending()))return;
    showProgress("Execution not confirmed","Status: "+status.status+". Inspect GenVM execution in Explorer before further writes.",tx.txId,true);
-   $("milestoneTx").textContent="Create TX "+tx.txId+" · "+status.status+". Do not resubmit.";
+   createStatus("Create TX "+tx.txId+" · "+status.status+". Do not resubmit.");
   }
  }catch(err){
-  const aborted=["USER_CANCELLED","BAD_ARGUMENTS","FEE_ESTIMATE_MISSING","FEE_REVIEW_REQUIRED"].includes(err?.code);
+  const aborted=["USER_CANCELLED","BAD_ARGUMENTS","FEE_ESTIMATE_MISSING","FEE_REVIEW_REQUIRED"].includes(err?.code)||rejectedBeforeBroadcast(err);
   if(!aborted)unresolved=true;
-  showProgress(aborted?"No transaction submitted":"Transaction requires review",aborted?String(err.message||err):"A write may have been broadcast. Inspect MetaMask activity and Studio before retrying.",submittedHash,true);
-  $("milestoneTx").textContent=aborted?"No transaction submitted: "+String(err.message||err):"Submission uncertain: "+String(err.message||err)+". Do not resubmit.";
+  const detail=explainWalletError(err);
+  showProgress(aborted?"No transaction submitted":"Transaction requires review",aborted?detail:"The transaction may have been broadcast. "+detail+" Inspect MetaMask activity and Studio before retrying.",submittedHash,true);
+  createStatus(aborted?"No transaction sent: "+detail:"Submission uncertain: "+detail+". Inspect MetaMask activity and Studio; do not resubmit blindly.",true);
  }finally{busy=false;$("v2CreateButton").disabled=false;renderActions();}
 });
 
