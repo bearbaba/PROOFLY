@@ -1,8 +1,8 @@
 import {test,expect} from "@playwright/test";
 
-test("V2 workspace is explicit about contract and no payments",async({page})=>{
+test("Indexed workspace is explicit about contract and no payments",async({page})=>{
  await page.goto("/milestones.html");
- await expect(page).toHaveTitle(/Milestone Gate V2/);
+ await expect(page).toHaveTitle(/Indexed Milestone Workspace/);
  await expect(page.getByRole("heading",{name:"Verified work. Provable release."})).toBeVisible();
  await expect(page.getByText("0xb8305F15336a79761157b86e214d3d3DeaDFc1ce")).toBeVisible();
  await expect(page.getByText(/NOT a token transfer, escrow, payment/)).toBeVisible();
@@ -11,7 +11,7 @@ test("V2 workspace is explicit about contract and no payments",async({page})=>{
  await expect(page.getByRole("heading",{name:"Milestone release"})).toBeVisible();
 });
 
-test("No V2 write offered until public read and assigned wallet",async({page})=>{
+test("No write offered until public read and assigned wallet",async({page})=>{
  await page.goto("/milestones.html");
  await expect(page.getByText(/Load a work order to see (the next )?eligible action/)).toBeVisible();
  await expect(page.getByText(/Awaiting order selection/)).toHaveCount(2);
@@ -59,12 +59,12 @@ test("V2 landing page exposes the real create workflow and positive demo without
  await expect(page.locator("#milestoneTx")).toContainText("no wallet request or on-chain write");
 });
 
-test("Preview homepage is V2 and never renders legacy contract",async({page})=>{
+test("Preview homepage is indexed and never renders legacy contract",async({page})=>{
  await page.goto("/",{waitUntil:"domcontentloaded"});
- await expect(page).toHaveTitle(/Milestone Gate V2/);
+ await expect(page).toHaveTitle(/Indexed Milestone Workspace/);
  await expect(page.locator("#milestoneId")).toBeVisible();
  await expect(page.locator("#v2CreateDetails")).toBeAttached();
- await expect(page.getByRole("link",{name:/Legacy V1/})).toHaveAttribute("href","https://proofly-lovat.vercel.app/");
+ await expect(page.getByRole("link",{name:/Contract source/})).toHaveAttribute("href","https://github.com/bearbaba/PROOFLY/blob/main/contracts/proofly/milestone_gate_v3_indexed.py");
  await expect(page.locator("#connectWallet")).toHaveCount(0);
 });
 
