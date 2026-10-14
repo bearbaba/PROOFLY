@@ -10,6 +10,29 @@
 .v2-wallet-connected{background:#e8f7f0!important;border-color:#b0dfcc!important;color:#11694d!important;font-weight:800}.v2-wallet-connected:before{content:"● ";color:#18a374}.v2-live-status{position:fixed;top:16px;left:50%;transform:translateX(-50%);width:min(800px,calc(100vw - 32px));z-index:300;margin:0;padding:16px 18px;border:1px solid #d5e4e9;border-radius:14px;background:#f1f8fb;box-shadow:0 8px 24px #193f4b12;font-size:13px}.v2-live-status[data-state="success"]{background:#e8f8f0;border-color:#abdfc3}.v2-live-status[data-state="attention"]{background:#fff5e7;border-color:#efd09e}.v2-live-status strong{display:block;font-size:15px;margin-bottom:4px}.v2-live-status a{display:inline-block;margin-top:6px;color:#087f86;text-decoration:underline;overflow-wrap:anywhere}.v2-wallet-card{padding:8px 0}.v2-wallet-card strong{color:#146c51}.v2-live-status[hidden]{display:none}.v2-live-close{position:absolute;top:10px;right:10px;background:transparent;border:0;color:#425d6b;cursor:pointer;font-size:18px;padding:4px 9px}.v2-live-status{padding-right:45px!important}
  .milestone-hero-actions{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-top:20px}.milestone-start{display:inline-flex;text-decoration:none!important;padding:14px 17px;border-radius:11px;font-weight:800;color:white!important;background:#087f86}#newMilestone{scroll-margin-top:24px}
 .milestone-discovery{margin:12px 0 18px;border:1px solid #dae7e9;border-radius:12px;background:#f8fbfc;padding:0;overflow:hidden}.milestone-work-toggle{padding:15px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;list-style:none}.milestone-work-toggle::-webkit-details-marker{display:none}.milestone-work-toggle small{display:block;color:#607987;font-weight:400;font-size:12px;margin-top:4px}.milestone-work-toggle:focus-visible{outline:3px solid #087f86;outline-offset:-3px}.milestone-work-indicator{font-size:20px;color:#087f86;transition:transform .15s}.milestone-discovery[open] .milestone-work-indicator{transform:rotate(180deg)}.milestone-work-content{padding:0 16px 16px;border-top:1px solid #dae7e9}.milestone-recent-list{max-height:300px;overflow-y:auto;overscroll-behavior:contain;padding-right:4px}.milestone-discovery-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.milestone-recent-list{display:grid;gap:8px;margin-top:10px}.milestone-recent-list button{width:100%;text-align:left;padding:11px 13px;border:1px solid #dae7e9;border-radius:10px;background:#f6fafb;color:#173641;white-space:normal}.milestone-discovery-head button{padding:8px 12px}.milestone-recent-list small{display:block;color:#536c79;margin-top:4px}
+
+/* Compact local activity drawer; never hides a pending write from persisted history. */
+.proofly-activity{max-width:1220px;margin:10px auto 14px;padding:0 22px}
+.proofly-activity details{margin-left:auto;width:fit-content;max-width:100%;position:relative}
+.proofly-activity summary{list-style:none;cursor:pointer;padding:8px 12px;border:1px solid #d3e5e5;border-radius:10px;background:#f5fafb;color:#225a63;font-size:12px;font-weight:800}
+.proofly-activity summary::-webkit-details-marker{display:none}
+.proofly-activity summary:focus-visible{outline:3px solid #087f86}
+.proofly-tx-panel{width:min(480px,calc(100vw - 44px));padding:14px;border:1px solid #d3e5e5;background:#fff;border-radius:12px;box-shadow:0 12px 30px #213b451c;margin-top:8px}
+.proofly-tx-panel>strong{font-size:13px}
+.proofly-tx-panel>p{font-size:11px;color:#566f7a;margin:5px 0 10px}
+.proofly-tx-list{max-height:290px;overflow:auto;display:grid;gap:8px}
+.proofly-tx-entry{border:1px solid #e0e9eb;border-radius:9px;padding:10px;font-size:11px;overflow-wrap:anywhere}
+.proofly-tx-entry>strong{font-size:12px;display:block}
+.proofly-tx-entry small{display:block;color:#536a77;margin-top:3px}
+.proofly-tx-entry a{display:inline-block;color:#087f86;text-decoration:underline;margin-top:4px}
+.milestone-complete-banner{max-width:1220px;margin:16px auto;padding:25px 28px;border:1px solid #a5d5c0;border-radius:18px;background:#eaf8f0;color:#16543f;box-shadow:0 12px 34px #17795b16}
+.milestone-complete-banner[hidden]{display:none}
+.milestone-complete-banner strong{display:block;font-size:12px;letter-spacing:.1em}
+.milestone-complete-banner h2{font-size:clamp(23px,3vw,31px);margin:6px 0;letter-spacing:-.04em}
+.milestone-complete-banner p{font-size:13px;margin:5px 0 12px}
+.milestone-complete-banner a{display:inline-block;font-size:12px;font-weight:800;color:#087f86;text-decoration:underline}
+@media(max-width:760px){.proofly-activity{padding:0 16px}.milestone-complete-banner{margin:14px 16px;padding:20px}}
+
 </style>
 <script type="module" src="./milestones.bundle.js"></script></head>
 <body><div class="wrap">
@@ -17,6 +40,8 @@
 <header class="milestone-hero"><div class="kicker">GENLAYER / MILESTONE ACCEPTANCE</div><h1>Verified work.<br>Provable release.</h1><p>Agree on the evidence. Submit a delivery. Let GenLayer record the verdict, then authorize a milestone release. Every verdict and release displayed here is read from the deployed contract.</p><div class="milestone-steps"><span>01 · Agreement</span><span>02 · Evidence</span><span>03 · AI verdict</span><span>04 · Release authorization</span></div><div class="milestone-hero-actions"><a class="primary milestone-start" href="#newMilestone">+ Create a real milestone ↗</a><a class="milestone-link" href="#milestoneLookup">Inspect an existing order ↓</a></div></header>
 <div class="strip"><span><strong>EXPERIMENTAL TESTNET</strong> · Release authorization is an on-chain record, NOT a token transfer, escrow, payment, or proof of real-world API operation.</span><a target="_blank" rel="noopener noreferrer" href="https://studio.genlayer.com/?import-contract=0xb8305F15336a79761157b86e214d3d3DeaDFc1ce">Open Studio ↗</a></div>
 <div id="v2LiveStatus" class="v2-live-status" role="status" aria-live="polite" hidden><button id="v2LiveClose" class="v2-live-close" type="button" aria-label="Dismiss transaction notice">×</button><strong id="v2LiveTitle"></strong><span id="v2LiveBody"></span><div id="v2LiveLinks"></div></div>
+<div class="proofly-activity"><details id="txHistoryDrawer"><summary id="txHistoryToggle">↗ Transactions <span id="txHistoryCount">0</span> ▾</summary><div class="proofly-tx-panel"><strong>Transaction history</strong><p>Saved on this browser only, across connected wallets. Explorer is authoritative; this is not a blockchain index.</p><div id="txHistoryList" class="proofly-tx-list" aria-live="polite">No saved transactions yet.</div></div></details></div>
+<section id="milestoneCelebration" class="milestone-complete-banner" role="region" aria-label="Verified milestone completion" hidden><strong>✓ VERIFIED MILESTONE · ON-CHAIN RELEASE</strong><h2 id="milestoneSuccessTitle">Milestone successfully verified</h2><p id="milestoneSuccessDescription"></p><a id="milestoneSuccessShare" href="#milestoneLookup">View verified milestone ↗</a><p>Release authorization is a public on-chain record, not a payment or token transfer.</p></section>
 <main class="milestone-layout">
 <section class="milestone-stack">
 <article class="panel milestone-panel"><div class="heading"><div><div class="kicker">01 / ON-CHAIN STATE</div><h2>Inspect a milestone</h2></div><span class="pill neutral">READ ONLY BY DEFAULT</span></div>

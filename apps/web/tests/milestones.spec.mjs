@@ -114,3 +114,28 @@ test("Create shows a visible blocker next to the button when no MetaMask account
  await expect(page.locator("#v2CreateStatus")).toContainText("Connect the Owner MetaMask wallet");
  await expect(page.locator("#v2CreateStatus")).toHaveClass(/milestone-error/);
 });
+
+test("Transaction history stays compact but preserves a saved tx across refreshes",async({page})=>{
+ await page.addInitScript(()=>{
+  const key="proofly.indexed.61999.b8305f15336a79761157b86e214d3d3deadfc1ce.tx-history.v1";
+  localStorage.setItem(key,JSON.stringify([{hash:"0x"+"1".repeat(64),account:"0x"+"a".repeat(40),
+   method:"accept_order",orderId:"2",submittedAt:Date.now(),status:"ONCHAIN_VERIFIED"}]));
+ });
+ await page.goto("/milestones.html");
+ await expect(page.locator("#txHistoryDrawer")).not.toHaveAttribute("open","");
+ await expect(page.locator("#txHistoryCount")).toHaveText("1");
+ await page.locator("#txHistoryToggle").click();
+ await expect(page.locator("#txHistoryList")).toContainText("accept order");
+ await expect(page.locator("#txHistoryList")).toContainText("Effect verified on-chain");
+ await expect(page.locator("#txHistoryList a")).toHaveAttribute("href","https://explorer-studio.genlayer.com/tx/0x"+"1".repeat(64));
+ await page.reload();
+ await expect(page.locator("#txHistoryCount")).toHaveText("1");
+ await expect(page.locator("#txHistoryDrawer")).not.toHaveAttribute("open","");
+});
+
+test("Public completion card defaults to hidden and is not fabricated from URL alone",async({page})=>{
+ await page.goto("/?order=2",{waitUntil:"domcontentloaded"});
+ await expect(page.locator("#milestoneCelebration")).toBeHidden();
+ await expect(page.locator("#milestoneSuccessTitle")).toHaveText("Milestone successfully verified");
+ await expect(page.locator("#txHistoryToggle")).toBeVisible();
+});
