@@ -1,6 +1,6 @@
 import {test} from "node:test";
 import assert from "node:assert/strict";
-import {pendingConfirmedByState as matches} from "./pending-reconcile.mjs";
+import {pendingConfirmedByState as matches, verifiedCreatedOrderNotice} from "./pending-reconcile.mjs";
 const alice="0xd6b8a3a5eb329410d9504784812b8569afa8c2af";
 const bob="0x4c7cb73ac8f8999af21cfc9ff4cf2333a9508dcb";
 const base={id:"2",status:"ACTIVE",accepted_at:1791864226,contributor:alice,spec_sha256:"spec-2",submissions:[]};
@@ -30,4 +30,13 @@ test("verification and release require matching finalized state",()=>{
  assert.equal(matches(claim,base,alice),false);
  assert.equal(matches(claim,base,alice,{order_id:"2",recipient:alice,spec_sha256:"spec-2"}),true);
  assert.equal(matches(claim,base,alice,{order_id:"2",recipient:alice,spec_sha256:"wrong"}),false);
+});
+
+test("verified create notice does not mislabel missing SDK receipt as a failed transaction",()=>{
+ const notice=verifiedCreatedOrderNotice("2");
+ assert.match(notice,/Work Order #2 verified in finalized contract state/);
+ assert.match(notice,/receipt tracking timed out/);
+ assert.match(notice,/do not create it again/);
+ assert.doesNotMatch(notice,/GenVM SUCCESS|transaction failed|TRACKING_UNRESOLVED/);
+ assert.throws(()=>verifiedCreatedOrderNotice("bad"),/Invalid verified work order ID/);
 });
