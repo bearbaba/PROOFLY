@@ -106,3 +106,11 @@ test("My Work stays collapsed until opened and is bounded for large lists",async
  await drawer.locator("summary").click();
  await expect(page.locator("#v2RecentOrders")).not.toBeVisible();
 });
+
+test("Create shows a visible blocker next to the button when no MetaMask account is connected",async({page})=>{
+ await page.goto("/milestones.html");
+ await page.locator("#v2CreateDetails").evaluate(el=>{el.open=true;});
+ await page.locator("#v2CreateForm").dispatchEvent("submit");
+ await expect(page.locator("#v2CreateStatus")).toContainText("Connect the Owner MetaMask wallet");
+ await expect(page.locator("#v2CreateStatus")).toHaveClass(/milestone-error/);
+});
