@@ -13,6 +13,7 @@ const final=TransactionHashVariant.LATEST_FINAL;
 const PENDING_KEY="proofly.indexed.61999.b8305f15336a79761157b86e214d3d3deadfc1ce.pending-write";
 let order=null, receipt=null, grant=null, account="", gateway=null, busy=false, unresolved=false;
 let didCheckInitialSelection=false;
+let walletEpoch=0;
 try{unresolved=Boolean(localStorage.getItem(PENDING_KEY));}catch{unresolved=true;}
 
 const provider=()=>window.ethereum;
@@ -48,6 +49,8 @@ async function recoverCreatedOrder(pending){
  try{
   const rec=await read("get_order",[pending.expectedOrderId]);
   if(!rec||rec.id!==pending.expectedOrderId||rec.title!==pending.title||
+     (pending.submitDeadline!=null&&rec.spec.submit_deadline!==pending.submitDeadline)||
+     (pending.revisionDeadline!=null&&rec.spec.revision_deadline!==pending.revisionDeadline)||
      rec.owner.toLowerCase()!==account||rec.contributor.toLowerCase()!==pending.contributor?.toLowerCase()||
      rec.spec.reference_url!==pending.referenceUrl||rec.spec.reference_sha256!==pending.referenceSha||
      JSON.stringify(rec.spec.criteria)!==JSON.stringify(pending.criteria))return null;
@@ -135,13 +138,14 @@ function renderDiscovery(){
 }
 async function discoverRecentOrders(reset=true){
  if(discoveryBusy)return;
- const epoch=++discoveryEpoch;
+ const epoch=++discoveryEpoch,scopedAccount=account;
  const button=$("v2RefreshRecent");discoveryBusy=true;button.disabled=true;
  try{
   if(reset){workOffset=0;workMore=false;discoveredOrders.clear();seenByRole.owner.clear();seenByRole.contributor.clear();}
   const idSet=new Set();
-  if(account){
-   const [own,assigned]=await Promise.all([indexedPage("owner",account,workOffset),indexedPage("contributor",account,workOffset)]);
+  if(scopedAccount){
+   const [own,assigned]=await Promise.all([indexedPage("owner",scopedAccount,workOffset),indexedPage("contributor",scopedAccount,workOffset)]);
+   if(epoch!==discoveryEpoch||scopedAccount!==account)return;
    workMore=own.has_more||assigned.has_more;
    for(const id of own.order_ids){if(!/^[1-9][0-9]*$/.test(String(id)))throw Error("Invalid indexed owner ID");idSet.add(String(id));seenByRole.owner.add(String(id));}
    for(const id of assigned.order_ids){if(!/^[1-9][0-9]*$/.test(String(id)))throw Error("Invalid indexed contributor ID");idSet.add(String(id));seenByRole.contributor.add(String(id));}
@@ -149,6 +153,7 @@ async function discoverRecentOrders(reset=true){
    $("v2DiscoveryProgress").textContent="Indexed My Work · Owner "+own.total+" · Contributor "+assigned.total+" · "+(workMore?"More pages available":"All pages loaded");
   }else{
    const next=BigInt(String(await readClient.readContract({address:V2_CONTRACT,functionName:"next_order",args:[],transactionHashVariant:final})));
+   if(epoch!==discoveryEpoch||scopedAccount!==account)return;
    for(let i=next-1n;i>=1n&&i>=next-21n;i--)idSet.add(String(i));
    $("v2DiscoveryProgress").textContent="Public recent milestones · Connect wallet to see indexed My Work";
    workMore=false;
@@ -157,10 +162,11 @@ async function discoverRecentOrders(reset=true){
   for(let i=0;i<ids.length;i+=4){
    const batch=ids.slice(i,i+4);
    const results=await Promise.allSettled(batch.map(id=>read("get_order",[id])));
+   if(epoch!==discoveryEpoch||scopedAccount!==account)return;
    for(let j=0;j<batch.length;j++){
     const v=results[j];if(v.status!=="fulfilled"||!v.value)throw Error("Could not verify indexed order "+batch[j]);
     validateMilestoneSnapshot(v.value,batch[j]);
-    if(account&&v.value.owner.toLowerCase()!==account&&v.value.contributor.toLowerCase()!==account)
+    if(scopedAccount&&v.value.owner.toLowerCase()!==scopedAccount&&v.value.contributor.toLowerCase()!==scopedAccount)
       throw Error("Wallet index returned an unrelated order");
     discoveredOrders.set(batch[j],v.value);
    }
@@ -180,22 +186,12 @@ async function discoverRecentOrders(reset=true){
     void load();
    }
   }
- }catch(e){$("v2DiscoveryProgress").textContent="Index read failed: "+String(e.message||e)+". No unverified entries shown.";renderDiscovery();}
- finally{discoveryBusy=false;button.disabled=false;renderDiscovery();}
+ }catch(e){if(epoch===discoveryEpoch){$("v2DiscoveryProgress").textContent="Index read failed: "+String(e.message||e)+". No unverified entries shown.";renderDiscovery();}}
+ finally{if(epoch===discoveryEpoch){discoveryBusy=false;button.disabled=false;renderDiscovery();}}
 }
 $("v2RefreshRecent").addEventListener("click",()=>void discoverRecentOrders(true));
 $("v2LoadOlder").addEventListener("click",()=>void discoverRecentOrders(false));
 $("v2FindMyWork").addEventListener("click",()=>void discoverRecentOrders(true));
-async function findCreatedOrder(title,owner){
- try{
-  const val=await readClient.readContract({address:V2_CONTRACT,functionName:"next_order",args:[],transactionHashVariant:final});
-  const n=BigInt(String(val));if(n<=1n)return null;
-  const id=String(n-1n),rec=await read("get_order",[id]);
-  if(!rec||rec.title!==title||rec.owner.toLowerCase()!==owner.toLowerCase())return null;
-  validateMilestoneSnapshot(rec,id);
-  $("milestoneId").value=id;await load();void discoverRecentOrders(true);return id;
- }catch{return null;}
-}
 const node=(tag,value,className)=>{const n=document.createElement(tag); if(value!==undefined)n.textContent=String(value); if(className)n.className=className;return n;};
 function message(msg,error=false){$("milestoneMessage").textContent=msg;$("milestoneMessage").className=error?"milestone-note milestone-error":"milestone-note";}
 function line(parent,name,value){const row=node("dl",undefined,"milestone-kv");row.append(node("dt",name),node("dd",value??"—"));parent.append(row);}
@@ -261,12 +257,13 @@ function renderActions(){const box=$("milestoneActions");box.replaceChildren();i
  const guidance=node("p","Confirm wallet, contract, and fees before approving. The app never auto-retries.","hint");box.append(guidance,b);
  b.addEventListener("click",()=>void submit(suggestion.method,url?.value?.trim(),sha?.value?.trim()));
 }
-async function load(){if(busy)return;const id=$("milestoneId").value.trim();if(!/^[1-9][0-9]*$/.test(id)){message("Enter a positive work order number.",true);return;}
+async function load(){if(busy)return;const scopedWalletEpoch=walletEpoch;const id=$("milestoneId").value.trim();if(!/^[1-9][0-9]*$/.test(id)){message("Enter a positive work order number.",true);return;}
  busy=true;$("milestoneLoad").disabled=true;message("Reading finalized contract state…");
  try{const next=await read("get_order",[id]);if(!next)throw Error("No work order found at the requested finalized state.");validateMilestoneSnapshot(next,id);
  const v=next.submissions.at(-1)?.version;const rec=v?await read("get_receipt",[id,v]):null;const release=await read("get_milestone_release",[id]);
  if(rec)validateMilestoneSnapshot(next,id,rec);
  if(release)validateRelease(next,rec,release);
+ if(scopedWalletEpoch!==walletEpoch)return; // Ignore a read started before MetaMask account/network changed.
  order=next;receipt=rec;grant=release;
  // Keep the indexed My Work card consistent with the already-verified detail.
  discoveredOrders.set(next.id,next);renderDiscovery();
@@ -331,10 +328,10 @@ async function submit(method,artifactUrl,artifactHash){if(busy||unresolved||!gat
   try{await verifyPublicArtifact(artifactUrl,artifactHash);}
   catch(e){$("milestoneTx").textContent="Evidence validation failed; no transaction sent: "+String(e.message||e);return;}
  }
- const ok=window.confirm("PROOFLY V2 · "+method+"\nContract: "+V2_CONTRACT+"\nAccount: "+account+"\nOrder: "+order.id+"\nNo token transfer. This GenLayer SDK cannot quote consensus fees; inspect all costs in MetaMask before signing. Continue?");
+ const ok=window.confirm("PROOFLY Indexed · "+method+"\nContract: "+V2_CONTRACT+"\nAccount: "+account+"\nOrder: "+order.id+"\nNo token transfer. This GenLayer SDK cannot quote consensus fees; inspect all costs in MetaMask before signing. Continue?");
  if(!ok)return;
  busy=true;renderActions();$("milestoneTx").textContent="Awaiting wallet approval. Do not submit again.";
- try{const context={orderId:order.id,specSha:order.spec_sha256,artifactUrl,artifactHash,expectedVersion:order.submissions.length+(method==="submit_evidence"?1:0)};
+ try{const context={account,orderId:order.id,specSha:order.spec_sha256,artifactUrl,artifactHash,expectedVersion:order.submissions.length+(method==="submit_evidence"?1:0)};
  const result=await gateway.submit(method,args,hash=>{
   savePending(hash,method,context);
   showProgress("Transaction submitted","Waiting for GenVM finality. Do not resubmit.",hash,true);
@@ -359,8 +356,6 @@ async function submit(method,artifactUrl,artifactHash){if(busy||unresolved||!gat
 }
 $("milestoneLookup").addEventListener("submit",e=>{e.preventDefault();void load();});
 $("milestoneConnect").addEventListener("click",()=>void connect());
-provider()?.on?.("accountsChanged",()=>{account="";gateway=null;$("milestoneConnect").textContent="Connect MetaMask";$("milestoneConnect").classList.remove("v2-wallet-connected");renderActions();$("milestoneWallet").textContent="Account changed. Reconnect to continue.";});
-provider()?.on?.("chainChanged",()=>{account="";gateway=null;$("milestoneConnect").textContent="Connect MetaMask";$("milestoneConnect").classList.remove("v2-wallet-connected");renderActions();$("milestoneWallet").textContent="Network changed. Reconnect to continue.";});
 let checkedReference=null;
 const pinned=/^https:\/\/raw\.githubusercontent\.com\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+\/[a-f0-9]{40}\/[A-Za-z0-9_./-]+\.txt$/;
 async function fetchAndHashReference(url){
@@ -440,8 +435,8 @@ $("v2CreateForm").addEventListener("submit",async e=>{
  const args=[addr,title,JSON.stringify(rows),url,digest,now+submitDays*86400,now+revisionDays*86400];
  let expectedOrderId;
  try{expectedOrderId=String(await readClient.readContract({address:V2_CONTRACT,functionName:"next_order",args:[],transactionHashVariant:final}));if(!/^[1-9][0-9]*$/.test(expectedOrderId))throw Error("bad id");}catch{$("milestoneTx").textContent="Could not capture the next on-chain order ID. No transaction sent; retry after network recovers.";return;}
- const createContext={orderId:null,expectedOrderId,title,contributor:addr.toLowerCase(),referenceUrl:url,referenceSha:digest,criteria:rows};
- if(!window.confirm("PROOFLY V2 CREATE ORDER\\nContract: "+V2_CONTRACT+"\\nOwner: "+account+"\\nContributor: "+addr+"\\nReference SHA-256: "+digest+"\\nNo escrow/payment. Confirm fees in MetaMask before signing."))return;
+ const createContext={account,orderId:null,expectedOrderId,title,contributor:addr.toLowerCase(),referenceUrl:url,referenceSha:digest,criteria:rows,submitDeadline:args[5],revisionDeadline:args[6]};
+ if(!window.confirm("PROOFLY INDEXED CREATE ORDER\\nContract: "+V2_CONTRACT+"\\nOwner: "+account+"\\nContributor: "+addr+"\\nReference SHA-256: "+digest+"\\nNo escrow/payment. Confirm fees in MetaMask before signing."))return;
  busy=true;$("v2CreateButton").disabled=true;
  showProgress("Approve agreement in MetaMask","Review the wallet, contract and fee. Do not submit another request.", "",true);
  $("milestoneTx").textContent="Awaiting wallet signature for create_order.";
@@ -455,12 +450,10 @@ $("v2CreateForm").addEventListener("submit",async e=>{
   showProgress("Milestone creation pending","Transaction submitted. Checking finality and execution.",tx.txId,true);
   const status=await gateway.resumeFinalization(tx.txId);
   if(status.status==="FINALIZED_SUCCESS"){
-   clearPending();
-   showProgress("Agreement created","GenVM execution succeeded. Finding the new Work Order.",tx.txId);
    busy=false;
-   const id=await findCreatedOrder(title,account);
-   showProgress("Agreement created",id?"Work Order #"+id+" loaded. Contributor can now accept the agreement.":"Contract execution succeeded; Work Order number could not be matched automatically. Inspect next_order in Studio.",tx.txId);
-   $("milestoneTx").textContent=id?"Work Order #"+id+" created and loaded.":"Created successfully; use Studio to identify Work Order.";
+   const id=await recoverCreatedOrder({...createContext,method:"create_order",hash:tx.txId});
+   showProgress(id?"Agreement created":"Agreement readback requires review",id?"Exact Work Order #"+id+" verified. Contributor can accept the agreement.":"GenVM execution succeeded but no exact matching finalized Work Order was found. Inspect the transaction and contract before continuing; do not resubmit.",tx.txId,!id);
+   $("milestoneTx").textContent=id?"Work Order #"+id+" created and loaded.":"GenVM SUCCESS; exact Work Order readback missing. Do not resubmit.";
   }else{
    busy=false;
    if(await recoverCreatedOrder(getPending()))return;
@@ -502,8 +495,10 @@ void connect(true); // Restore an already authorized wallet without prompting or
 // MetaMask account/network events must invalidate stale permissions and My Work.
 if(provider()?.on){
  const refreshWallet=()=>{
+  ++walletEpoch;++discoveryEpoch;discoveryBusy=false;
+  $("v2RefreshRecent").disabled=false;
   account="";gateway=null;order=null;receipt=null;grant=null;
-  discoveredOrders.clear();workOffset=0;workMore=false;
+  discoveredOrders.clear();seenByRole.owner.clear();seenByRole.contributor.clear();workOffset=0;workMore=false;
   $("milestoneWallet").textContent="Wallet changed. Checking connected account…";
   $("milestoneConnect").textContent="Connect MetaMask";
   $("milestoneConnect").classList.remove("v2-wallet-connected");
