@@ -5,7 +5,7 @@ import {TransactionHashVariant} from "genlayer-js/types";
 import {createWorkflowGateway} from "./sdk-workflow.mjs";
 import {inspectTransaction} from "./tx-verdict.mjs";
 import {ensureStudionet, explainWalletError, rejectedBeforeBroadcast} from "./wallet-connect.mjs";
-import {pendingConfirmedByState} from "./pending-reconcile.mjs";
+import {pendingConfirmedByState, verifiedCreatedOrderNotice} from "./pending-reconcile.mjs";
 import {validateMilestoneSnapshot, validateRelease, nextMilestoneAction, V2_CONTRACT} from "./milestones-model.mjs";
 
 const $=id=>document.getElementById(id);
@@ -59,7 +59,7 @@ async function recoverCreatedOrder(pending){
   $("milestoneId").value=rec.id;
   clearPending();
   showProgress("Created milestone verified","Matching on-chain order #"+rec.id+" was read from finalized state; no second signature was sent.",pending.hash);
-  $("milestoneTx").textContent="Created Work Order #"+rec.id+" confirmed by finalized state.";
+  createStatus(verifiedCreatedOrderNotice(rec.id)); // Keep the Create panel aligned with verified chain readback.
   await load();void discoverRecentOrders(true);
   return rec.id;
  }catch{return null;}
