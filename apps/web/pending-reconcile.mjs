@@ -16,3 +16,10 @@ export function pendingConfirmedByState(record,state,activeAccount,grant=null){
     grant?.order_id===state.id&&grant?.spec_sha256===record.specSha;
  return false;
 }
+
+/** UI copy for an exact finalized create_order readback when SDK receipt tracking timed out.
+ * Verified state is not itself an authenticated transaction-level GenVM receipt. */
+export function verifiedCreatedOrderNotice(orderId){
+ if(typeof orderId!=="string"||!(/^[1-9][0-9]*$/).test(orderId))throw Error("Invalid verified work order ID");
+ return "Work Order #"+orderId+" verified in finalized contract state. If transaction receipt tracking timed out, do not create it again; check Explorer for the transaction-level GenVM result.";
+}
