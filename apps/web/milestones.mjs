@@ -7,7 +7,7 @@ import {inspectTransaction} from "./tx-verdict.mjs";
 import {addTx, readTxs, setTxStatus, txLabel} from "./tx-history.mjs";
 import {ensureStudionet, explainWalletError, rejectedBeforeBroadcast} from "./wallet-connect.mjs";
 import {pendingConfirmedByState, verifiedCreatedOrderNotice} from "./pending-reconcile.mjs";
-import {validateMilestoneSnapshot, validateRelease, nextMilestoneAction, V2_CONTRACT} from "./milestones-model.mjs";
+import {validateMilestoneSnapshot, validateRelease, isMilestoneCompleted, nextMilestoneAction, V2_CONTRACT} from "./milestones-model.mjs";
 
 const $=id=>document.getElementById(id);
 const readClient=createClient({chain:studionet});
@@ -245,7 +245,7 @@ function renderReceipt(){const box=$("milestoneReceipt");box.replaceChildren();i
 }
 function renderMilestoneCompletion(){
  const banner=$("milestoneCelebration");if(!banner)return;
- const success=Boolean(order&&receipt&&grant&&order.status==="COMPLETED"&&receipt.outcome==="ACCEPTED");
+ const success=isMilestoneCompleted(order,receipt,grant);
  banner.hidden=!success;
  if(!success)return;
  const met=receipt.results.filter(row=>row.status==="SATISFIED").length;
